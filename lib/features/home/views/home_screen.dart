@@ -106,35 +106,31 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSummaryCards() {
-    final String currency = _settings?.currency ?? 'YER';
-    final double sales = currency == 'SAR' ? (_summary['daily_sales_sar'] ?? 0.0) : (_summary['daily_sales_yer'] ?? 0.0);
-    final double debt = currency == 'SAR' ? (_summary['total_debt_sar'] ?? 0.0) : (_summary['total_debt_yer'] ?? 0.0);
-
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: FadeInLeft(
-            duration: const Duration(milliseconds: 600),
-            child: _SummaryCard(
-              title: 'daily_sales'.tr(),
-              amount: sales,
-              icon: Icons.trending_up,
-              color: AppColors.success,
-              settings: _settings,
-            ),
+        FadeInDown(
+          duration: const Duration(milliseconds: 600),
+          child: _SummaryCard(
+            title: 'daily_sales'.tr(),
+            amounts: {
+              'YER': _summary['daily_sales_yer'] ?? 0.0,
+              'SAR': _summary['daily_sales_sar'] ?? 0.0,
+            },
+            icon: Icons.trending_up,
+            color: AppColors.success,
           ),
         ),
-        SizedBox(width: 15.w),
-        Expanded(
-          child: FadeInRight(
-            duration: const Duration(milliseconds: 600),
-            child: _SummaryCard(
-              title: 'total_debt'.tr(),
-              amount: debt,
-              icon: Icons.account_balance_wallet_outlined,
-              color: AppColors.error,
-              settings: _settings,
-            ),
+        SizedBox(height: 15.h),
+        FadeInUp(
+          duration: const Duration(milliseconds: 600),
+          child: _SummaryCard(
+            title: 'total_debt'.tr(),
+            amounts: {
+              'YER': _summary['total_debt_yer'] ?? 0.0,
+              'SAR': _summary['total_debt_sar'] ?? 0.0,
+            },
+            icon: Icons.account_balance_wallet_outlined,
+            color: AppColors.error,
           ),
         ),
       ],
@@ -490,25 +486,22 @@ class _CustomerDropdownState extends State<_CustomerDropdown> {
 
 class _SummaryCard extends StatelessWidget {
   final String title;
-  final double amount;
+  final Map<String, double> amounts;
   final IconData icon;
   final Color color;
-  final AppSettings? settings;
 
   const _SummaryCard({
     required this.title,
-    required this.amount,
+    required this.amounts,
     required this.icon,
     required this.color,
-    this.settings,
   });
 
   @override
   Widget build(BuildContext context) {
-    final formatter = CurrencyHelper.getFormatter(settings?.currency ?? 'YER');
-
     return Container(
-      padding: EdgeInsets.all(16.w),
+      width: double.infinity,
+      padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(24.r),
@@ -521,38 +514,51 @@ class _SummaryCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(10.w),
+            padding: EdgeInsets.all(12.w),
             decoration: BoxDecoration(
               color: color.withOpacity(0.12),
               borderRadius: BorderRadius.circular(16.r),
             ),
-            child: Icon(icon, color: color, size: 24.sp),
+            child: Icon(icon, color: color, size: 28.sp),
           ),
-          SizedBox(height: 20.h),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              formatter.format(amount),
-              style: TextStyle(
-                fontSize: 20.sp,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
-                letterSpacing: -0.5,
-              ),
+          SizedBox(width: 20.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Wrap(
+                  spacing: 15.w,
+                  runSpacing: 5.h,
+                  children: amounts.entries.map((entry) {
+                    final value = entry.value;
+                    if (value == 0 && amounts.values.any((v) => v > 0)) {
+                      return const SizedBox.shrink();
+                    }
+                    return Text(
+                      CurrencyHelper.getFormatter(entry.key).format(value),
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.5,
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
             ),
           ),
         ],

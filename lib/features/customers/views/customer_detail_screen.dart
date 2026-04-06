@@ -119,10 +119,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   Widget _buildCustomerHeader() {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(25.w),
+      padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
         gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(25.r),
+        borderRadius: BorderRadius.circular(24.r),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withOpacity(0.3),
@@ -135,45 +135,79 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
         children: [
           Text(
             'current_balance'.tr(),
-            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16.sp),
+            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13.sp, fontWeight: FontWeight.w500, letterSpacing: 1),
           ),
-          SizedBox(height: 10.h),
-          FittedBox(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (_currentCustomer.totalDebt > 0 || _currentCustomer.totalDebtSar == 0)
+          SizedBox(height: 15.h),
+          if (_currentCustomer.totalDebt > 0 || _currentCustomer.totalDebtSar == 0)
+            FittedBox(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
                   Text(
                     CurrencyHelper.getFormatter('YER').format(_currentCustomer.totalDebt),
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 28.sp,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -1,
                     ),
                   ),
-                if (_currentCustomer.totalDebt > 0 && _currentCustomer.totalDebtSar > 0)
-                  Text("  |  ", style: TextStyle(color: Colors.white54, fontSize: 20.sp)),
-                if (_currentCustomer.totalDebtSar > 0)
+                  SizedBox(width: 8.w),
+                  Text(
+                    'YER',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (_currentCustomer.totalDebt > 0 && _currentCustomer.totalDebtSar > 0)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 12.h),
+              child: Container(height: 1, width: 40.w, color: Colors.white24),
+            ),
+          if (_currentCustomer.totalDebtSar > 0)
+            FittedBox(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
                   Text(
                     CurrencyHelper.getFormatter('SAR').format(_currentCustomer.totalDebtSar),
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 28.sp,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -1,
                     ),
                   ),
-              ],
+                  SizedBox(width: 8.w),
+                  Text(
+                    'SAR',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          SizedBox(height: 15.h),
+          SizedBox(height: 20.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.phone, color: Colors.white70, size: 16),
+              const Icon(Icons.phone, color: Colors.white70, size: 14),
               SizedBox(width: 8.w),
               Text(
                 _currentCustomer.phone,
-                style: TextStyle(color: Colors.white70, fontSize: 14.sp),
+                style: TextStyle(color: Colors.white70, fontSize: 14.sp, fontWeight: FontWeight.w500),
               ),
             ],
           ),

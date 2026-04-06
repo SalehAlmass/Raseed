@@ -211,7 +211,7 @@ class _CustomerTile extends StatelessWidget {
           children: [
             if (customer.totalDebt > 0)
               Text(
-                CurrencyHelper.getFormatter('YER').format(customer.totalDebt),
+                '${CurrencyHelper.getFormatter('YER').format(customer.totalDebt)} YER',
                 style: TextStyle(
                   color: AppColors.error,
                   fontWeight: FontWeight.bold,
@@ -220,7 +220,7 @@ class _CustomerTile extends StatelessWidget {
               ),
             if (customer.totalDebtSar > 0)
               Text(
-                CurrencyHelper.getFormatter('SAR').format(customer.totalDebtSar),
+                '${CurrencyHelper.getFormatter('SAR').format(customer.totalDebtSar)} SAR',
                 style: TextStyle(
                   color: AppColors.error,
                   fontWeight: FontWeight.bold,
