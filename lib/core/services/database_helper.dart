@@ -26,7 +26,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -74,6 +74,16 @@ class DatabaseHelper {
       'currency': 'YER',
       'onboarding_completed': 0,
     });
+
+    await db.execute('''
+      CREATE TABLE products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        price REAL NOT NULL,
+        currency TEXT DEFAULT 'YER',
+        stock_quantity INTEGER DEFAULT 0
+      )
+    ''');
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -86,6 +96,17 @@ class DatabaseHelper {
     if (oldVersion < 4) {
       await db.execute('ALTER TABLE transactions ADD COLUMN currency TEXT DEFAULT "YER"');
       await db.execute('ALTER TABLE customers ADD COLUMN total_debt_sar REAL DEFAULT 0');
+    }
+    if (oldVersion < 5) {
+      await db.execute('''
+        CREATE TABLE products (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          price REAL NOT NULL,
+          currency TEXT DEFAULT 'YER',
+          stock_quantity INTEGER DEFAULT 0
+        )
+      ''');
     }
   }
 

@@ -7,6 +7,7 @@ import '../../features/customers/views/customer_list_screen.dart';
 import '../../features/customers/views/customer_detail_screen.dart';
 import '../../features/settings/views/settings_screen.dart';
 import '../../features/auth/views/master_password_screen.dart';
+import '../../features/store/views/store_screen.dart';
 import '../models/customer.dart';
 
 /// Application Router
@@ -30,6 +31,8 @@ class AppRouter {
         return _buildRoute(const SettingsScreen(), settings);
       case Routes.auth:
         return _buildRoute(const MasterPasswordScreen(), settings);
+      case Routes.store:
+        return _buildRoute(const StoreScreen(), settings);
       default:
         return _buildRoute(
           Scaffold(

@@ -10,6 +10,7 @@ import '../services/customer_service.dart';
 import '../services/transaction_service.dart';
 import '../services/settings_service.dart';
 import '../services/auth_service.dart';
+import '../services/product_service.dart';
 
 final sl = GetIt.instance;
 
@@ -57,4 +58,5 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SettingsService());
 
   sl.registerLazySingleton<AuthService>(() => AuthService());
+  sl.registerLazySingleton<ProductService>(() => ProductService(sl<TransactionService>()));
 }

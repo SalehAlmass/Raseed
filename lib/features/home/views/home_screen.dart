@@ -53,7 +53,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('app_name'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          'app_name'.tr(),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
@@ -62,8 +65,8 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => Navigator.pushNamed(context, '/settings'),
           ),
-           IconButton(
-            icon: const Icon(Icons.lock_outline),
+          IconButton(
+            icon: const Icon(Icons.store_mall_directory),
             onPressed: null,
           ),
         ],
@@ -151,13 +154,15 @@ class _HomeScreenState extends State<HomeScreen> {
           label: 'cash_sale'.tr(),
           icon: Icons.attach_money,
           color: AppColors.success,
-          onTap: () => _showAddTransactionDialog(context, type: TransactionType.cash),
+          onTap: () =>
+              _showAddTransactionDialog(context, type: TransactionType.cash),
         ),
         _QuickActionBtn(
           label: 'add_debt'.tr(),
           icon: Icons.remove_circle_outline,
           color: AppColors.warning,
-          onTap: () => _showAddTransactionDialog(context, type: TransactionType.debt),
+          onTap: () =>
+              _showAddTransactionDialog(context, type: TransactionType.debt),
         ),
       ],
     );
@@ -175,10 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
             color: AppColors.textPrimary,
           ),
         ),
-        TextButton(
-          onPressed: () {},
-          child: Text('see_all'.tr()),
-        ),
+        TextButton(onPressed: () {}, child: Text('see_all'.tr())),
       ],
     );
   }
@@ -197,10 +199,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      child: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : _recentTransactions.isEmpty
-          ? Center(child: Text('no_transactions'.tr(), style: const TextStyle(color: Colors.grey)))
+      child: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _recentTransactions.isEmpty
+          ? Center(
+              child: Text(
+                'no_transactions'.tr(),
+                style: const TextStyle(color: Colors.grey),
+              ),
+            )
           : ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -210,21 +217,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 final tx = _recentTransactions[index];
                 final isDebt = tx.type == TransactionType.debt;
                 final isCash = tx.type == TransactionType.cash;
-                
+
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(
-                    backgroundColor: isDebt 
-                      ? AppColors.error.withOpacity(0.1) 
-                      : (isCash ? AppColors.success.withOpacity(0.1) : AppColors.secondary.withOpacity(0.1)),
+                    backgroundColor: isDebt
+                        ? AppColors.error.withOpacity(0.1)
+                        : (isCash
+                              ? AppColors.success.withOpacity(0.1)
+                              : AppColors.secondary.withOpacity(0.1)),
                     child: Icon(
                       isDebt ? Icons.arrow_upward : Icons.arrow_downward,
-                      color: isDebt ? AppColors.error : (isCash ? AppColors.success : AppColors.secondary),
+                      color: isDebt
+                          ? AppColors.error
+                          : (isCash ? AppColors.success : AppColors.secondary),
                       size: 20,
                     ),
                   ),
                   title: Text(
-                    isCash ? 'cash_sale'.tr() : (isDebt ? 'debt'.tr() : 'payment'.tr()),
+                    isCash
+                        ? 'cash_sale'.tr()
+                        : (isDebt ? 'debt'.tr() : 'payment'.tr()),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text(
@@ -244,22 +257,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showAddTransactionDialog(BuildContext context, {TransactionType type = TransactionType.cash}) {
+  void _showAddTransactionDialog(
+    BuildContext context, {
+    TransactionType type = TransactionType.cash,
+  }) {
     final amountController = TextEditingController();
     final noteController = TextEditingController();
     TransactionType selectedType = type;
     Customer? selectedCustomer;
     String selectedCurrency = _settings?.currency ?? 'YER';
     DateTime selectedDate = DateTime.now();
- 
+
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: Text(
-            selectedType == TransactionType.cash 
-              ? 'cash_sale'.tr() 
-              : 'add_debt'.tr()
+            selectedType == TransactionType.cash
+                ? 'cash_sale'.tr()
+                : 'add_debt'.tr(),
           ),
           content: SingleChildScrollView(
             child: Column(
@@ -267,9 +283,18 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 SegmentedButton<TransactionType>(
                   segments: [
-                    ButtonSegment(value: TransactionType.cash, label: Text('cash_sale'.tr())),
-                    ButtonSegment(value: TransactionType.debt, label: Text('debt'.tr())),
-                    ButtonSegment(value: TransactionType.payment, label: Text('payment'.tr())),
+                    ButtonSegment(
+                      value: TransactionType.cash,
+                      label: Text('cash_sale'.tr()),
+                    ),
+                    ButtonSegment(
+                      value: TransactionType.debt,
+                      label: Text('debt'.tr()),
+                    ),
+                    ButtonSegment(
+                      value: TransactionType.payment,
+                      label: Text('payment'.tr()),
+                    ),
                   ],
                   selected: {selectedType},
                   onSelectionChanged: (newSelection) {
@@ -279,8 +304,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 SizedBox(height: 15.h),
                 SegmentedButton<String>(
                   segments: [
-                    ButtonSegment(value: 'YER', label: Text('yemeni_rial'.tr())),
-                    ButtonSegment(value: 'SAR', label: Text('saudi_riyal'.tr())),
+                    ButtonSegment(
+                      value: 'YER',
+                      label: Text('yemeni_rial'.tr()),
+                    ),
+                    ButtonSegment(
+                      value: 'SAR',
+                      label: Text('saudi_riyal'.tr()),
+                    ),
                   ],
                   selected: {selectedCurrency},
                   onSelectionChanged: (newSelection) {
@@ -290,7 +321,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 SizedBox(height: 20.h),
                 if (selectedType != TransactionType.cash) ...[
                   _CustomerDropdown(
-                    onChanged: (customer) => setState(() => selectedCustomer = customer),
+                    onChanged: (customer) =>
+                        setState(() => selectedCustomer = customer),
                   ),
                   SizedBox(height: 20.h),
                 ],
@@ -298,8 +330,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   controller: amountController,
                   decoration: InputDecoration(
                     labelText: 'Amount',
-                    prefixText: '${CurrencyHelper.getSymbol(selectedCurrency)} ',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                    prefixText:
+                        '${CurrencyHelper.getSymbol(selectedCurrency)} ',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
                   ),
                   keyboardType: TextInputType.number,
                 ),
@@ -308,7 +343,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   controller: noteController,
                   decoration: InputDecoration(
                     labelText: 'note'.tr(),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
                   ),
                 ),
                 SizedBox(height: 15.h),
@@ -328,24 +365,29 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () async {
                 final amount = double.tryParse(amountController.text);
                 if (amount == null || amount <= 0) return;
-                
-                if (selectedType != TransactionType.cash && selectedCustomer == null) {
+
+                if (selectedType != TransactionType.cash &&
+                    selectedCustomer == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please select a customer'))
+                    const SnackBar(content: Text('Please select a customer')),
                   );
                   return;
                 }
 
                 try {
-                  await _transactionService.addTransaction(AppTransaction(
-                    customerId: selectedType == TransactionType.cash ? null : selectedCustomer!.id,
-                    type: selectedType,
-                    amount: amount,
-                    currency: selectedCurrency,
-                    date: selectedDate,
-                    note: noteController.text,
-                  ));
-                  
+                  await _transactionService.addTransaction(
+                    AppTransaction(
+                      customerId: selectedType == TransactionType.cash
+                          ? null
+                          : selectedCustomer!.id,
+                      type: selectedType,
+                      amount: amount,
+                      currency: selectedCurrency,
+                      date: selectedDate,
+                      note: noteController.text,
+                    ),
+                  );
+
                   if (context.mounted) {
                     Navigator.pop(context);
                     _loadData();
@@ -354,9 +396,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(e.toString().contains('over_limit') 
-                          ? 'over_limit_error'.tr() 
-                          : 'error_occurred'.tr()),
+                        content: Text(
+                          e.toString().contains('over_limit')
+                              ? 'over_limit_error'.tr()
+                              : 'error_occurred'.tr(),
+                        ),
                         backgroundColor: AppColors.error,
                       ),
                     );
@@ -404,10 +448,9 @@ class _CustomerDropdownState extends State<_CustomerDropdown> {
         labelText: 'customers'.tr(),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
       ),
-      items: _customers.map((c) => DropdownMenuItem(
-        value: c,
-        child: Text(c.name),
-      )).toList(),
+      items: _customers
+          .map((c) => DropdownMenuItem(value: c, child: Text(c.name)))
+          .toList(),
       onChanged: (val) {
         setState(() => _selected = val);
         widget.onChanged(val);
@@ -444,7 +487,8 @@ class _CustomerDropdownState extends State<_CustomerDropdown> {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (nameController.text.isNotEmpty && phoneController.text.isNotEmpty) {
+              if (nameController.text.isNotEmpty &&
+                  phoneController.text.isNotEmpty) {
                 final customer = Customer(
                   name: nameController.text,
                   phone: phoneController.text,

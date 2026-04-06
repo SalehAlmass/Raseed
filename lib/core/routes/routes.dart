@@ -12,4 +12,5 @@ class Routes {
   static const String customers = '/customers';
   static const String customerDetail = '/customer_detail';
   static const String auth = '/auth';
+  static const String store = '/store';
 }
