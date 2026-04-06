@@ -310,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                   SizedBox(height: 15.h),
-                  if (selectedType != TransactionType.payment) ...[
+                  if (selectedType == TransactionType.cash) ...[
                     _ProductDropdown(
                       onChanged: (product) {
                         setState(() {
@@ -368,7 +368,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     onChanged: (val) => setState(() {}),
                   ),
                   SizedBox(height: 15.h),
-                  if (selectedType == TransactionType.debt) ...[
+                  if (selectedType == TransactionType.cash) ...[
                      TextField(
                        controller: paidController,
                        decoration: InputDecoration(
@@ -382,7 +382,8 @@ class _HomeScreenState extends State<HomeScreen> {
                      SizedBox(height: 15.h),
                      Builder(builder: (context) {
                          final total = double.tryParse(amountController.text) ?? 0.0;
-                         final paid = double.tryParse(paidController.text) ?? 0.0;
+                         final rawPaid = double.tryParse(paidController.text);
+                         final paid = rawPaid ?? (selectedType == TransactionType.cash ? total : 0.0);
                          final remaining = total - paid;
                          return Container(
                            padding: EdgeInsets.all(12.w),
@@ -429,14 +430,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   final amount = double.tryParse(amountController.text);
                   if (amount == null || amount <= 0) return;
 
-                  final paidAmount = double.tryParse(paidController.text) ?? 0.0;
-                  if (selectedType == TransactionType.debt && paidAmount > amount) {
+                  final rawPaid = double.tryParse(paidController.text);
+                  final paidAmount = rawPaid ?? (selectedType == TransactionType.cash ? amount : 0.0);
+
+                  if (paidAmount > amount) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Paid amount cannot exceed total')));
                     return;
                   }
 
-                  if (selectedType != TransactionType.cash && selectedCustomer == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a customer')));
+                  // Auto-convert cash sale to debt if they leave a remaining balance
+                  TransactionType effectiveType = selectedType;
+                  if (selectedType == TransactionType.cash && paidAmount < amount) {
+                    effectiveType = TransactionType.debt;
+                  }
+
+                  if (effectiveType != TransactionType.cash && selectedCustomer == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a customer for the debt tracking')));
                     return;
                   }
 
@@ -446,7 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       await sl<ProductService>().sellProduct(
                         product: selectedProduct!,
                         quantity: quantity,
-                        type: selectedType,
+                        type: effectiveType,
                         customerId: selectedCustomer?.id,
                         note: noteController.text,
                       );
@@ -454,7 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       await _transactionService.addTransaction(
                         AppTransaction(
                           customerId: selectedCustomer?.id,
-                          type: selectedType,
+                          type: effectiveType,
                           amount: amount,
                           currency: selectedCurrency,
                           date: selectedDate,
@@ -463,7 +472,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     }
 
-                    if (selectedType == TransactionType.debt && paidAmount > 0) {
+                    if (effectiveType == TransactionType.debt && paidAmount > 0) {
                       await _transactionService.addTransaction(
                         AppTransaction(
                           customerId: selectedCustomer?.id,
@@ -471,7 +480,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           amount: paidAmount,
                           currency: selectedCurrency,
                           date: selectedDate,
-                          note: 'Down payment: ${noteController.text.isNotEmpty ? noteController.text : "Purchase"}',
+                          note: 'Payment: ${noteController.text.isNotEmpty ? noteController.text : "Purchase"}',
                         ),
                       );
                     }
