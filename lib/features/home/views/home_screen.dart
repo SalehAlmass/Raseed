@@ -67,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.store_mall_directory),
-            onPressed: null,
+            onPressed: () => Navigator.pushNamed(context, '/store'),
           ),
         ],
       ),

@@ -205,39 +205,31 @@ class _CustomerTile extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
         ),
         subtitle: Text(customer.phone),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            if (customer.totalDebt > 0)
+        trailing: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
               Text(
                 '${CurrencyHelper.getFormatter('YER').format(customer.totalDebt)} YER',
                 style: TextStyle(
-                  color: AppColors.error,
+                  color: customer.totalDebt > 0 ? AppColors.error : AppColors.success,
                   fontWeight: FontWeight.bold,
-                  fontSize: 14.sp,
+                  fontSize: 13.sp,
                 ),
               ),
-            if (customer.totalDebtSar > 0)
               Text(
                 '${CurrencyHelper.getFormatter('SAR').format(customer.totalDebtSar)} SAR',
                 style: TextStyle(
-                  color: AppColors.error,
+                  color: customer.totalDebtSar > 0 ? AppColors.error : AppColors.success,
                   fontWeight: FontWeight.bold,
-                  fontSize: 14.sp,
+                  fontSize: 13.sp,
                 ),
               ),
-            if (customer.totalDebt == 0 && customer.totalDebtSar == 0)
-              Text(
-                CurrencyHelper.getFormatter(settings?.currency ?? 'YER').format(0),
-                style: TextStyle(
-                  color: AppColors.success,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14.sp,
-                ),
-              ),
-            Text('debt'.tr(), style: const TextStyle(fontSize: 10, color: Colors.grey)),
-          ],
+              Text('debt'.tr(), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+            ],
+          ),
         ),
       ),
     );

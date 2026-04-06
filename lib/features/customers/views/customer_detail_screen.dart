@@ -138,7 +138,6 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
             style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13.sp, fontWeight: FontWeight.w500, letterSpacing: 1),
           ),
           SizedBox(height: 15.h),
-          if (_currentCustomer.totalDebt > 0 || _currentCustomer.totalDebtSar == 0)
             FittedBox(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -166,12 +165,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                 ],
               ),
             ),
-          if (_currentCustomer.totalDebt > 0 && _currentCustomer.totalDebtSar > 0)
             Padding(
               padding: EdgeInsets.symmetric(vertical: 12.h),
               child: Container(height: 1, width: 40.w, color: Colors.white24),
             ),
-          if (_currentCustomer.totalDebtSar > 0)
             FittedBox(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
