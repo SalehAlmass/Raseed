@@ -4,6 +4,10 @@ import '../../core/routes/routes.dart';
 import '../../core/theme/colors.dart';
 import '../../core/config/app_config.dart';
 
+import '../../core/di/injection_container.dart';
+import '../../core/services/auth_service.dart';
+import '../../core/services/settings_service.dart';
+
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -41,9 +45,25 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _navigateToNext() {
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 3), () async {
       if (mounted) {
-        Navigator.pushReplacementNamed(context, Routes.auth);
+        final authService = sl<AuthService>();
+        final isAuthenticated = await authService.isAuthenticated();
+        
+        if (mounted) {
+          if (isAuthenticated) {
+            final settings = await sl<SettingsService>().getSettings();
+            if (mounted) {
+               if (!settings.onboardingCompleted) {
+                 Navigator.pushReplacementNamed(context, Routes.onboarding);
+               } else {
+                 Navigator.pushReplacementNamed(context, Routes.home);
+               }
+            }
+          } else {
+            Navigator.pushReplacementNamed(context, Routes.auth);
+          }
+        }
       }
     });
   }
