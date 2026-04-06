@@ -10,6 +10,8 @@ import '../../../core/theme/colors.dart';
 import '../../../core/models/app_transaction.dart';
 import '../../../core/models/customer.dart';
 import '../../../core/models/app_settings.dart';
+import '../../../core/models/product.dart';
+import '../../../core/services/product_service.dart';
 import '../../../core/utils/currency_helper.dart';
 import '../../../core/widgets/date_selector.dart';
 import 'package:intl/intl.dart';
@@ -81,6 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _buildSummaryCards(),
               SizedBox(height: 30.h),
+              
               Text(
                 'quick_actions'.tr(),
                 style: TextStyle(
@@ -262,155 +265,237 @@ class _HomeScreenState extends State<HomeScreen> {
     TransactionType type = TransactionType.cash,
   }) {
     final amountController = TextEditingController();
+    final paidController = TextEditingController();
     final noteController = TextEditingController();
+    final quantityController = TextEditingController(text: '1');
     TransactionType selectedType = type;
     Customer? selectedCustomer;
+    Product? selectedProduct;
     String selectedCurrency = _settings?.currency ?? 'YER';
     DateTime selectedDate = DateTime.now();
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(
-            selectedType == TransactionType.cash
-                ? 'cash_sale'.tr()
-                : 'add_debt'.tr(),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SegmentedButton<TransactionType>(
-                  segments: [
-                    ButtonSegment(
-                      value: TransactionType.cash,
-                      label: Text('cash_sale'.tr()),
+        builder: (context, setState) {
+          void updateAmountFields() {
+            if (selectedProduct != null) {
+              final quantity = int.tryParse(quantityController.text) ?? 1;
+              amountController.text = (selectedProduct!.price * quantity).toStringAsFixed(0);
+            }
+          }
+
+          return AlertDialog(
+            title: Text(
+              selectedType == TransactionType.cash ? 'cash_sale'.tr() : 'add_debt'.tr(),
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SegmentedButton<TransactionType>(
+                    segments: [
+                      ButtonSegment(value: TransactionType.cash, label: Text('cash_sale'.tr())),
+                      ButtonSegment(value: TransactionType.debt, label: Text('debt'.tr())),
+                      ButtonSegment(value: TransactionType.payment, label: Text('payment'.tr())),
+                    ],
+                    selected: {selectedType},
+                    onSelectionChanged: (newSelection) {
+                      setState(() {
+                         selectedType = newSelection.first;
+                         if (selectedType == TransactionType.payment) {
+                            selectedProduct = null;
+                         }
+                      });
+                    },
+                  ),
+                  SizedBox(height: 15.h),
+                  if (selectedType != TransactionType.payment) ...[
+                    _ProductDropdown(
+                      onChanged: (product) {
+                        setState(() {
+                          selectedProduct = product;
+                          if (product != null) {
+                            selectedCurrency = product.currency;
+                            updateAmountFields();
+                          } else {
+                            amountController.clear();
+                          }
+                        });
+                      },
                     ),
-                    ButtonSegment(
-                      value: TransactionType.debt,
-                      label: Text('debt'.tr()),
-                    ),
-                    ButtonSegment(
-                      value: TransactionType.payment,
-                      label: Text('payment'.tr()),
-                    ),
+                    SizedBox(height: 15.h),
                   ],
-                  selected: {selectedType},
-                  onSelectionChanged: (newSelection) {
-                    setState(() => selectedType = newSelection.first);
-                  },
-                ),
-                SizedBox(height: 15.h),
-                SegmentedButton<String>(
-                  segments: [
-                    ButtonSegment(
-                      value: 'YER',
-                      label: Text('yemeni_rial'.tr()),
-                    ),
-                    ButtonSegment(
-                      value: 'SAR',
-                      label: Text('saudi_riyal'.tr()),
-                    ),
+                  if (selectedProduct != null) ...[
+                     TextField(
+                       controller: quantityController,
+                       keyboardType: TextInputType.number,
+                       decoration: InputDecoration(
+                         labelText: 'Quantity',
+                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                       ),
+                       onChanged: (val) => setState(() => updateAmountFields()),
+                     ),
+                     SizedBox(height: 15.h),
                   ],
-                  selected: {selectedCurrency},
-                  onSelectionChanged: (newSelection) {
-                    setState(() => selectedCurrency = newSelection.first);
-                  },
-                ),
-                SizedBox(height: 20.h),
-                if (selectedType != TransactionType.cash) ...[
-                  _CustomerDropdown(
-                    onChanged: (customer) =>
-                        setState(() => selectedCustomer = customer),
+                  SegmentedButton<String>(
+                    segments: [
+                      ButtonSegment(value: 'YER', label: Text('yemeni_rial'.tr())),
+                      ButtonSegment(value: 'SAR', label: Text('saudi_riyal'.tr())),
+                    ],
+                    selected: {selectedCurrency},
+                    onSelectionChanged: (newSelection) {
+                      // Don't allow changing currency if a product is selected
+                      if (selectedProduct == null) {
+                         setState(() => selectedCurrency = newSelection.first);
+                      }
+                    },
                   ),
                   SizedBox(height: 20.h),
+                  _CustomerDropdown(
+                    onChanged: (customer) => setState(() => selectedCustomer = customer),
+                  ),
+                  SizedBox(height: 20.h),
+                  TextField(
+                    controller: amountController,
+                    readOnly: selectedProduct != null, // Auto-calculated if product
+                    decoration: InputDecoration(
+                      labelText: selectedType == TransactionType.debt ? 'Total Amount' : 'Amount',
+                      prefixText: '${CurrencyHelper.getSymbol(selectedCurrency)} ',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                    ),
+                    keyboardType: TextInputType.number,
+                    onChanged: (val) => setState(() {}),
+                  ),
+                  SizedBox(height: 15.h),
+                  if (selectedType == TransactionType.debt) ...[
+                     TextField(
+                       controller: paidController,
+                       decoration: InputDecoration(
+                         labelText: 'Paid Amount (Optional)',
+                         prefixText: '${CurrencyHelper.getSymbol(selectedCurrency)} ',
+                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                       ),
+                       keyboardType: TextInputType.number,
+                       onChanged: (val) => setState(() {}),
+                     ),
+                     SizedBox(height: 15.h),
+                     Builder(builder: (context) {
+                         final total = double.tryParse(amountController.text) ?? 0.0;
+                         final paid = double.tryParse(paidController.text) ?? 0.0;
+                         final remaining = total - paid;
+                         return Container(
+                           padding: EdgeInsets.all(12.w),
+                           decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(12.r),
+                           ),
+                           child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                 Text('Remaining:', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                 Text(
+                                    '${CurrencyHelper.getFormatter(selectedCurrency).format(remaining)} $selectedCurrency',
+                                    style: TextStyle(
+                                       fontWeight: FontWeight.bold,
+                                       color: remaining < 0 ? AppColors.error : AppColors.primary,
+                                    ),
+                                 ),
+                              ]
+                           ),
+                         );
+                     }),
+                     SizedBox(height: 15.h),
+                  ],
+                  TextField(
+                    controller: noteController,
+                    decoration: InputDecoration(
+                      labelText: 'note'.tr(),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                    ),
+                  ),
+                  SizedBox(height: 15.h),
+                  DateSelector(
+                    initialDate: selectedDate,
+                    onDateSelected: (date) => setState(() => selectedDate = date),
+                  ),
                 ],
-                TextField(
-                  controller: amountController,
-                  decoration: InputDecoration(
-                    labelText: 'Amount',
-                    prefixText:
-                        '${CurrencyHelper.getSymbol(selectedCurrency)} ',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                SizedBox(height: 15.h),
-                TextField(
-                  controller: noteController,
-                  decoration: InputDecoration(
-                    labelText: 'note'.tr(),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 15.h),
-                DateSelector(
-                  initialDate: selectedDate,
-                  onDateSelected: (date) => setState(() => selectedDate = date),
-                ),
-              ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('cancel'.tr()),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final amount = double.tryParse(amountController.text);
-                if (amount == null || amount <= 0) return;
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: Text('cancel'.tr())),
+              ElevatedButton(
+                onPressed: () async {
+                  final amount = double.tryParse(amountController.text);
+                  if (amount == null || amount <= 0) return;
 
-                if (selectedType != TransactionType.cash &&
-                    selectedCustomer == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please select a customer')),
-                  );
-                  return;
-                }
-
-                try {
-                  await _transactionService.addTransaction(
-                    AppTransaction(
-                      customerId: selectedType == TransactionType.cash
-                          ? null
-                          : selectedCustomer!.id,
-                      type: selectedType,
-                      amount: amount,
-                      currency: selectedCurrency,
-                      date: selectedDate,
-                      note: noteController.text,
-                    ),
-                  );
-
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    _loadData();
+                  final paidAmount = double.tryParse(paidController.text) ?? 0.0;
+                  if (selectedType == TransactionType.debt && paidAmount > amount) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Paid amount cannot exceed total')));
+                    return;
                   }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          e.toString().contains('over_limit')
-                              ? 'over_limit_error'.tr()
-                              : 'error_occurred'.tr(),
+
+                  if (selectedType != TransactionType.cash && selectedCustomer == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a customer')));
+                    return;
+                  }
+
+                  try {
+                    if (selectedProduct != null && selectedType != TransactionType.payment) {
+                      final quantity = int.tryParse(quantityController.text) ?? 1;
+                      await sl<ProductService>().sellProduct(
+                        product: selectedProduct!,
+                        quantity: quantity,
+                        type: selectedType,
+                        customerId: selectedCustomer?.id,
+                        note: noteController.text,
+                      );
+                    } else {
+                      await _transactionService.addTransaction(
+                        AppTransaction(
+                          customerId: selectedCustomer?.id,
+                          type: selectedType,
+                          amount: amount,
+                          currency: selectedCurrency,
+                          date: selectedDate,
+                          note: noteController.text,
                         ),
-                        backgroundColor: AppColors.error,
-                      ),
-                    );
+                      );
+                    }
+
+                    if (selectedType == TransactionType.debt && paidAmount > 0) {
+                      await _transactionService.addTransaction(
+                        AppTransaction(
+                          customerId: selectedCustomer?.id,
+                          type: TransactionType.payment,
+                          amount: paidAmount,
+                          currency: selectedCurrency,
+                          date: selectedDate,
+                          note: 'Down payment: ${noteController.text.isNotEmpty ? noteController.text : "Purchase"}',
+                        ),
+                      );
+                    }
+
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      _loadData(); // Refresh UI
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      String errMsg = 'error_occurred'.tr();
+                      if (e.toString().contains('uninsufficient_stock')) errMsg = 'Not enough stock!';
+                      if (e.toString().contains('over_limit')) errMsg = 'over_limit_error'.tr();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(errMsg), backgroundColor: AppColors.error),
+                      );
+                    }
                   }
-                }
-              },
-              child: Text('save'.tr()),
-            ),
-          ],
-        ),
+                },
+                child: Text('save'.tr()),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -527,6 +612,58 @@ class _CustomerDropdownState extends State<_CustomerDropdown> {
     );
   }
 }
+
+class _ProductDropdown extends StatefulWidget {
+  final Function(Product?) onChanged;
+  const _ProductDropdown({required this.onChanged});
+
+  @override
+  State<_ProductDropdown> createState() => _ProductDropdownState();
+}
+
+class _ProductDropdownState extends State<_ProductDropdown> {
+  final ProductService _productService = sl<ProductService>();
+  List<Product> _products = [];
+  Product? _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final list = await _productService.getAllProducts();
+    setState(() => _products = list);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<Product>(
+      value: _selected,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: 'Select Product (Optional)',
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+      ),
+      items: [
+        const DropdownMenuItem<Product>(
+          value: null,
+          child: Text('None (Manual Entry)'),
+        ),
+        ..._products.map((p) => DropdownMenuItem(
+              value: p,
+              child: Text('${p.name} - ${CurrencyHelper.getFormatter(p.currency).format(p.price)} ${p.currency}'),
+            )),
+      ],
+      onChanged: (val) {
+        setState(() => _selected = val);
+        widget.onChanged(val);
+      },
+    );
+  }
+}
+
 
 class _SummaryCard extends StatelessWidget {
   final String title;
