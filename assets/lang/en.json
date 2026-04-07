@@ -44,5 +44,9 @@
   "enter_master_password": "Enter Master Password",
   "unlock": "Unlock",
   "access_restricted": "This app is restricted to the owner only.",
-  "incorrect_password": "Incorrect Master Password!"
+  "incorrect_password": "Incorrect Master Password!",
+  "reset_data": "Reset Data",
+  "reset_data_confirm": "Are you sure you want to delete all data? This action cannot be undone.",
+  "data_reset_success": "All data has been deleted successfully",
+  "confirm": "Confirm"
 }

@@ -44,5 +44,9 @@
   "enter_master_password": "أدخل كلمة المرور الرئيسية",
   "unlock": "فتح التطبيق",
   "access_restricted": "هذا التطبيق مخصص للمالك فقط.",
-  "incorrect_password": "كلمة المرور غير صحيحة!"
+  "incorrect_password": "كلمة المرور غير صحيحة!",
+  "reset_data": "تصفير البيانات",
+  "reset_data_confirm": "هل أنت متأكد من حذف جميع البيانات؟ لا يمكن التراجع عن هذا الإجراء.",
+  "data_reset_success": "تم حذف جميع البيانات بنجاح",
+  "confirm": "تأكيد"
 }

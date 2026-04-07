@@ -114,4 +114,22 @@ class DatabaseHelper {
     final db = await instance.database;
     db.close();
   }
+
+  Future<void> deleteAllData() async {
+    final db = await instance.database;
+    
+    // Delete all data from tables (in order to respect foreign key constraints)
+    await db.delete('transactions');
+    await db.delete('customers');
+    await db.delete('products');
+    
+    // Reset settings to default values
+    await db.update('settings', {
+      'max_debt': 1000.0,
+      'reminder_days': 30,
+      'strict_mode': 0,
+      'currency': 'YER',
+      'onboarding_completed': 0,
+    });
+  }
 }

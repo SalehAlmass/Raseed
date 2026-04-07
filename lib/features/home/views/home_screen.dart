@@ -6,6 +6,7 @@ import '../../../core/di/injection_container.dart';
 import '../../../core/services/transaction_service.dart';
 import '../../../core/services/customer_service.dart';
 import '../../../core/services/settings_service.dart';
+import '../../../core/services/database_helper.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/models/app_transaction.dart';
 import '../../../core/models/customer.dart';
@@ -144,31 +145,107 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildQuickActions(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
       children: [
-        _QuickActionBtn(
-          label: 'customers'.tr(),
-          icon: Icons.people,
-          color: AppColors.primary,
-          onTap: () => Navigator.pushNamed(context, '/customers'),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _QuickActionBtn(
+              label: 'customers'.tr(),
+              icon: Icons.people,
+              color: AppColors.primary,
+              onTap: () => Navigator.pushNamed(context, '/customers'),
+            ),
+            _QuickActionBtn(
+              label: 'cash_sale'.tr(),
+              icon: Icons.attach_money,
+              color: AppColors.success,
+              onTap: () =>
+                  _showAddTransactionDialog(context, type: TransactionType.cash),
+            ),
+            _QuickActionBtn(
+              label: 'add_debt'.tr(),
+              icon: Icons.remove_circle_outline,
+              color: AppColors.warning,
+              onTap: () =>
+                  _showAddTransactionDialog(context, type: TransactionType.debt),
+            ),
+          ],
         ),
-        _QuickActionBtn(
-          label: 'cash_sale'.tr(),
-          icon: Icons.attach_money,
-          color: AppColors.success,
-          onTap: () =>
-              _showAddTransactionDialog(context, type: TransactionType.cash),
-        ),
-        _QuickActionBtn(
-          label: 'add_debt'.tr(),
-          icon: Icons.remove_circle_outline,
-          color: AppColors.warning,
-          onTap: () =>
-              _showAddTransactionDialog(context, type: TransactionType.debt),
+        SizedBox(height: 15.h),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _QuickActionBtn(
+              label: 'reset_data'.tr(),
+              icon: Icons.delete_forever,
+              color: AppColors.error,
+              onTap: () => _showResetDataConfirmation(context),
+            ),
+          ],
         ),
       ],
     );
+  }
+
+  void _showResetDataConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: Icon(
+          Icons.warning_amber_rounded,
+          color: AppColors.error,
+          size: 48.sp,
+        ),
+        title: Text(
+          'reset_data'.tr(),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text('reset_data_confirm'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('cancel'.tr()),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _resetAllData();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: Text('confirm'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _resetAllData() async {
+    try {
+      await DatabaseHelper.instance.deleteAllData();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('data_reset_success'.tr()),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        await _loadData();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('error_occurred'.tr()),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildRecentActivityHeader() {
