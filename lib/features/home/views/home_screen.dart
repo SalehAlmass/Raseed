@@ -11,6 +11,7 @@ import '../../../core/models/app_transaction.dart';
 import '../../../core/models/customer.dart';
 import '../../../core/models/product.dart';
 import '../../../core/services/product_service.dart';
+import '../../../core/widgets/barcode_scanner_view.dart';
 import '../../../core/utils/currency_helper.dart';
 import '../../../core/widgets/date_selector.dart';
 import 'package:intl/intl.dart';
@@ -112,29 +113,33 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSummaryCards() {
-    return Column(
+    return Row(
       children: [
-        FadeInDown(
-          duration: const Duration(milliseconds: 600),
-          child: _SummaryCard(
-            title: 'daily_sales'.tr(),
-            amounts: {
-              'YER': _summary['daily_sales_yer'] ?? 0.0,
-            },
-            icon: Icons.trending_up,
-            color: AppColors.success,
+        Expanded(
+          child: FadeInDown(
+            duration: const Duration(milliseconds: 600),
+            child: _SummaryCard(
+              title: 'daily_sales'.tr(),
+              amounts: {
+                'YER': _summary['daily_sales_yer'] ?? 0.0,
+              },
+              icon: Icons.trending_up_rounded,
+              color: AppColors.success,
+            ),
           ),
         ),
-        SizedBox(height: 15.h),
-        FadeInUp(
-          duration: const Duration(milliseconds: 600),
-          child: _SummaryCard(
-            title: 'total_debt'.tr(),
-            amounts: {
-              'YER': _summary['total_debt_yer'] ?? 0.0,
-            },
-            icon: Icons.account_balance_wallet_outlined,
-            color: AppColors.error,
+        SizedBox(width: 12.w),
+        Expanded(
+          child: FadeInUp(
+            duration: const Duration(milliseconds: 600),
+            child: _SummaryCard(
+              title: 'total_debt'.tr(),
+              amounts: {
+                'YER': _summary['total_debt_yer'] ?? 0.0,
+              },
+              icon: Icons.account_balance_wallet_rounded,
+              color: AppColors.error,
+            ),
           ),
         ),
       ],
@@ -710,27 +715,63 @@ class _ProductDropdownState extends State<_ProductDropdown> {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<Product>(
-      value: _selected,
-      isExpanded: true,
-      decoration: InputDecoration(
-        labelText: 'Select Product (Optional)',
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
-      ),
-      items: [
-        const DropdownMenuItem<Product>(
-          value: null,
-          child: Text('None (Manual Entry)'),
+    return Row(
+      children: [
+        Expanded(
+          child: DropdownButtonFormField<Product>(
+            value: _selected,
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: 'Select Product (Optional)'.tr(),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+            ),
+            items: [
+              DropdownMenuItem<Product>(
+                value: null,
+                child: Text('none_manual'.tr()),
+              ),
+              ..._products.map((p) => DropdownMenuItem(
+                    value: p,
+                    child: Text('${p.name} - ${CurrencyHelper.getFormatter(p.currency).format(p.price)} ${p.currency}'),
+                  )),
+            ],
+            onChanged: (val) {
+              setState(() => _selected = val);
+              widget.onChanged(val);
+            },
+          ),
         ),
-        ..._products.map((p) => DropdownMenuItem(
-              value: p,
-              child: Text('${p.name} - ${CurrencyHelper.getFormatter(p.currency).format(p.price)} ${p.currency}'),
-            )),
+        SizedBox(width: 8.w),
+        IconButton.filled(
+          onPressed: () async {
+            final code = await Navigator.push<String>(
+              context,
+              MaterialPageRoute(builder: (_) => const BarcodeScannerView()),
+            );
+            if (code != null) {
+              final product = _products.cast<Product?>().firstWhere(
+                (p) => p?.barcode == code,
+                orElse: () => null,
+              );
+              if (product != null) {
+                setState(() => _selected = product);
+                widget.onChanged(product);
+              } else {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('product_not_found'.tr()), backgroundColor: AppColors.error),
+                  );
+                }
+              }
+            }
+          },
+          icon: const Icon(Icons.qr_code_scanner),
+          style: IconButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+          ),
+        ),
       ],
-      onChanged: (val) {
-        setState(() => _selected = val);
-        widget.onChanged(val);
-      },
     );
   }
 }
@@ -741,77 +782,87 @@ class _SummaryCard extends StatelessWidget {
   final Map<String, double> amounts;
   final IconData icon;
   final Color color;
+  final bool isGradient;
 
   const _SummaryCard({
     required this.title,
     required this.amounts,
     required this.icon,
     required this.color,
+    this.isGradient = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(20.w),
+      padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(color: color.withOpacity(0.1), width: 1.5),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.1),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(16.r),
-            ),
-            child: Icon(icon, color: color, size: 28.sp),
-          ),
-          SizedBox(width: 20.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 20.sp,
+                ),
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 14.sp,
+                    fontSize: 12.sp,
                     color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
+                    fontWeight: FontWeight.w500,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 8.h),
-                Wrap(
-                  spacing: 15.w,
-                  runSpacing: 5.h,
-                  children: amounts.entries.map((entry) {
-                    final value = entry.value;
-                    if (value == 0 && amounts.values.any((v) => v > 0)) {
-                      return const SizedBox.shrink();
-                    }
-                    return Text(
-                      CurrencyHelper.getFormatter(entry.key).format(value),
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                        letterSpacing: -0.5,
-                      ),
-                    );
-                  }).toList(),
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          Wrap(
+            spacing: 8.w,
+            runSpacing: 4.h,
+            children: amounts.entries.map((entry) {
+              final value = entry.value;
+              if (value == 0 && amounts.values.any((v) => v > 0)) {
+                return const SizedBox.shrink();
+              }
+              return Text(
+                CurrencyHelper.getFormatter(entry.key).format(value),
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.3,
                 ),
-              ],
-            ),
+              );
+            }).toList(),
           ),
         ],
       ),

@@ -5,6 +5,7 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/models/product.dart';
 import '../../../../core/services/product_service.dart';
 import '../../../../core/theme/colors.dart';
+import '../../../../core/widgets/barcode_scanner_view.dart';
 
 class AddEditProductDialog extends StatefulWidget {
   final Product? product;
@@ -20,6 +21,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   final _nameController = TextEditingController();
   final _priceController = TextEditingController();
   final _stockController = TextEditingController();
+  final _barcodeController = TextEditingController();
   String _selectedCurrency = 'YER';
   bool _isLoading = false;
 
@@ -31,6 +33,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       _priceController.text = widget.product!.price.toStringAsFixed(0);
       _stockController.text = widget.product!.stockQuantity.toString();
       _selectedCurrency = widget.product!.currency;
+      _barcodeController.text = widget.product!.barcode ?? '';
     }
   }
 
@@ -49,6 +52,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       price: price,
       stockQuantity: stock,
       currency: _selectedCurrency,
+      barcode: _barcodeController.text.isEmpty ? null : _barcodeController.text,
     );
 
     try {
@@ -104,6 +108,37 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 labelText: 'stock_quantity'.tr(),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
               ),
+            ),
+            SizedBox(height: 15.h),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _barcodeController,
+                    decoration: InputDecoration(
+                      labelText: 'barcode'.tr(),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                IconButton.filled(
+                  onPressed: () async {
+                    final code = await Navigator.push<String>(
+                      context,
+                      MaterialPageRoute(builder: (_) => const BarcodeScannerView()),
+                    );
+                    if (code != null) {
+                      setState(() => _barcodeController.text = code);
+                    }
+                  },
+                  icon: const Icon(Icons.qr_code_scanner),
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

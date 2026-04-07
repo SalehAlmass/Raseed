@@ -4,6 +4,7 @@ class Product {
   final double price;
   final String currency;
   final int stockQuantity;
+  final String? barcode;
 
   Product({
     this.id,
@@ -11,6 +12,7 @@ class Product {
     required this.price,
     this.currency = 'YER',
     this.stockQuantity = 0,
+    this.barcode,
   });
 
   Map<String, dynamic> toMap() {
@@ -20,6 +22,7 @@ class Product {
       'price': price,
       'currency': currency,
       'stock_quantity': stockQuantity,
+      'barcode': barcode,
     };
   }
 
@@ -30,6 +33,7 @@ class Product {
       price: (map['price'] as num).toDouble(),
       currency: map['currency'] ?? 'YER',
       stockQuantity: map['stock_quantity'] ?? 0,
+      barcode: map['barcode'],
     );
   }
 
@@ -39,6 +43,7 @@ class Product {
     double? price,
     String? currency,
     int? stockQuantity,
+    String? barcode,
   }) {
     return Product(
       id: id ?? this.id,
@@ -46,6 +51,7 @@ class Product {
       price: price ?? this.price,
       currency: currency ?? this.currency,
       stockQuantity: stockQuantity ?? this.stockQuantity,
+      barcode: barcode ?? this.barcode,
     );
   }
 }

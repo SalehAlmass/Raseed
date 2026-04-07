@@ -26,7 +26,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -80,7 +80,8 @@ class DatabaseHelper {
         name TEXT NOT NULL,
         price REAL NOT NULL,
         currency TEXT DEFAULT 'YER',
-        stock_quantity INTEGER DEFAULT 0
+        stock_quantity INTEGER DEFAULT 0,
+        barcode TEXT
       )
     ''');
   }
@@ -106,6 +107,9 @@ class DatabaseHelper {
           stock_quantity INTEGER DEFAULT 0
         )
       ''');
+    }
+    if (oldVersion < 6) {
+      await db.execute('ALTER TABLE products ADD COLUMN barcode TEXT');
     }
   }
 
