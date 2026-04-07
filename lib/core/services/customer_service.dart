@@ -24,19 +24,14 @@ class CustomerService {
       return (res.first['total'] as num?)?.toDouble() ?? 0.0;
     }
 
-    // Get total debt from all customers - Split by currency
+    // Get total debt from all customers
     final List<Map<String, dynamic>> debtResultYer = await db.rawQuery(
       "SELECT SUM(total_debt) as total FROM customers"
-    );
-    final List<Map<String, dynamic>> debtResultSar = await db.rawQuery(
-      "SELECT SUM(total_debt_sar) as total FROM customers"
     );
 
     return {
       'daily_sales_yer': await getDaily('YER'),
-      'daily_sales_sar': await getDaily('SAR'),
       'total_debt_yer': (debtResultYer.first['total'] as num?)?.toDouble() ?? 0.0,
-      'total_debt_sar': (debtResultSar.first['total'] as num?)?.toDouble() ?? 0.0,
     };
   }
 
@@ -58,8 +53,8 @@ class CustomerService {
     final customer = await getCustomer(id);
     if (customer == null) return;
 
-    final String column = currency == 'SAR' ? 'total_debt_sar' : 'total_debt';
-    final double currentDebt = currency == 'SAR' ? customer.totalDebtSar : customer.totalDebt;
+    final String column = 'total_debt';
+    final double currentDebt = customer.totalDebt;
     final double newDebt = currentDebt + amountChange;
 
     await db.update(

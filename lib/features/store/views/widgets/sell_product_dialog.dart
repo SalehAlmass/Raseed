@@ -98,7 +98,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Price: ${CurrencyHelper.getFormatter(widget.product.currency).format(widget.product.price)} ${widget.product.currency}'),
+                  Text('Price: ${CurrencyHelper.getFormatter('YER').format(widget.product.price)} YER'),
                   Text('Stock: ${widget.product.stockQuantity}', style: const TextStyle(fontWeight: FontWeight.bold)),
                 ],
               ),
@@ -138,7 +138,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
             SizedBox(height: 20.h),
             Center(
               child: Text(
-                'Total: ${CurrencyHelper.getFormatter(widget.product.currency).format(totalPrice)} ${widget.product.currency}',
+                'Total: ${CurrencyHelper.getFormatter('YER').format(totalPrice)} YER',
                 style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: AppColors.primary),
               ),
             ),

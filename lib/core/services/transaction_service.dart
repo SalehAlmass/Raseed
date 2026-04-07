@@ -20,7 +20,7 @@ class TransactionService {
         whereArgs: [transaction.customerId],
       )).then((maps) => maps.first);
       
-      final String debtColumn = transaction.currency == 'SAR' ? 'total_debt_sar' : 'total_debt';
+      final String debtColumn = 'total_debt';
       final currentDebt = (customerMap[debtColumn] as num).toDouble();
       
       if (settings.strictMode && (currentDebt + transaction.amount) > settings.maxDebt) {
@@ -89,19 +89,14 @@ class TransactionService {
       return (res.first['total'] as num?)?.toDouble() ?? 0.0;
     }
 
-    // Get total debt from all customers - Split by currency
+    // Get total debt from all customers
     final List<Map<String, dynamic>> debtResultYer = await db.rawQuery(
       "SELECT SUM(total_debt) as total FROM customers"
-    );
-    final List<Map<String, dynamic>> debtResultSar = await db.rawQuery(
-      "SELECT SUM(total_debt_sar) as total FROM customers"
     );
 
     return {
       'daily_sales_yer': await getDaily('YER'),
-      'daily_sales_sar': await getDaily('SAR'),
       'total_debt_yer': (debtResultYer.first['total'] as num?)?.toDouble() ?? 0.0,
-      'total_debt_sar': (debtResultSar.first['total'] as num?)?.toDouble() ?? 0.0,
     };
   }
 

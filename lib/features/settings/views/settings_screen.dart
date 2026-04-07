@@ -88,10 +88,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   icon: Icons.notification_important_outlined,
                   keyboardType: TextInputType.number,
                 ),
-                SizedBox(height: 20.h),
-                _buildSectionHeader('currency'.tr()),
-                SizedBox(height: 15.h),
-                _buildCurrencyDropdown(),
+
                 SizedBox(height: 30.h),
                 _buildSectionHeader('language'.tr()),
                 SizedBox(height: 15.h),
@@ -180,39 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildCurrencyDropdown() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 5.h),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(15.r),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: _settings.currency,
-          isExpanded: true,
-          icon: Icon(Icons.money, color: AppColors.primary, size: 20.sp),
-          items: [
-            DropdownMenuItem(
-              value: 'YER',
-              child: Text('yemeni_rial'.tr(), style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600)),
-            ),
-            DropdownMenuItem(
-              value: 'SAR',
-              child: Text('saudi_riyal'.tr(), style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600)),
-            ),
-          ],
-          onChanged: (String? newVal) {
-            if (newVal != null) {
-              setState(() {
-                _settings = _settings.copyWith(currency: newVal);
-              });
-            }
-          },
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildLanguageDropdown(BuildContext context) {
     return Container(

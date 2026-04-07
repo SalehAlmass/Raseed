@@ -87,30 +87,14 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
               ),
             ),
             SizedBox(height: 15.h),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _priceController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'price'.tr(),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 10.w),
-                Expanded(
-                  child: SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(value: 'YER', label: Text('YER')),
-                      ButtonSegment(value: 'SAR', label: Text('SAR')),
-                    ],
-                    selected: {_selectedCurrency},
-                    onSelectionChanged: (set) => setState(() => _selectedCurrency = set.first),
-                  ),
-                ),
-              ],
+            TextField(
+              controller: _priceController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'price'.tr(),
+                prefixText: 'YER ',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+              ),
             ),
             SizedBox(height: 15.h),
             TextField(

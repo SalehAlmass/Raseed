@@ -8,8 +8,6 @@ import '../../../core/services/transaction_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/models/customer.dart';
 import '../../../core/models/app_transaction.dart';
-import '../../../core/services/settings_service.dart';
-import '../../../core/models/app_settings.dart';
 import '../../../core/utils/currency_helper.dart';
 import '../../../core/widgets/date_selector.dart';
 import 'package:intl/intl.dart';
@@ -25,10 +23,8 @@ class CustomerDetailScreen extends StatefulWidget {
 class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   final TransactionService _transactionService = sl<TransactionService>();
   final CustomerService _customerService = sl<CustomerService>();
-  final SettingsService _settingsService = sl<SettingsService>();
   late Customer _currentCustomer;
   List<AppTransaction> _transactions = [];
-  AppSettings? _settings;
   bool _isLoading = true;
 
   @override
@@ -42,23 +38,16 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     setState(() => _isLoading = true);
     final transactions = await _transactionService.getCustomerTransactions(_currentCustomer.id!);
     final customer = await _customerService.getCustomer(_currentCustomer.id!);
-    final settings = await _settingsService.getSettings();
     setState(() {
       _transactions = transactions;
       if (customer != null) _currentCustomer = customer;
-      _settings = settings;
       _isLoading = false;
     });
   }
 
   Future<void> _openWhatsApp() async {
     final String yerBal = CurrencyHelper.getFormatter('YER').format(_currentCustomer.totalDebt);
-    final String sarBal = CurrencyHelper.getFormatter('SAR').format(_currentCustomer.totalDebtSar);
-    
-    String balanceMsg = "";
-    if (_currentCustomer.totalDebt > 0) balanceMsg += yerBal;
-    if (_currentCustomer.totalDebtSar > 0) balanceMsg += (balanceMsg.isEmpty ? "" : " & ") + sarBal;
-    if (balanceMsg.isEmpty) balanceMsg = yerBal;
+    String balanceMsg = yerBal;
 
     final message = "Hello ${_currentCustomer.name}, your current balance at Raseed is $balanceMsg.";
     final url = "https://wa.me/${_currentCustomer.phone}?text=${Uri.encodeComponent(message)}";
@@ -156,37 +145,6 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                   SizedBox(width: 8.w),
                   Text(
                     'YER',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 12.h),
-              child: Container(height: 1, width: 40.w, color: Colors.white24),
-            ),
-            FittedBox(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    CurrencyHelper.getFormatter('SAR').format(_currentCustomer.totalDebtSar),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28.sp,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -1,
-                    ),
-                  ),
-                  SizedBox(width: 8.w),
-                  Text(
-                    'SAR',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.7),
                       fontSize: 16.sp,
@@ -312,7 +270,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   void _showTransactionDialog(TransactionType type) {
     final amountController = TextEditingController();
     final noteController = TextEditingController();
-    String selectedCurrency = _settings?.currency ?? 'YER';
+    String selectedCurrency = 'YER';
     DateTime selectedDate = DateTime.now();
  
     showDialog(
@@ -324,16 +282,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SegmentedButton<String>(
-                  segments: [
-                    ButtonSegment(value: 'YER', label: Text('yemeni_rial'.tr())),
-                    ButtonSegment(value: 'SAR', label: Text('saudi_riyal'.tr())),
-                  ],
-                  selected: {selectedCurrency},
-                  onSelectionChanged: (newSelection) {
-                    setState(() => selectedCurrency = newSelection.first);
-                  },
-                ),
+
                 SizedBox(height: 20.h),
                 TextField(
                   controller: amountController,

@@ -5,12 +5,10 @@ import 'package:animate_do/animate_do.dart';
 import '../../../core/di/injection_container.dart';
 import '../../../core/services/transaction_service.dart';
 import '../../../core/services/customer_service.dart';
-import '../../../core/services/settings_service.dart';
 import '../../../core/services/database_helper.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/models/app_transaction.dart';
 import '../../../core/models/customer.dart';
-import '../../../core/models/app_settings.dart';
 import '../../../core/models/product.dart';
 import '../../../core/services/product_service.dart';
 import '../../../core/utils/currency_helper.dart';
@@ -26,10 +24,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TransactionService _transactionService = sl<TransactionService>();
-  final SettingsService _settingsService = sl<SettingsService>();
   Map<String, double> _summary = {'daily_sales': 0.0, 'total_debt': 0.0};
   List<AppTransaction> _recentTransactions = [];
-  AppSettings? _settings;
   bool _isLoading = true;
 
   @override
@@ -42,11 +38,9 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
     final summary = await _transactionService.getDashboardSummary();
     final recent = await _transactionService.getAllTransactions(limit: 5);
-    final settings = await _settingsService.getSettings();
     setState(() {
       _summary = summary;
       _recentTransactions = recent;
-      _settings = settings;
       _isLoading = false;
     });
   }
@@ -72,6 +66,11 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.store_mall_directory),
             onPressed: () => Navigator.pushNamed(context, '/store'),
           ),
+          IconButton(
+            icon: const Icon(Icons.delete_forever),
+            onPressed: () => _showResetDataConfirmation(context),
+          ),
+        
         ],
       ),
       body: RefreshIndicator(
@@ -121,7 +120,6 @@ class _HomeScreenState extends State<HomeScreen> {
             title: 'daily_sales'.tr(),
             amounts: {
               'YER': _summary['daily_sales_yer'] ?? 0.0,
-              'SAR': _summary['daily_sales_sar'] ?? 0.0,
             },
             icon: Icons.trending_up,
             color: AppColors.success,
@@ -134,7 +132,6 @@ class _HomeScreenState extends State<HomeScreen> {
             title: 'total_debt'.tr(),
             amounts: {
               'YER': _summary['total_debt_yer'] ?? 0.0,
-              'SAR': _summary['total_debt_sar'] ?? 0.0,
             },
             icon: Icons.account_balance_wallet_outlined,
             color: AppColors.error,
@@ -172,18 +169,18 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        SizedBox(height: 15.h),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _QuickActionBtn(
-              label: 'reset_data'.tr(),
-              icon: Icons.delete_forever,
-              color: AppColors.error,
-              onTap: () => _showResetDataConfirmation(context),
-            ),
-          ],
-        ),
+        // SizedBox(height: 15.h),
+        // Row(
+        //   mainAxisAlignment: MainAxisAlignment.center,
+        //   children: [
+        //     _QuickActionBtn(
+        //       label: 'reset_data'.tr(),
+        //       icon: Icons.delete_forever,
+        //       color: AppColors.error,
+        //       onTap: () => _showResetDataConfirmation(context),
+        //     ),
+        //   ],
+        // ),
       ],
     );
   }
@@ -348,7 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
     TransactionType selectedType = type;
     Customer? selectedCustomer;
     Product? selectedProduct;
-    String selectedCurrency = _settings?.currency ?? 'YER';
+    String selectedCurrency = 'YER';
     DateTime selectedDate = DateTime.now();
 
     showDialog(
@@ -415,19 +412,7 @@ class _HomeScreenState extends State<HomeScreen> {
                      ),
                      SizedBox(height: 15.h),
                   ],
-                  SegmentedButton<String>(
-                    segments: [
-                      ButtonSegment(value: 'YER', label: Text('yemeni_rial'.tr())),
-                      ButtonSegment(value: 'SAR', label: Text('saudi_riyal'.tr())),
-                    ],
-                    selected: {selectedCurrency},
-                    onSelectionChanged: (newSelection) {
-                      // Don't allow changing currency if a product is selected
-                      if (selectedProduct == null) {
-                         setState(() => selectedCurrency = newSelection.first);
-                      }
-                    },
-                  ),
+
                   SizedBox(height: 20.h),
                   _CustomerDropdown(
                     onChanged: (customer) => setState(() => selectedCustomer = customer),

@@ -219,14 +219,6 @@ class _CustomerTile extends StatelessWidget {
                   fontSize: 13.sp,
                 ),
               ),
-              Text(
-                '${CurrencyHelper.getFormatter('SAR').format(customer.totalDebtSar)} SAR',
-                style: TextStyle(
-                  color: customer.totalDebtSar > 0 ? AppColors.error : AppColors.success,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13.sp,
-                ),
-              ),
               Text('debt'.tr(), style: const TextStyle(fontSize: 10, color: Colors.grey)),
             ],
           ),

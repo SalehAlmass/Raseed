@@ -39,7 +39,6 @@ class DatabaseHelper {
         name TEXT NOT NULL,
         phone TEXT NOT NULL,
         total_debt REAL DEFAULT 0,
-        total_debt_sar REAL DEFAULT 0,
         last_transaction_date TEXT
       )
     ''');
