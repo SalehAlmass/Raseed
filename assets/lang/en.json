@@ -58,5 +58,21 @@
   "reset_data": "Reset Data",
   "reset_data_confirm": "Are you sure you want to delete all data? This action cannot be undone.",
   "data_reset_success": "All data has been deleted successfully",
-  "confirm": "Confirm"
+  "confirm": "Confirm",
+  "please_enter_amount": "Please enter amount",
+  "amount_must_be_positive": "Amount must be greater than zero",
+  "please_select_customer": "Please select a customer",
+  "paid_amount_exceeds": "Paid amount cannot exceed total amount",
+  "please_enter_quantity": "Please enter quantity",
+  "quantity_must_be_positive": "Quantity must be greater than zero",
+  "invalid_amount": "Invalid amount",
+  "note": "Note",
+  "quantity": "Quantity",
+  "total_amount": "Total Amount",
+  "amount": "Amount",
+  "paid_amount": "Paid Amount",
+  "paid_amount_optional": "Paid Amount (Optional)",
+  "remaining": "Remaining",
+  "select_customer": "Select Customer",
+  "select_product": "Select Product (Optional)"
 }

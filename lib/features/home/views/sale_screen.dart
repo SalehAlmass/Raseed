@@ -1,0 +1,344 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:animate_do/animate_do.dart';
+import '../../../core/di/injection_container.dart';
+import '../../../core/models/app_transaction.dart';
+import '../../../core/models/customer.dart';
+import '../../../core/models/product.dart';
+import '../../../core/models/transaction_item.dart';
+import '../../../core/services/customer_service.dart';
+import '../../../core/services/product_service.dart';
+import '../../../core/services/transaction_service.dart';
+import '../../../core/theme/colors.dart';
+import '../../../core/utils/currency_helper.dart';
+import '../../../core/widgets/barcode_scanner_view.dart';
+
+class SaleScreen extends StatefulWidget {
+  final TransactionType initialType;
+
+  const SaleScreen({super.key, this.initialType = TransactionType.cash});
+
+  @override
+  State<SaleScreen> createState() => _SaleScreenState();
+}
+
+class _SaleScreenState extends State<SaleScreen> {
+  final _transactionService = sl<TransactionService>();
+  final _productService = sl<ProductService>();
+  final _customerService = sl<CustomerService>();
+
+  final List<TransactionItem> _cart = [];
+  TransactionType _selectedType = TransactionType.cash;
+  Customer? _selectedCustomer;
+  List<Product> _products = [];
+  List<Customer> _customers = [];
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedType = widget.initialType;
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    _products = await _productService.getAllProducts();
+    _customers = await _customerService.getAllCustomers();
+    setState(() => _isLoading = false);
+  }
+
+  double get _totalAmount => _cart.fold(0, (sum, item) => sum + item.total);
+
+  void _addToCart(Product product) {
+    setState(() {
+      final existingIndex = _cart.indexWhere((item) => item.productId == product.id);
+      if (existingIndex >= 0) {
+        final existingItem = _cart[existingIndex];
+        _cart[existingIndex] = TransactionItem(
+          productId: existingItem.productId,
+          productName: existingItem.productName,
+          quantity: existingItem.quantity + 1,
+          price: existingItem.price,
+          currency: existingItem.currency,
+        );
+      } else {
+        _cart.add(TransactionItem(
+          productId: product.id!,
+          productName: product.name,
+          quantity: 1,
+          price: product.price,
+          currency: product.currency,
+        ));
+      }
+    });
+  }
+
+  void _updateQuantity(int index, int delta) {
+    setState(() {
+      final newQty = _cart[index].quantity + delta;
+      if (newQty <= 0) {
+        _cart.removeAt(index);
+      } else {
+        final item = _cart[index];
+        _cart[index] = TransactionItem(
+          productId: item.productId,
+          productName: item.productName,
+          quantity: newQty,
+          price: item.price,
+          currency: item.currency,
+        );
+      }
+    });
+  }
+
+  Future<void> _scanBarcode() async {
+    final code = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (_) => const BarcodeScannerView()),
+    );
+    if (code != null) {
+      try {
+        final product = _products.firstWhere((p) => p.barcode == code);
+        _addToCart(product);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('product_not_found'.tr()), backgroundColor: AppColors.error),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _completeSale() async {
+    if (_cart.isEmpty) return;
+    if (_selectedType == TransactionType.debt && _selectedCustomer == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('please_select_customer'.tr()), backgroundColor: AppColors.error),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final transaction = AppTransaction(
+        customerId: _selectedCustomer?.id,
+        type: _selectedType,
+        amount: _totalAmount,
+        date: DateTime.now(),
+        items: _cart,
+      );
+
+      await _transactionService.addTransaction(transaction);
+      if (mounted) {
+        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('sale_completed_success'.tr()), backgroundColor: AppColors.success),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        String msg = 'error_occurred'.tr();
+        if (e.toString().contains('over_limit')) msg = 'over_limit_error'.tr();
+        if (e.toString().contains('uninsufficient_stock')) msg = 'insufficient_stock_error'.tr();
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: AppColors.error),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('new_sale'.tr()),
+        actions: [
+          IconButton(
+            onPressed: _scanBarcode,
+            icon: const Icon(Icons.qr_code_scanner),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          _buildProductSearch(),
+          Expanded(child: _buildCartList()),
+          _buildCheckoutSection(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductSearch() {
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      color: AppColors.surface,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DropdownButtonFormField<Product>(
+            decoration: InputDecoration(
+              labelText: 'select_product'.tr(),
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+            ),
+            items: _products.map((p) => DropdownMenuItem(
+              value: p,
+              child: Text('${p.name} (${p.stockQuantity}) - ${CurrencyHelper.getSymbol(p.currency)}${p.price}'),
+            )).toList(),
+            onChanged: (val) {
+              if (val != null) _addToCart(val);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCartList() {
+    if (_cart.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.shopping_cart_outlined, size: 64.sp, color: Colors.grey.withOpacity(0.5)),
+            SizedBox(height: 16.h),
+            Text('cart_empty'.tr(), style: const TextStyle(color: Colors.grey)),
+          ],
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: EdgeInsets.all(16.w),
+      itemCount: _cart.length,
+      separatorBuilder: (context, index) => SizedBox(height: 12.h),
+      itemBuilder: (context, index) {
+        final item = _cart[index];
+        return FadeInRight(
+          duration: Duration(milliseconds: 300 + (index * 50)),
+          child: Container(
+            padding: EdgeInsets.all(12.w),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12.r),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, 2)),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(item.productName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp)),
+                      Text(
+                        '${CurrencyHelper.getSymbol(item.currency)}${item.price} / unit',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12.sp),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => _updateQuantity(index, -1),
+                      icon: const Icon(Icons.remove_circle_outline, color: AppColors.error),
+                    ),
+                    Text('${item.quantity}', style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+                    IconButton(
+                      onPressed: () => _updateQuantity(index, 1),
+                      icon: const Icon(Icons.add_circle_outline, color: AppColors.success),
+                    ),
+                  ],
+                ),
+                SizedBox(width: 8.w),
+                Text(
+                  CurrencyHelper.getFormatter(item.currency).format(item.total),
+                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCheckoutSection() {
+    return Container(
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -5)),
+        ],
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SegmentedButton<TransactionType>(
+              segments: [
+                ButtonSegment(value: TransactionType.cash, label: Text('cash'.tr()), icon: const Icon(Icons.money)),
+                ButtonSegment(value: TransactionType.debt, label: Text('debt'.tr()), icon: const Icon(Icons.history_edu)),
+              ],
+              selected: {_selectedType},
+              onSelectionChanged: (val) => setState(() => _selectedType = val.first),
+            ),
+            SizedBox(height: 16.h),
+            if (_selectedType == TransactionType.debt) ...[
+              DropdownButtonFormField<Customer>(
+                value: _selectedCustomer,
+                decoration: InputDecoration(
+                  labelText: 'select_customer'.tr(),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                ),
+                items: _customers.map((c) => DropdownMenuItem(
+                  value: c,
+                  child: Text(c.name),
+                )).toList(),
+                onChanged: (val) => setState(() => _selectedCustomer = val),
+              ),
+              SizedBox(height: 16.h),
+            ],
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('total_amount'.tr(), style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold)),
+                Text(
+                  CurrencyHelper.getFormatter('YER').format(_totalAmount),
+                  style: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.bold, color: AppColors.primary),
+                ),
+              ],
+            ),
+            SizedBox(height: 20.h),
+            SizedBox(
+              width: double.infinity,
+              height: 54.h,
+              child: ElevatedButton(
+                onPressed: _isLoading || _cart.isEmpty ? null : _completeSale,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                ),
+                child: _isLoading 
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : Text('complete_sale'.tr(), style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

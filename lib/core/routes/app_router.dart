@@ -8,7 +8,9 @@ import '../../features/customers/views/customer_detail_screen.dart';
 import '../../features/settings/views/settings_screen.dart';
 import '../../features/auth/views/master_password_screen.dart';
 import '../../features/store/views/store_screen.dart';
+import '../../features/home/views/sale_screen.dart';
 import '../models/customer.dart';
+import '../models/app_transaction.dart';
 
 /// Application Router
 class AppRouter {
@@ -33,6 +35,9 @@ class AppRouter {
         return _buildRoute(const MasterPasswordScreen(), settings);
       case Routes.store:
         return _buildRoute(const StoreScreen(), settings);
+      case Routes.sale:
+        final type = settings.arguments as TransactionType? ?? TransactionType.cash;
+        return _buildRoute(SaleScreen(initialType: type), settings);
       default:
         return _buildRoute(
           Scaffold(

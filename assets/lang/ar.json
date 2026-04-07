@@ -58,5 +58,21 @@
   "reset_data": "تصفير البيانات",
   "reset_data_confirm": "هل أنت متأكد من حذف جميع البيانات؟ لا يمكن التراجع عن هذا الإجراء.",
   "data_reset_success": "تم حذف جميع البيانات بنجاح",
-  "confirm": "تأكيد"
+  "confirm": "تأكيد",
+  "please_enter_amount": "الرجاء إدخال المبلغ",
+  "amount_must_be_positive": "يجب أن يكون المبلغ أكبر من صفر",
+  "please_select_customer": "الرجاء اختيار عميل",
+  "paid_amount_exceeds": "المبلغ المدفوع لا يمكن أن يكون أكثر من المبلغ الإجمالي",
+  "please_enter_quantity": "الرجاء إدخال الكمية",
+  "quantity_must_be_positive": "يجب أن تكون الكمية أكبر من صفر",
+  "invalid_amount": "مبلغ غير صحيح",
+  "note": "ملاحظة",
+  "quantity": "الكمية",
+  "total_amount": "المبلغ الإجمالي",
+  "amount": "المبلغ",
+  "paid_amount": "المبلغ المدفوع",
+  "paid_amount_optional": "المبلغ المدفوع (اختياري)",
+  "remaining": "المتبقي",
+  "select_customer": "اختر العميل",
+  "select_product": "اختر المنتج (اختياري)"
 }

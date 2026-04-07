@@ -1,3 +1,5 @@
+import 'transaction_item.dart';
+
 enum TransactionType { cash, debt, payment }
 
 class AppTransaction {
@@ -8,6 +10,7 @@ class AppTransaction {
   final String currency;
   final DateTime date;
   final String note;
+  final List<TransactionItem> items;
 
   AppTransaction({
     this.id,
@@ -17,6 +20,7 @@ class AppTransaction {
     this.currency = 'YER',
     required this.date,
     this.note = '',
+    this.items = const [],
   });
 
   Map<String, dynamic> toMap() {
@@ -31,7 +35,7 @@ class AppTransaction {
     };
   }
 
-  factory AppTransaction.fromMap(Map<String, dynamic> map) {
+  factory AppTransaction.fromMap(Map<String, dynamic> map, {List<TransactionItem> items = const []}) {
     return AppTransaction(
       id: map['id'],
       customerId: map['customer_id'],
@@ -40,6 +44,7 @@ class AppTransaction {
       currency: map['currency'] ?? 'YER',
       date: DateTime.parse(map['date']),
       note: map['note'] ?? '',
+      items: items,
     );
   }
 
@@ -51,6 +56,7 @@ class AppTransaction {
     String? currency,
     DateTime? date,
     String? note,
+    List<TransactionItem>? items,
   }) {
     return AppTransaction(
       id: id ?? this.id,
@@ -60,6 +66,7 @@ class AppTransaction {
       currency: currency ?? this.currency,
       date: date ?? this.date,
       note: note ?? this.note,
+      items: items ?? this.items,
     );
   }
 }

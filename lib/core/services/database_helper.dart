@@ -26,7 +26,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -53,6 +53,20 @@ class DatabaseHelper {
         date TEXT NOT NULL,
         note TEXT,
         FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE transaction_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        transaction_id INTEGER NOT NULL,
+        product_id INTEGER NOT NULL,
+        product_name TEXT NOT NULL,
+        quantity INTEGER NOT NULL,
+        price REAL NOT NULL,
+        currency TEXT DEFAULT 'YER',
+        FOREIGN KEY (transaction_id) REFERENCES transactions (id) ON DELETE CASCADE,
+        FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL
       )
     ''');
 
@@ -110,6 +124,21 @@ class DatabaseHelper {
     }
     if (oldVersion < 6) {
       await db.execute('ALTER TABLE products ADD COLUMN barcode TEXT');
+    }
+    if (oldVersion < 7) {
+      await db.execute('''
+        CREATE TABLE transaction_items (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          transaction_id INTEGER NOT NULL,
+          product_id INTEGER NOT NULL,
+          product_name TEXT NOT NULL,
+          quantity INTEGER NOT NULL,
+          price REAL NOT NULL,
+          currency TEXT DEFAULT 'YER',
+          FOREIGN KEY (transaction_id) REFERENCES transactions (id) ON DELETE CASCADE,
+          FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL
+        )
+      ''');
     }
   }
 

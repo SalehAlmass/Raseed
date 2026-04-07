@@ -13,8 +13,7 @@ import '../../../core/models/product.dart';
 import '../../../core/services/product_service.dart';
 import '../../../core/widgets/barcode_scanner_view.dart';
 import '../../../core/utils/currency_helper.dart';
-import '../../../core/widgets/date_selector.dart';
-import 'package:intl/intl.dart';
+import '../../../core/routes/routes.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -104,8 +103,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddTransactionDialog(context),
-        label: Text('new_transaction'.tr()),
+        onPressed: () async {
+          final result = await Navigator.pushNamed(context, Routes.sale);
+          if (result == true) _loadData();
+        },
+        label: Text('new_sale'.tr()),
         icon: const Icon(Icons.add),
         backgroundColor: AppColors.primary,
       ),
@@ -156,36 +158,48 @@ class _HomeScreenState extends State<HomeScreen> {
               label: 'customers'.tr(),
               icon: Icons.people,
               color: AppColors.primary,
-              onTap: () => Navigator.pushNamed(context, '/customers'),
+              onTap: () => Navigator.pushNamed(context, Routes.customers),
             ),
             _QuickActionBtn(
               label: 'cash_sale'.tr(),
               icon: Icons.attach_money,
               color: AppColors.success,
-              onTap: () =>
-                  _showAddTransactionDialog(context, type: TransactionType.cash),
+              onTap: () async {
+                final result = await Navigator.pushNamed(
+                  context, 
+                  Routes.sale, 
+                  arguments: TransactionType.cash
+                );
+                if (result == true) _loadData();
+              },
             ),
             _QuickActionBtn(
               label: 'add_debt'.tr(),
               icon: Icons.remove_circle_outline,
               color: AppColors.warning,
-              onTap: () =>
-                  _showAddTransactionDialog(context, type: TransactionType.debt),
+              onTap: () async {
+                final result = await Navigator.pushNamed(
+                  context, 
+                  Routes.sale, 
+                  arguments: TransactionType.debt
+                );
+                if (result == true) _loadData();
+              },
             ),
           ],
         ),
-        // SizedBox(height: 15.h),
-        // Row(
-        //   mainAxisAlignment: MainAxisAlignment.center,
-        //   children: [
-        //     _QuickActionBtn(
-        //       label: 'reset_data'.tr(),
-        //       icon: Icons.delete_forever,
-        //       color: AppColors.error,
-        //       onTap: () => _showResetDataConfirmation(context),
-        //     ),
-        //   ],
-        // ),
+        SizedBox(height: 15.h),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _QuickActionBtn(
+              label: 'get_payment'.tr(),
+              icon: Icons.account_balance_wallet,
+              color: AppColors.primary,
+              onTap: () => _showPaymentDialog(context),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -339,239 +353,62 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showAddTransactionDialog(
-    BuildContext context, {
-    TransactionType type = TransactionType.cash,
-  }) {
+  void _showPaymentDialog(BuildContext context) {
+    // New simplified dialog for standalone customer payments (collections)
     final amountController = TextEditingController();
-    final paidController = TextEditingController();
-    final noteController = TextEditingController();
-    final quantityController = TextEditingController(text: '1');
-    TransactionType selectedType = type;
     Customer? selectedCustomer;
-    Product? selectedProduct;
-    String selectedCurrency = 'YER';
-    DateTime selectedDate = DateTime.now();
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          void updateAmountFields() {
-            if (selectedProduct != null) {
-              final quantity = int.tryParse(quantityController.text) ?? 1;
-              amountController.text = (selectedProduct!.price * quantity).toStringAsFixed(0);
-            }
-          }
-
-          return AlertDialog(
-            title: Text(
-              selectedType == TransactionType.cash ? 'cash_sale'.tr() : 'add_debt'.tr(),
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SegmentedButton<TransactionType>(
-                    segments: [
-                      ButtonSegment(value: TransactionType.cash, label: Text('cash_sale'.tr())),
-                      ButtonSegment(value: TransactionType.debt, label: Text('debt'.tr())),
-                      ButtonSegment(value: TransactionType.payment, label: Text('payment'.tr())),
-                    ],
-                    selected: {selectedType},
-                    onSelectionChanged: (newSelection) {
-                      setState(() {
-                         selectedType = newSelection.first;
-                         if (selectedType == TransactionType.payment) {
-                            selectedProduct = null;
-                         }
-                      });
-                    },
-                  ),
-                  SizedBox(height: 15.h),
-                  if (selectedType == TransactionType.cash) ...[
-                    _ProductDropdown(
-                      onChanged: (product) {
-                        setState(() {
-                          selectedProduct = product;
-                          if (product != null) {
-                            selectedCurrency = product.currency;
-                            updateAmountFields();
-                          } else {
-                            amountController.clear();
-                          }
-                        });
-                      },
-                    ),
-                    SizedBox(height: 15.h),
-                  ],
-                  if (selectedProduct != null) ...[
-                     TextField(
-                       controller: quantityController,
-                       keyboardType: TextInputType.number,
-                       decoration: InputDecoration(
-                         labelText: 'Quantity',
-                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
-                       ),
-                       onChanged: (val) => setState(() => updateAmountFields()),
-                     ),
-                     SizedBox(height: 15.h),
-                  ],
-
-                  SizedBox(height: 20.h),
-                  _CustomerDropdown(
-                    onChanged: (customer) => setState(() => selectedCustomer = customer),
-                  ),
-                  SizedBox(height: 20.h),
-                  TextField(
-                    controller: amountController,
-                    readOnly: selectedProduct != null, // Auto-calculated if product
-                    decoration: InputDecoration(
-                      labelText: selectedType == TransactionType.debt ? 'Total Amount' : 'Amount',
-                      prefixText: '${CurrencyHelper.getSymbol(selectedCurrency)} ',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (val) => setState(() {}),
-                  ),
-                  SizedBox(height: 15.h),
-                  if (selectedType == TransactionType.cash) ...[
-                     TextField(
-                       controller: paidController,
-                       decoration: InputDecoration(
-                         labelText: 'Paid Amount (Optional)',
-                         prefixText: '${CurrencyHelper.getSymbol(selectedCurrency)} ',
-                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
-                       ),
-                       keyboardType: TextInputType.number,
-                       onChanged: (val) => setState(() {}),
-                     ),
-                     SizedBox(height: 15.h),
-                     Builder(builder: (context) {
-                         final total = double.tryParse(amountController.text) ?? 0.0;
-                         final rawPaid = double.tryParse(paidController.text);
-                         final paid = rawPaid ?? (selectedType == TransactionType.cash ? total : 0.0);
-                         final remaining = total - paid;
-                         return Container(
-                           padding: EdgeInsets.all(12.w),
-                           decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(12.r),
-                           ),
-                           child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                 Text('Remaining:', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                 Text(
-                                    '${CurrencyHelper.getFormatter(selectedCurrency).format(remaining)} $selectedCurrency',
-                                    style: TextStyle(
-                                       fontWeight: FontWeight.bold,
-                                       color: remaining < 0 ? AppColors.error : AppColors.primary,
-                                    ),
-                                 ),
-                              ]
-                           ),
-                         );
-                     }),
-                     SizedBox(height: 15.h),
-                  ],
-                  TextField(
-                    controller: noteController,
-                    decoration: InputDecoration(
-                      labelText: 'note'.tr(),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
-                    ),
-                  ),
-                  SizedBox(height: 15.h),
-                  DateSelector(
-                    initialDate: selectedDate,
-                    onDateSelected: (date) => setState(() => selectedDate = date),
-                  ),
-                ],
+        builder: (context, setState) => AlertDialog(
+          title: Text('get_payment'.tr()),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _CustomerDropdown(
+                onChanged: (c) => setState(() => selectedCustomer = c),
+                isRequired: true,
               ),
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: Text('cancel'.tr())),
-              ElevatedButton(
-                onPressed: () async {
-                  final amount = double.tryParse(amountController.text);
-                  if (amount == null || amount <= 0) return;
-
-                  final rawPaid = double.tryParse(paidController.text);
-                  final paidAmount = rawPaid ?? (selectedType == TransactionType.cash ? amount : 0.0);
-
-                  if (paidAmount > amount) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Paid amount cannot exceed total')));
-                    return;
-                  }
-
-                  // Auto-convert cash sale to debt if they leave a remaining balance
-                  TransactionType effectiveType = selectedType;
-                  if (selectedType == TransactionType.cash && paidAmount < amount) {
-                    effectiveType = TransactionType.debt;
-                  }
-
-                  if (effectiveType != TransactionType.cash && selectedCustomer == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a customer for the debt tracking')));
-                    return;
-                  }
-
-                  try {
-                    if (selectedProduct != null && selectedType != TransactionType.payment) {
-                      final quantity = int.tryParse(quantityController.text) ?? 1;
-                      await sl<ProductService>().sellProduct(
-                        product: selectedProduct!,
-                        quantity: quantity,
-                        type: effectiveType,
-                        customerId: selectedCustomer?.id,
-                        note: noteController.text,
-                      );
-                    } else {
-                      await _transactionService.addTransaction(
-                        AppTransaction(
-                          customerId: selectedCustomer?.id,
-                          type: effectiveType,
-                          amount: amount,
-                          currency: selectedCurrency,
-                          date: selectedDate,
-                          note: noteController.text,
-                        ),
-                      );
-                    }
-
-                    if (effectiveType == TransactionType.debt && paidAmount > 0) {
-                      await _transactionService.addTransaction(
-                        AppTransaction(
-                          customerId: selectedCustomer?.id,
-                          type: TransactionType.payment,
-                          amount: paidAmount,
-                          currency: selectedCurrency,
-                          date: selectedDate,
-                          note: 'Payment: ${noteController.text.isNotEmpty ? noteController.text : "Purchase"}',
-                        ),
-                      );
-                    }
-
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                      _loadData(); // Refresh UI
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      String errMsg = 'error_occurred'.tr();
-                      if (e.toString().contains('uninsufficient_stock')) errMsg = 'Not enough stock!';
-                      if (e.toString().contains('over_limit')) errMsg = 'over_limit_error'.tr();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(errMsg), backgroundColor: AppColors.error),
-                      );
-                    }
-                  }
-                },
-                child: Text('save'.tr()),
+              SizedBox(height: 15.h),
+              TextField(
+                controller: amountController,
+                decoration: InputDecoration(
+                  labelText: 'amount'.tr(),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                ),
+                keyboardType: TextInputType.number,
               ),
             ],
-          );
-        },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('cancel'.tr()),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final amount = double.tryParse(amountController.text) ?? 0;
+                if (amount <= 0 || selectedCustomer == null) return;
+
+                final tx = AppTransaction(
+                  customerId: selectedCustomer!.id,
+                  type: TransactionType.payment,
+                  amount: amount,
+                  date: DateTime.now(),
+                  note: 'Payment received',
+                );
+
+                await sl<TransactionService>().addTransaction(tx);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  _loadData();
+                }
+              },
+              child: Text('save'.tr()),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -579,7 +416,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _CustomerDropdown extends StatefulWidget {
   final Function(Customer?) onChanged;
-  const _CustomerDropdown({required this.onChanged});
+  final bool isRequired;
+  
+  const _CustomerDropdown({
+    required this.onChanged,
+    this.isRequired = false,
+  });
 
   @override
   State<_CustomerDropdown> createState() => _CustomerDropdownState();
@@ -606,7 +448,7 @@ class _CustomerDropdownState extends State<_CustomerDropdown> {
       value: _selected,
       isExpanded: true,
       decoration: InputDecoration(
-        labelText: 'customers'.tr(),
+        labelText: 'select_customer'.tr(),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
       ),
       items: _customers
@@ -616,6 +458,14 @@ class _CustomerDropdownState extends State<_CustomerDropdown> {
         setState(() => _selected = val);
         widget.onChanged(val);
       },
+      validator: widget.isRequired
+          ? (value) {
+              if (value == null) {
+                return 'please_select_customer'.tr();
+              }
+              return null;
+            }
+          : null,
     );
   }
 
@@ -722,7 +572,7 @@ class _ProductDropdownState extends State<_ProductDropdown> {
             value: _selected,
             isExpanded: true,
             decoration: InputDecoration(
-              labelText: 'Select Product (Optional)'.tr(),
+              labelText: 'select_product'.tr(),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
             ),
             items: [
