@@ -168,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 final result = await Navigator.pushNamed(
                   context, 
                   Routes.sale, 
-                  arguments: TransactionType.cash
+                  arguments: TransactionType.sale
                 );
                 if (result == true) _loadData();
               },
@@ -181,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 final result = await Navigator.pushNamed(
                   context, 
                   Routes.sale, 
-                  arguments: TransactionType.debt
+                  arguments: TransactionType.sale
                 );
                 if (result == true) _loadData();
               },
@@ -311,29 +311,29 @@ class _HomeScreenState extends State<HomeScreen> {
               separatorBuilder: (context, index) => const Divider(),
               itemBuilder: (context, index) {
                 final tx = _recentTransactions[index];
-                final isDebt = tx.type == TransactionType.debt;
-                final isCash = tx.type == TransactionType.cash;
+                final isRefund = tx.type == TransactionType.refund;
+                final isSale = tx.type == TransactionType.sale;
 
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(
-                    backgroundColor: isDebt
+                    backgroundColor: isRefund
                         ? AppColors.error.withOpacity(0.1)
-                        : (isCash
+                        : (isSale
                               ? AppColors.success.withOpacity(0.1)
                               : AppColors.secondary.withOpacity(0.1)),
                     child: Icon(
-                      isDebt ? Icons.arrow_upward : Icons.arrow_downward,
-                      color: isDebt
+                      isRefund ? Icons.keyboard_return : Icons.arrow_downward,
+                      color: isRefund
                           ? AppColors.error
-                          : (isCash ? AppColors.success : AppColors.secondary),
+                          : (isSale ? AppColors.success : AppColors.secondary),
                       size: 20,
                     ),
                   ),
                   title: Text(
-                    isCash
+                    isSale
                         ? 'cash_sale'.tr()
-                        : (isDebt ? 'debt'.tr() : 'payment'.tr()),
+                        : (isRefund ? 'refund'.tr() : 'payment'.tr()),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text(
@@ -344,7 +344,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     CurrencyHelper.getFormatter(tx.currency).format(tx.amount),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: isDebt ? AppColors.error : AppColors.success,
+                      color: isRefund ? AppColors.error : AppColors.success,
                     ),
                   ),
                 );

@@ -17,7 +17,7 @@ import '../../../core/widgets/barcode_scanner_view.dart';
 class SaleScreen extends StatefulWidget {
   final TransactionType initialType;
 
-  const SaleScreen({super.key, this.initialType = TransactionType.cash});
+  const SaleScreen({super.key, this.initialType = TransactionType.sale});
 
   @override
   State<SaleScreen> createState() => _SaleScreenState();
@@ -30,7 +30,7 @@ class _SaleScreenState extends State<SaleScreen> {
 
   final List<TransactionItem> _cart = [];
   final _paidAmountController = TextEditingController();
-  TransactionType _selectedType = TransactionType.cash;
+  TransactionType _selectedType = TransactionType.sale;
   Customer? _selectedCustomer;
   List<Product> _products = [];
   List<Customer> _customers = [];
@@ -81,7 +81,7 @@ class _SaleScreenState extends State<SaleScreen> {
         ));
       }
       // Auto-update paid amount if it was empty or matching previous total
-      if (_paidAmountController.text.isEmpty || _selectedType == TransactionType.cash) {
+      if (_paidAmountController.text.isEmpty || _selectedType == TransactionType.sale) {
          _paidAmountController.text = _totalAmount.toStringAsFixed(0);
       }
     });
@@ -102,7 +102,7 @@ class _SaleScreenState extends State<SaleScreen> {
           currency: item.currency,
         );
       }
-      if (_selectedType == TransactionType.cash) {
+      if (_selectedType == TransactionType.sale) {
          _paidAmountController.text = _totalAmount.toStringAsFixed(0);
       }
     });
@@ -138,7 +138,7 @@ class _SaleScreenState extends State<SaleScreen> {
        return;
     }
 
-    if ((_selectedType == TransactionType.debt || paid < _totalAmount) && _selectedCustomer == null) {
+    if ((_selectedType == TransactionType.sale || paid < _totalAmount) && _selectedCustomer == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('please_select_customer'.tr()), backgroundColor: AppColors.error),
       );
@@ -317,14 +317,14 @@ class _SaleScreenState extends State<SaleScreen> {
           children: [
             SegmentedButton<TransactionType>(
               segments: [
-                ButtonSegment(value: TransactionType.cash, label: Text('cash'.tr()), icon: const Icon(Icons.money)),
-                ButtonSegment(value: TransactionType.debt, label: Text('debt'.tr()), icon: const Icon(Icons.history_edu)),
+                ButtonSegment(value: TransactionType.sale, label: Text('sale'.tr()), icon: const Icon(Icons.shopping_cart)),
+                ButtonSegment(value: TransactionType.payment, label: Text('payment'.tr()), icon: const Icon(Icons.payment)),
               ],
               selected: {_selectedType},
               onSelectionChanged: (val) {
                  setState(() {
                     _selectedType = val.first;
-                    if (_selectedType == TransactionType.cash) {
+                    if (_selectedType == TransactionType.sale) {
                        _paidAmountController.text = _totalAmount.toStringAsFixed(0);
                     } else if (_paidAmountController.text == _totalAmount.toStringAsFixed(0)) {
                        _paidAmountController.text = '0';
@@ -333,7 +333,7 @@ class _SaleScreenState extends State<SaleScreen> {
               },
             ),
             SizedBox(height: 16.h),
-            if (_selectedType == TransactionType.debt || _paidAmount < _totalAmount) ...[
+            if (_selectedType == TransactionType.sale || _paidAmount < _totalAmount) ...[
               DropdownButtonFormField<Customer>(
                 value: _selectedCustomer,
                 decoration: InputDecoration(

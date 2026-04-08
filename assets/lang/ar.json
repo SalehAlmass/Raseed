@@ -74,5 +74,17 @@
   "paid_amount_optional": "المبلغ المدفوع (اختياري)",
   "remaining": "المتبقي",
   "select_customer": "اختر العميل",
-  "select_product": "اختر المنتج (اختياري)"
+  "select_product": "اختر المنتج (اختياري)",
+  "sale": "بيع",
+  "refund": "استرجاع",
+  "void_transaction": "إلغاء العملية",
+  "void_confirm": "هل أنت متأكد من إلغاء هذه العملية؟",
+  "transaction_voided": "تم إلغاء العملية بنجاح",
+  "refund_amount": "مبلغ الاسترجاع",
+  "refund_for_transaction": "استرجاع للعملية",
+  "sale_completed_success": "تم إتمام البيع بنجاح",
+  "no_debt_to_repay": "لا يوجد دين لسداده",
+  "payment_exceeds_debt": "المبلغ المدفوع يتجاوز الدين",
+  "amount_exceeds_total": "المبلغ يتجاوز الإجمالي",
+  "insufficient_stock_error": "الكمية في المخزون غير كافية"
 }

@@ -74,5 +74,17 @@
   "paid_amount_optional": "Paid Amount (Optional)",
   "remaining": "Remaining",
   "select_customer": "Select Customer",
-  "select_product": "Select Product (Optional)"
+  "select_product": "Select Product (Optional)",
+  "sale": "Sale",
+  "refund": "Refund",
+  "void_transaction": "Void Transaction",
+  "void_confirm": "Are you sure you want to void this transaction?",
+  "transaction_voided": "Transaction voided successfully",
+  "refund_amount": "Refund Amount",
+  "refund_for_transaction": "Refund for transaction",
+  "sale_completed_success": "Sale completed successfully",
+  "no_debt_to_repay": "No debt to repay",
+  "payment_exceeds_debt": "Payment exceeds total debt",
+  "amount_exceeds_total": "Amount exceeds total",
+  "insufficient_stock_error": "Insufficient stock quantity"
 }

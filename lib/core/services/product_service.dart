@@ -1,5 +1,6 @@
 import '../models/product.dart';
 import '../models/app_transaction.dart';
+import '../models/transaction_item.dart';
 import 'database_helper.dart';
 import 'transaction_service.dart';
 
@@ -42,34 +43,44 @@ class ProductService {
     return await db.delete('products', where: 'id = ?', whereArgs: [id]);
   }
 
-  /// Sells a product, deducting its stock and creating a transaction
+  /// Sells a product, creating a sale transaction with items
+  /// Stock is managed by TransactionService (not duplicated here)
   Future<void> sellProduct({
     required Product product,
     required int quantity,
     required TransactionType type,
     int? customerId,
+    double paidAmount = 0,
     String note = '',
   }) async {
     if (quantity <= 0) throw Exception('Quantity must be greater than 0');
     if (product.stockQuantity < quantity) throw Exception('uninsufficient_stock');
+    if (type != TransactionType.sale) throw Exception('Invalid transaction type for selling');
 
     final double totalAmount = product.price * quantity;
     final String finalNote = note.isEmpty ? 'Sold $quantity x ${product.name}' : 'Sold $quantity x ${product.name} | $note';
 
-    // 1. Create the transaction
+    // Create transaction item
+    final item = TransactionItem(
+      productId: product.id!,
+      productName: product.name,
+      quantity: quantity,
+      price: product.price,
+      currency: product.currency,
+    );
+
+    // Create the transaction (TransactionService will handle stock update)
     await _transactionService.addTransaction(
       AppTransaction(
         customerId: customerId,
-        type: type,
+        type: TransactionType.sale,
         amount: totalAmount,
+        paidAmount: paidAmount,
         currency: product.currency,
         date: DateTime.now(),
         note: finalNote,
+        items: [item],
       ),
     );
-
-    // 2. Reduce the stock
-    final updatedProduct = product.copyWith(stockQuantity: product.stockQuantity - quantity);
-    await updateProduct(updatedProduct);
   }
 }

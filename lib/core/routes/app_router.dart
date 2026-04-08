@@ -36,7 +36,7 @@ class AppRouter {
       case Routes.store:
         return _buildRoute(const StoreScreen(), settings);
       case Routes.sale:
-        final type = settings.arguments as TransactionType? ?? TransactionType.cash;
+        final type = settings.arguments as TransactionType? ?? TransactionType.sale;
         return _buildRoute(SaleScreen(initialType: type), settings);
       default:
         return _buildRoute(

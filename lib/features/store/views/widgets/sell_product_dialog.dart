@@ -24,7 +24,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
   final _customerService = sl<CustomerService>();
   final _quantityController = TextEditingController(text: '1');
   
-  TransactionType _selectedType = TransactionType.cash;
+  TransactionType _selectedType = TransactionType.sale;
   List<Customer> _customers = [];
   Customer? _selectedCustomer;
   bool _isLoading = false;
@@ -44,7 +44,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
     final quantity = int.tryParse(_quantityController.text) ?? 0;
     if (quantity <= 0) return;
     
-    if (_selectedType == TransactionType.debt && _selectedCustomer == null) {
+    if (_selectedType == TransactionType.sale && _selectedCustomer == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please select a customer'), backgroundColor: AppColors.error),
       );
@@ -58,7 +58,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
         product: widget.product,
         quantity: quantity,
         type: _selectedType,
-        customerId: _selectedType == TransactionType.debt ? _selectedCustomer!.id : null,
+        customerId: _selectedType == TransactionType.sale ? _selectedCustomer!.id : null,
       );
       
       if (mounted) Navigator.pop(context, true);
@@ -116,13 +116,13 @@ class _SellProductDialogState extends State<SellProductDialog> {
             SizedBox(height: 15.h),
             SegmentedButton<TransactionType>(
               segments: [
-                ButtonSegment(value: TransactionType.cash, label: Text('cash_sale'.tr())),
-                ButtonSegment(value: TransactionType.debt, label: Text('debt'.tr())),
+                ButtonSegment(value: TransactionType.sale, label: Text('cash_sale'.tr())),
+                ButtonSegment(value: TransactionType.payment, label: Text('payment'.tr())),
               ],
               selected: {_selectedType},
               onSelectionChanged: (set) => setState(() => _selectedType = set.first),
             ),
-            if (_selectedType == TransactionType.debt) ...[
+            if (_selectedType == TransactionType.sale) ...[
               SizedBox(height: 15.h),
               DropdownButtonFormField<Customer>(
                 value: _selectedCustomer,

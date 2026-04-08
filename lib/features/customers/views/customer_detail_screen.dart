@@ -179,7 +179,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
           label: 'add_debt'.tr(),
           icon: Icons.add_circle_outline,
           color: AppColors.error,
-          onTap: () => _showTransactionDialog(TransactionType.debt),
+          onTap: () => _showTransactionDialog(TransactionType.sale),
         ),
         _ActionButton(
           label: 'get_payment'.tr(),
@@ -213,7 +213,8 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
       itemCount: _transactions.length,
       itemBuilder: (context, index) {
         final tx = _transactions[index];
-        final isDebt = tx.type == TransactionType.debt;
+        final isRefund = tx.type == TransactionType.refund;
+        final isSale = tx.type == TransactionType.sale;
         
         return Container(
           margin: EdgeInsets.only(bottom: 15.h),
@@ -227,12 +228,12 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
               Container(
                 padding: EdgeInsets.all(10.w),
                 decoration: BoxDecoration(
-                  color: (isDebt ? AppColors.error : AppColors.success).withOpacity(0.1),
+                  color: (isRefund ? AppColors.error : AppColors.success).withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  isDebt ? Icons.arrow_upward : Icons.arrow_downward,
-                  color: isDebt ? AppColors.error : AppColors.success,
+                  isRefund ? Icons.keyboard_return : (isSale ? Icons.shopping_cart : Icons.payment),
+                  color: isRefund ? AppColors.error : AppColors.success,
                   size: 20,
                 ),
               ),
@@ -242,7 +243,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isDebt ? 'debt'.tr() : 'payment'.tr(),
+                      isSale ? 'sale'.tr() : (isRefund ? 'refund'.tr() : 'payment'.tr()),
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15.sp),
                     ),
                     Text(
@@ -253,11 +254,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                 ),
               ),
               Text(
-                '${isDebt ? '+' : '-'}${CurrencyHelper.getSymbol(tx.currency)} ${tx.amount.toStringAsFixed(0)}',
+                '${isRefund ? '+' : '-'}${CurrencyHelper.getSymbol(tx.currency)} ${tx.amount.toStringAsFixed(0)}',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16.sp,
-                  color: isDebt ? AppColors.error : AppColors.success,
+                  color: isRefund ? AppColors.error : AppColors.success,
                 ),
               ),
             ],
@@ -277,7 +278,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: Text(type == TransactionType.debt ? 'add_debt'.tr() : 'get_payment'.tr()),
+          title: Text(type == TransactionType.sale ? 'add_debt'.tr() : 'get_payment'.tr()),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,

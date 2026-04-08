@@ -26,7 +26,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 7,
+      version: 9,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -47,11 +47,13 @@ class DatabaseHelper {
       CREATE TABLE transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         customer_id INTEGER,
-        type TEXT NOT NULL, -- cash, debt, payment
+        type TEXT NOT NULL, -- sale, payment, return
         amount REAL NOT NULL,
+        paid_amount REAL DEFAULT 0,
         currency TEXT DEFAULT 'YER',
         date TEXT NOT NULL,
         note TEXT,
+        is_void INTEGER DEFAULT 0,
         FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE
       )
     ''');
@@ -98,6 +100,12 @@ class DatabaseHelper {
         barcode TEXT
       )
     ''');
+
+    // Create performance indexes
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_transactions_customer_id ON transactions(customer_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_transaction_items_transaction_id ON transaction_items(transaction_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode)');
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -139,6 +147,23 @@ class DatabaseHelper {
           FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL
         )
       ''');
+    }
+    if (oldVersion < 8) {
+      // Add missing columns to transactions table
+      await db.execute('ALTER TABLE transactions ADD COLUMN paid_amount REAL DEFAULT 0');
+      await db.execute('ALTER TABLE transactions ADD COLUMN is_void INTEGER DEFAULT 0');
+      
+      // Add performance indexes
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_transactions_customer_id ON transactions(customer_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_transaction_items_transaction_id ON transaction_items(transaction_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode)');
+    }
+    if (oldVersion < 9) {
+      // Migrate old transaction types to new types
+      // 'cash' and 'debt' → 'sale', 'payment' stays 'payment'
+      await db.execute("UPDATE transactions SET type = 'sale' WHERE type = 'cash'");
+      await db.execute("UPDATE transactions SET type = 'sale' WHERE type = 'debt'");
     }
   }
 
