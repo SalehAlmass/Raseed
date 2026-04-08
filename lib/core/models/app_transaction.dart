@@ -7,6 +7,7 @@ class AppTransaction {
   final int? customerId; // null for generic cash sales
   final TransactionType type;
   final double amount;
+  final double? paidAmount; // For sales: how much was actually paid. Null if amount == paidAmount.
   final String currency;
   final DateTime date;
   final String note;
@@ -17,6 +18,7 @@ class AppTransaction {
     this.customerId,
     required this.type,
     required this.amount,
+    this.paidAmount,
     this.currency = 'YER',
     required this.date,
     this.note = '',
@@ -53,6 +55,7 @@ class AppTransaction {
     int? customerId,
     TransactionType? type,
     double? amount,
+    double? paidAmount,
     String? currency,
     DateTime? date,
     String? note,
@@ -63,6 +66,7 @@ class AppTransaction {
       customerId: customerId ?? this.customerId,
       type: type ?? this.type,
       amount: amount ?? this.amount,
+      paidAmount: paidAmount ?? this.paidAmount,
       currency: currency ?? this.currency,
       date: date ?? this.date,
       note: note ?? this.note,

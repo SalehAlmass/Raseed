@@ -29,6 +29,7 @@ class _SaleScreenState extends State<SaleScreen> {
   final _customerService = sl<CustomerService>();
 
   final List<TransactionItem> _cart = [];
+  final _paidAmountController = TextEditingController();
   TransactionType _selectedType = TransactionType.cash;
   Customer? _selectedCustomer;
   List<Product> _products = [];
@@ -42,6 +43,12 @@ class _SaleScreenState extends State<SaleScreen> {
     _loadData();
   }
 
+  @override
+  void dispose() {
+    _paidAmountController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     _products = await _productService.getAllProducts();
@@ -50,6 +57,7 @@ class _SaleScreenState extends State<SaleScreen> {
   }
 
   double get _totalAmount => _cart.fold(0, (sum, item) => sum + item.total);
+  double get _paidAmount => double.tryParse(_paidAmountController.text) ?? 0.0;
 
   void _addToCart(Product product) {
     setState(() {
@@ -72,6 +80,10 @@ class _SaleScreenState extends State<SaleScreen> {
           currency: product.currency,
         ));
       }
+      // Auto-update paid amount if it was empty or matching previous total
+      if (_paidAmountController.text.isEmpty || _selectedType == TransactionType.cash) {
+         _paidAmountController.text = _totalAmount.toStringAsFixed(0);
+      }
     });
   }
 
@@ -89,6 +101,9 @@ class _SaleScreenState extends State<SaleScreen> {
           price: item.price,
           currency: item.currency,
         );
+      }
+      if (_selectedType == TransactionType.cash) {
+         _paidAmountController.text = _totalAmount.toStringAsFixed(0);
       }
     });
   }
@@ -114,7 +129,16 @@ class _SaleScreenState extends State<SaleScreen> {
 
   Future<void> _completeSale() async {
     if (_cart.isEmpty) return;
-    if (_selectedType == TransactionType.debt && _selectedCustomer == null) {
+    
+    final paid = _paidAmount;
+    if (paid > _totalAmount) {
+       ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(content: Text('amount_exceeds_total'.tr()), backgroundColor: AppColors.error),
+       );
+       return;
+    }
+
+    if ((_selectedType == TransactionType.debt || paid < _totalAmount) && _selectedCustomer == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('please_select_customer'.tr()), backgroundColor: AppColors.error),
       );
@@ -127,6 +151,7 @@ class _SaleScreenState extends State<SaleScreen> {
         customerId: _selectedCustomer?.id,
         type: _selectedType,
         amount: _totalAmount,
+        paidAmount: paid,
         date: DateTime.now(),
         items: _cart,
       );
@@ -141,8 +166,10 @@ class _SaleScreenState extends State<SaleScreen> {
     } catch (e) {
       if (mounted) {
         String msg = 'error_occurred'.tr();
-        if (e.toString().contains('over_limit')) msg = 'over_limit_error'.tr();
-        if (e.toString().contains('uninsufficient_stock')) msg = 'insufficient_stock_error'.tr();
+        final errorStr = e.toString();
+        if (errorStr.contains('over_limit')) msg = 'over_limit_error'.tr();
+        if (errorStr.contains('uninsufficient_stock')) msg = 'insufficient_stock_error'.tr();
+        if (errorStr.contains('amount_exceeds_total')) msg = 'amount_exceeds_total'.tr();
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(msg), backgroundColor: AppColors.error),
@@ -273,6 +300,8 @@ class _SaleScreenState extends State<SaleScreen> {
   }
 
   Widget _buildCheckoutSection() {
+    final isOverpaid = _paidAmount > _totalAmount;
+
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
@@ -292,10 +321,19 @@ class _SaleScreenState extends State<SaleScreen> {
                 ButtonSegment(value: TransactionType.debt, label: Text('debt'.tr()), icon: const Icon(Icons.history_edu)),
               ],
               selected: {_selectedType},
-              onSelectionChanged: (val) => setState(() => _selectedType = val.first),
+              onSelectionChanged: (val) {
+                 setState(() {
+                    _selectedType = val.first;
+                    if (_selectedType == TransactionType.cash) {
+                       _paidAmountController.text = _totalAmount.toStringAsFixed(0);
+                    } else if (_paidAmountController.text == _totalAmount.toStringAsFixed(0)) {
+                       _paidAmountController.text = '0';
+                    }
+                 });
+              },
             ),
             SizedBox(height: 16.h),
-            if (_selectedType == TransactionType.debt) ...[
+            if (_selectedType == TransactionType.debt || _paidAmount < _totalAmount) ...[
               DropdownButtonFormField<Customer>(
                 value: _selectedCustomer,
                 decoration: InputDecoration(
@@ -304,19 +342,37 @@ class _SaleScreenState extends State<SaleScreen> {
                 ),
                 items: _customers.map((c) => DropdownMenuItem(
                   value: c,
-                  child: Text(c.name),
+                  child: Text('${c.name} (${CurrencyHelper.getFormatter("YER").format(c.totalDebt)})'),
                 )).toList(),
                 onChanged: (val) => setState(() => _selectedCustomer = val),
               ),
               SizedBox(height: 16.h),
             ],
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('total_amount'.tr(), style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold)),
-                Text(
-                  CurrencyHelper.getFormatter('YER').format(_totalAmount),
-                  style: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.bold, color: AppColors.primary),
+                Expanded(
+                  child: TextField(
+                    controller: _paidAmountController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                        labelText: 'paid_amount'.tr(),
+                        errorText: isOverpaid ? 'amount_exceeds_total'.tr() : null,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                        prefixText: 'YER ',
+                    ),
+                    onChanged: (val) => setState(() {}),
+                  ),
+                ),
+                SizedBox(width: 16.w),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('total_amount'.tr(), style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary)),
+                    Text(
+                      CurrencyHelper.getFormatter('YER').format(_totalAmount),
+                      style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: AppColors.primary),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -325,7 +381,7 @@ class _SaleScreenState extends State<SaleScreen> {
               width: double.infinity,
               height: 54.h,
               child: ElevatedButton(
-                onPressed: _isLoading || _cart.isEmpty ? null : _completeSale,
+                onPressed: _isLoading || _cart.isEmpty || isOverpaid ? null : _completeSale,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,

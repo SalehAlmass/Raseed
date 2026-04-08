@@ -391,6 +391,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 final amount = double.tryParse(amountController.text) ?? 0;
                 if (amount <= 0 || selectedCustomer == null) return;
 
+                if (selectedCustomer!.totalDebt <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('no_debt_to_repay'.tr()), backgroundColor: AppColors.error),
+                  );
+                  return;
+                }
+
+                if (amount > selectedCustomer!.totalDebt) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('payment_exceeds_debt'.tr()), backgroundColor: AppColors.error),
+                  );
+                  return;
+                }
+
                 final tx = AppTransaction(
                   customerId: selectedCustomer!.id,
                   type: TransactionType.payment,
@@ -399,10 +413,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   note: 'Payment received',
                 );
 
-                await sl<TransactionService>().addTransaction(tx);
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  _loadData();
+                try {
+                  await sl<TransactionService>().addTransaction(tx);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    _loadData();
+                  }
+                } catch (e) {
+                   if (context.mounted) {
+                     String msg = 'error_occurred'.tr();
+                     if (e.toString().contains('no_debt_to_repay')) msg = 'no_debt_to_repay'.tr();
+                     if (e.toString().contains('payment_exceeds_debt')) msg = 'payment_exceeds_debt'.tr();
+                     
+                     ScaffoldMessenger.of(context).showSnackBar(
+                       SnackBar(content: Text(msg), backgroundColor: AppColors.error),
+                     );
+                   }
                 }
               },
               child: Text('save'.tr()),

@@ -14,8 +14,35 @@ class TransactionService {
   Future<int> addTransaction(AppTransaction transaction) async {
     final db = await _dbHelper.database;
 
-    // Check for debt limit if it's a debt transaction
-    if (transaction.type == TransactionType.debt && transaction.customerId != null) {
+    // --- Strict Validations ---
+    
+    // 1. Check for debt repayment rules
+    if (transaction.type == TransactionType.payment && transaction.customerId != null) {
+      final customerMap = await db.query(
+        'customers', 
+        where: 'id = ?', 
+        whereArgs: [transaction.customerId],
+      ).then((maps) => maps.first);
+      
+      final currentDebt = (customerMap['total_debt'] as num).toDouble();
+      
+      if (currentDebt <= 0) {
+        throw Exception('no_debt_to_repay');
+      }
+      
+      if (transaction.amount > currentDebt) {
+        throw Exception('payment_exceeds_debt');
+      }
+    }
+
+    // 2. Check for Sale overpayment
+    if (transaction.paidAmount != null && transaction.paidAmount! > transaction.amount) {
+      throw Exception('amount_exceeds_total');
+    }
+
+    // 3. Check for debt limit if it's a debt transaction (or partial debt)
+    if ((transaction.type == TransactionType.debt || (transaction.paidAmount ?? transaction.amount) < transaction.amount) && 
+        transaction.customerId != null) {
       final settings = await _settingsService.getSettings();
       final customerMap = await db.query(
         'customers', 
@@ -23,10 +50,10 @@ class TransactionService {
         whereArgs: [transaction.customerId],
       ).then((maps) => maps.first);
       
-      const String debtColumn = 'total_debt';
-      final currentDebt = (customerMap[debtColumn] as num).toDouble();
+      final currentDebt = (customerMap['total_debt'] as num).toDouble();
+      final addedDebt = transaction.amount - (transaction.paidAmount ?? (transaction.type == TransactionType.cash ? transaction.amount : 0));
       
-      if (settings.strictMode && (currentDebt + transaction.amount) > settings.maxDebt) {
+      if (settings.strictMode && (currentDebt + addedDebt) > settings.maxDebt) {
         throw Exception('over_limit');
       }
     }
@@ -49,10 +76,18 @@ class TransactionService {
       // 3. Update customer debt if applicable
       if (transaction.customerId != null) {
         double debtChange = 0.0;
-        if (transaction.type == TransactionType.debt) {
-          debtChange = transaction.amount;
-        } else if (transaction.type == TransactionType.payment) {
+        
+        if (transaction.type == TransactionType.payment) {
           debtChange = -transaction.amount;
+        } else {
+          // It's a sale (Cash or Debt)
+          final paidAmount = transaction.paidAmount ?? (transaction.type == TransactionType.cash ? transaction.amount : 0);
+          final remainingDebt = transaction.amount - paidAmount;
+          debtChange = remainingDebt;
+          
+          // If there's a partial payment in a "Sale" transaction, we might want to record the payment part too
+          // Or just let the debtChange handle the balance. 
+          // The current logic: Total Debt increases by (Total - Paid).
         }
 
         if (debtChange != 0) {
