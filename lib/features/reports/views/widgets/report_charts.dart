@@ -72,7 +72,7 @@ class TopProductsChart extends StatelessWidget {
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: products.fold(0, (max, p) => p.value > max ? p.value : max) * 1.2,
+        maxY: products.fold(0.0, (max, p) => p.value > max ? p.value : max) * 1.2,
         barTouchData: BarTouchData(enabled: true),
         titlesData: FlTitlesData(
           leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
