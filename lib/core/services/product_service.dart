@@ -66,6 +66,7 @@ class ProductService {
       productName: product.name,
       quantity: quantity,
       price: product.price,
+      costPrice: product.costPrice,
       currency: product.currency,
     );
 

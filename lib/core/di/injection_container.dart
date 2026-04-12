@@ -11,6 +11,9 @@ import '../services/transaction_service.dart';
 import '../services/settings_service.dart';
 import '../services/auth_service.dart';
 import '../services/product_service.dart';
+import '../../features/reports/services/report_service.dart';
+import '../../features/reports/services/export_service.dart';
+import '../../features/reports/bloc/reports_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -59,4 +62,9 @@ Future<void> init() async {
 
   sl.registerLazySingleton<AuthService>(() => AuthService());
   sl.registerLazySingleton<ProductService>(() => ProductService(sl<TransactionService>()));
+
+  //! Reports
+  sl.registerLazySingleton(() => ReportService());
+  sl.registerLazySingleton(() => ExportService());
+  sl.registerFactory(() => ReportsBloc(sl<ReportService>()));
 }

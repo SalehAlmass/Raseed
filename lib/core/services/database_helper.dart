@@ -36,7 +36,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 10,
+      version: 11,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -76,6 +76,7 @@ class DatabaseHelper {
         product_name TEXT NOT NULL,
         quantity INTEGER NOT NULL,
         price REAL NOT NULL,
+        cost_price REAL DEFAULT 0,
         currency TEXT DEFAULT 'YER',
         FOREIGN KEY (transaction_id) REFERENCES transactions (id) ON DELETE CASCADE,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL
@@ -106,6 +107,7 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         price REAL NOT NULL,
+        cost_price REAL DEFAULT 0,
         currency TEXT DEFAULT 'YER',
         stock_quantity INTEGER DEFAULT 0,
         barcode TEXT
@@ -178,6 +180,10 @@ class DatabaseHelper {
     }
     if (oldVersion < 10) {
       await db.execute("ALTER TABLE settings ADD COLUMN debt_mode TEXT DEFAULT 'block'");
+    }
+    if (oldVersion < 11) {
+      await db.execute("ALTER TABLE products ADD COLUMN cost_price REAL DEFAULT 0");
+      await db.execute("ALTER TABLE transaction_items ADD COLUMN cost_price REAL DEFAULT 0");
     }
   }
 

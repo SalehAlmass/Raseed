@@ -69,6 +69,7 @@ class _SaleScreenState extends State<SaleScreen> {
           productName: existingItem.productName,
           quantity: existingItem.quantity + 1,
           price: existingItem.price,
+          costPrice: existingItem.costPrice,
           currency: existingItem.currency,
         );
       } else {
@@ -77,6 +78,7 @@ class _SaleScreenState extends State<SaleScreen> {
           productName: product.name,
           quantity: 1,
           price: product.price,
+          costPrice: product.costPrice,
           currency: product.currency,
         ));
       }
@@ -99,6 +101,7 @@ class _SaleScreenState extends State<SaleScreen> {
           productName: item.productName,
           quantity: newQty,
           price: item.price,
+          costPrice: item.costPrice,
           currency: item.currency,
         );
       }

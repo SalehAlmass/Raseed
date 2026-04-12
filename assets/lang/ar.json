@@ -86,5 +86,16 @@
   "no_debt_to_repay": "لا يوجد دين لسداده",
   "payment_exceeds_debt": "المبلغ المدفوع يتجاوز الدين",
   "amount_exceeds_total": "المبلغ يتجاوز الإجمالي",
-  "insufficient_stock_error": "الكمية في المخزون غير كافية"
+  "insufficient_stock_error": "الكمية في المخزون غير كافية",
+  "reports": "التقارير",
+  "sales_trend": "اتجاه المبيعات",
+  "top_products": "أعلى المنتجات",
+  "top_customers": "أعلى العملاء",
+  "daily": "يومي",
+  "monthly": "شهري",
+  "yearly": "سنوي",
+  "total_sales": "إجمالي المبيعات",
+  "total_profit": "إجمالي الأرباح",
+  "purchase_price": "سعر الشراء",
+  "cost_price": "سعر التكلفة"
 }

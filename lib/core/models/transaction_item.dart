@@ -5,6 +5,7 @@ class TransactionItem {
   final String productName;
   final int quantity;
   final double price;
+  final double costPrice;
   final String currency;
 
   TransactionItem({
@@ -14,6 +15,7 @@ class TransactionItem {
     required this.productName,
     required this.quantity,
     required this.price,
+    this.costPrice = 0.0,
     this.currency = 'YER',
   });
 
@@ -25,6 +27,7 @@ class TransactionItem {
       'product_name': productName,
       'quantity': quantity,
       'price': price,
+      'cost_price': costPrice,
       'currency': currency,
     };
   }
@@ -37,11 +40,13 @@ class TransactionItem {
       productName: map['product_name'] ?? '',
       quantity: map['quantity'] ?? 0,
       price: (map['price'] as num?)?.toDouble() ?? 0.0,
+      costPrice: (map['cost_price'] as num?)?.toDouble() ?? 0.0,
       currency: map['currency'] ?? 'YER',
     );
   }
 
   double get total => price * quantity;
+  double get profit => (price - costPrice) * quantity;
 
   TransactionItem copyWith({
     int? id,
@@ -50,6 +55,7 @@ class TransactionItem {
     String? productName,
     int? quantity,
     double? price,
+    double? costPrice,
     String? currency,
   }) {
     return TransactionItem(
@@ -59,6 +65,7 @@ class TransactionItem {
       productName: productName ?? this.productName,
       quantity: quantity ?? this.quantity,
       price: price ?? this.price,
+      costPrice: costPrice ?? this.costPrice,
       currency: currency ?? this.currency,
     );
   }

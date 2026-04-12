@@ -54,13 +54,18 @@ dependencies:
   connectivity_plus: ^6.1.5
   easy_localization: ^3.0.8
   animate_do: ^4.2.0
-  lottie: ^3.3.2
+  lottie: ^3.3.0
   intl: ^0.20.2
   flutter_screenutil: ^5.9.3
   flutter_bloc: ^9.1.1
   flutter_secure_storage: ^9.2.4
   bloc: ^9.2.0
   mobile_scanner: ^7.2.0
+  fl_chart: ^0.70.2
+  excel: ^4.0.5
+  pdf: ^3.11.1
+  printing: ^5.13.2
+  share_plus: ^10.1.4
 
 dev_dependencies:
   flutter_test:

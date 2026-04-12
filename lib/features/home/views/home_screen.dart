@@ -198,6 +198,13 @@ class _HomeScreenState extends State<HomeScreen> {
               color: AppColors.primary,
               onTap: () => _showPaymentDialog(context),
             ),
+            SizedBox(width: 40.w),
+            _QuickActionBtn(
+              label: 'reports'.tr(),
+              icon: Icons.analytics_outlined,
+              color: AppColors.secondary,
+              onTap: () => Navigator.pushNamed(context, Routes.reports),
+            ),
           ],
         ),
       ],

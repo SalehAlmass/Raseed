@@ -86,5 +86,16 @@
   "no_debt_to_repay": "No debt to repay",
   "payment_exceeds_debt": "Payment exceeds total debt",
   "amount_exceeds_total": "Amount exceeds total",
-  "insufficient_stock_error": "Insufficient stock quantity"
+  "insufficient_stock_error": "Insufficient stock quantity",
+  "reports": "Reports",
+  "sales_trend": "Sales Trend",
+  "top_products": "Top Products",
+  "top_customers": "Top Customers",
+  "daily": "Daily",
+  "monthly": "Monthly",
+  "yearly": "Yearly",
+  "total_sales": "Total Sales",
+  "total_profit": "Total Profit",
+  "purchase_price": "Purchase Price",
+  "cost_price": "Cost Price"
 }

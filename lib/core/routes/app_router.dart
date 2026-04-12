@@ -11,6 +11,10 @@ import '../../features/store/views/store_screen.dart';
 import '../../features/home/views/sale_screen.dart';
 import '../models/customer.dart';
 import '../models/app_transaction.dart';
+import '../../features/reports/views/reports_dashboard_screen.dart';
+import '../../features/reports/bloc/reports_bloc.dart';
+import '../di/injection_container.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Application Router
 class AppRouter {
@@ -38,6 +42,14 @@ class AppRouter {
       case Routes.sale:
         final type = settings.arguments as TransactionType? ?? TransactionType.sale;
         return _buildRoute(SaleScreen(initialType: type), settings);
+      case Routes.reports:
+        return _buildRoute(
+          BlocProvider(
+            create: (context) => sl<ReportsBloc>(),
+            child: const ReportsDashboardScreen(),
+          ),
+          settings,
+        );
       default:
         return _buildRoute(
           Scaffold(
