@@ -42,4 +42,24 @@ class TransactionItem {
   }
 
   double get total => price * quantity;
+
+  TransactionItem copyWith({
+    int? id,
+    int? transactionId,
+    int? productId,
+    String? productName,
+    int? quantity,
+    double? price,
+    String? currency,
+  }) {
+    return TransactionItem(
+      id: id ?? this.id,
+      transactionId: transactionId ?? this.transactionId,
+      productId: productId ?? this.productId,
+      productName: productName ?? this.productName,
+      quantity: quantity ?? this.quantity,
+      price: price ?? this.price,
+      currency: currency ?? this.currency,
+    );
+  }
 }

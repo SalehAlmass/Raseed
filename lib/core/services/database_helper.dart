@@ -6,13 +6,18 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
+  static String? testPath;
 
   DatabaseHelper._init();
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('raseed.db');
+    _database = await _initDB(testPath ?? 'raseed.db');
     return _database!;
+  }
+
+  static void reset() {
+    _database = null;
   }
 
   Future<Database> _initDB(String filePath) async {
@@ -21,12 +26,17 @@ class DatabaseHelper {
       databaseFactory = databaseFactoryFfi;
     }
 
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, filePath);
+    String path;
+    if (filePath == inMemoryDatabasePath) {
+      path = inMemoryDatabasePath;
+    } else {
+      final dbPath = await getDatabasesPath();
+      path = join(dbPath, filePath);
+    }
 
     return await openDatabase(
       path,
-      version: 9,
+      version: 10,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -77,6 +87,7 @@ class DatabaseHelper {
         max_debt REAL DEFAULT 1000,
         reminder_days INTEGER DEFAULT 30,
         strict_mode INTEGER DEFAULT 0,
+        debt_mode TEXT DEFAULT 'block',
         currency TEXT DEFAULT 'YER',
         onboarding_completed INTEGER DEFAULT 0
       )
@@ -164,6 +175,9 @@ class DatabaseHelper {
       // 'cash' and 'debt' → 'sale', 'payment' stays 'payment'
       await db.execute("UPDATE transactions SET type = 'sale' WHERE type = 'cash'");
       await db.execute("UPDATE transactions SET type = 'sale' WHERE type = 'debt'");
+    }
+    if (oldVersion < 10) {
+      await db.execute("ALTER TABLE settings ADD COLUMN debt_mode TEXT DEFAULT 'block'");
     }
   }
 

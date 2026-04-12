@@ -44,9 +44,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     await _settingsService.updateSettings(newSettings);
     if (mounted) {
+      Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Settings saved successfully')),
-      );
+        SnackBar(
+          content: Text('Settings saved successfully', style: TextStyle(color: Colors.white),),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+          
+        ),);
     }
   }
 

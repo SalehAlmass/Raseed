@@ -1,5 +1,6 @@
 import '../models/app_transaction.dart';
 import '../models/transaction_item.dart';
+import '../models/app_settings.dart';
 import 'database_helper.dart';
 import 'customer_service.dart';
 import 'settings_service.dart';
@@ -40,9 +41,26 @@ class TransactionService {
       throw Exception('amount_exceeds_total');
     }
 
-    // 3. Check for debt limit if it's a sale transaction with remaining debt
+    // 3. Check for Stock (if SALE and strictMode ON)
+    final settings = await _settingsService.getSettings();
+    if (transaction.type == TransactionType.sale && settings.strictMode) {
+      for (final item in transaction.items) {
+        final productMap = await db.query(
+          'products',
+          columns: ['stock_quantity'],
+          where: 'id = ?',
+          whereArgs: [item.productId],
+        ).then((maps) => maps.first);
+        
+        final currentStock = (productMap['stock_quantity'] as num).toInt();
+        if (currentStock < item.quantity) {
+          throw Exception('insufficient_stock');
+        }
+      }
+    }
+
+    // 4. Check for debt limit
     if (transaction.type == TransactionType.sale && transaction.customerId != null) {
-      final settings = await _settingsService.getSettings();
       final customerMap = await db.query(
         'customers', 
         where: 'id = ?', 
@@ -51,9 +69,17 @@ class TransactionService {
       
       final currentDebt = (customerMap['total_debt'] as num).toDouble();
       final remainingDebt = transaction.amount - transaction.paidAmount;
+      final totalNewDebt = currentDebt + remainingDebt;
       
-      if (settings.strictMode && (currentDebt + remainingDebt) > settings.maxDebt) {
-        throw Exception('over_limit');
+      if (totalNewDebt > settings.maxDebt) {
+        if (settings.debtMode == DebtMode.block) {
+          throw Exception('over_limit');
+        } else if (settings.debtMode == DebtMode.warning) {
+          // In a real app, we might return a status that includes a warning.
+          // For now, we allow it but we could log it or throw a specific 'warning_triggered' 
+          // that the UI can catch and then re-summit with a flag.
+          // Simplification: just allow it if mode is warning, but we could add a note.
+        }
       }
     }
 
@@ -61,16 +87,24 @@ class TransactionService {
       // 1. Insert transaction
       final int transactionId = await txn.insert('transactions', transaction.toMap());
 
-      // 2. Insert items and reduce stock (only for sales)
-      if (transaction.type == TransactionType.sale && transaction.items.isNotEmpty) {
+      // 2. Insert items and update stock
+      if (transaction.items.isNotEmpty) {
         for (final item in transaction.items) {
           await txn.insert('transaction_items', item.toMap()..['transaction_id'] = transactionId);
           
-          // Deduct stock
-          await txn.execute(
-            'UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
-            [item.quantity, item.productId]
-          );
+          if (transaction.type == TransactionType.sale) {
+            // Deduct stock
+            await txn.execute(
+              'UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
+              [item.quantity, item.productId]
+            );
+          } else if (transaction.type == TransactionType.refund) {
+            // Restore stock
+            await txn.execute(
+              'UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?',
+              [item.quantity, item.productId]
+            );
+          }
         }
       }
 
@@ -79,15 +113,17 @@ class TransactionService {
         double debtChange = 0.0;
         
         if (transaction.type == TransactionType.payment) {
-          // Payment reduces debt
+          // Payment reduces debt (Payment is stored as positive amount)
           debtChange = -transaction.amount;
         } else if (transaction.type == TransactionType.sale) {
           // Sale adds remaining debt (amount - paid)
           final remainingDebt = transaction.amount - transaction.paidAmount;
           debtChange = remainingDebt;
         } else if (transaction.type == TransactionType.refund) {
-          // Refund reduces debt
-          debtChange = -transaction.amount;
+          // Refund reduces debt. 
+          // If transaction.amount is stored as negative (e.g., -500), 
+          // then adding it will reduce debt.
+          debtChange = transaction.amount;
         }
 
         if (debtChange != 0) {
@@ -96,6 +132,7 @@ class TransactionService {
             debtChange,
             transaction.currency,
             transaction.date,
+            executor: txn,
           );
         }
       }
@@ -185,14 +222,23 @@ class TransactionService {
     final db = await _dbHelper.database;
     
     await db.transaction((txn) async {
-      // 1. Reverse stock for each item (only for sales)
-      if (transaction.type == TransactionType.sale) {
+      // 1. Reverse stock for each item
+      if (transaction.type == TransactionType.sale || transaction.type == TransactionType.refund) {
         final items = await _getTransactionItems(txn, transaction.id!);
         for (final item in items) {
-          await txn.execute(
-            'UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?',
-            [item.quantity, item.productId]
-          );
+          if (transaction.type == TransactionType.sale) {
+            // Restore stock (it was deducted)
+            await txn.execute(
+              'UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?',
+              [item.quantity, item.productId]
+            );
+          } else if (transaction.type == TransactionType.refund) {
+            // Deduct stock (it was restored during refund)
+            await txn.execute(
+              'UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
+              [item.quantity, item.productId]
+            );
+          }
         }
       }
 
@@ -205,11 +251,13 @@ class TransactionService {
           final remainingDebt = transaction.amount - transaction.paidAmount;
           debtChange = -remainingDebt;
         } else if (transaction.type == TransactionType.payment) {
-          // Reverse the payment (add debt back)
+          // Reverse the payment (add debt back). Payment is positive.
           debtChange = transaction.amount;
         } else if (transaction.type == TransactionType.refund) {
-          // Reverse the refund (add debt back)
-          debtChange = transaction.amount;
+          // Reverse the refund (add debt back). 
+          // If refund amount is negative (e.g., -500), 
+          // then subtracting it will add debt back.
+          debtChange = -transaction.amount;
         }
         
         if (debtChange != 0) {
@@ -218,6 +266,7 @@ class TransactionService {
             debtChange,
             transaction.currency,
             DateTime.now(),
+            executor: txn,
           );
         }
       }
@@ -253,7 +302,7 @@ class TransactionService {
     final refundTransaction = AppTransaction(
       customerId: customerId ?? originalTransaction.customerId,
       type: TransactionType.refund,
-      amount: refundAmount,
+      amount: -refundAmount, // Store as NEGATIVE transaction
       currency: originalTransaction.currency,
       date: DateTime.now(),
       note: note.isEmpty ? 'Refund for transaction #${originalTransaction.id}' : 'Refund: $note',

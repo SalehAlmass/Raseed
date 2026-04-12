@@ -1,3 +1,4 @@
+import 'package:sqflite/sqflite.dart';
 import '../models/customer.dart';
 import 'database_helper.dart';
 
@@ -41,16 +42,16 @@ class CustomerService {
     return List.generate(maps.length, (i) => Customer.fromMap(maps[i]));
   }
 
-  Future<Customer?> getCustomer(int id) async {
-    final db = await _dbHelper.database;
+  Future<Customer?> getCustomer(int id, {DatabaseExecutor? executor}) async {
+    final db = executor ?? await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query('customers', where: 'id = ?', whereArgs: [id]);
     if (maps.isEmpty) return null;
     return Customer.fromMap(maps.first);
   }
 
-  Future<void> updateCustomerDebt(int id, double amountChange, String currency, DateTime date) async {
-    final db = await _dbHelper.database;
-    final customer = await getCustomer(id);
+  Future<void> updateCustomerDebt(int id, double amountChange, String currency, DateTime date, {DatabaseExecutor? executor}) async {
+    final db = executor ?? await _dbHelper.database;
+    final customer = await getCustomer(id, executor: executor);
     if (customer == null) return;
 
     final String column = 'total_debt';
