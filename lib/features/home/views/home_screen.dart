@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../../core/di/injection_container.dart';
@@ -27,6 +28,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, double> _summary = {'daily_sales': 0.0, 'total_debt': 0.0};
   List<AppTransaction> _recentTransactions = [];
   bool _isLoading = true;
+  int _bottomNavIndex = 0;
+
+  final List<IconData> _navIcons = [
+    Icons.people,
+    Icons.account_balance_wallet,
+    Icons.analytics_outlined,
+    Icons.store_mall_directory,
+  ];
 
   @override
   void initState() {
@@ -83,9 +92,8 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _buildSummaryCards(),
               SizedBox(height: 30.h),
-              
               Text(
-                'quick_actions'.tr(),
+                'recent_activity'.tr(),
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.bold,
@@ -93,25 +101,52 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               SizedBox(height: 15.h),
-              _buildQuickActions(context),
-              SizedBox(height: 30.h),
-              _buildRecentActivityHeader(),
-              SizedBox(height: 15.h),
               _buildRecentActivityList(),
             ],
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final result = await Navigator.pushNamed(context, Routes.sale);
           if (result == true) _loadData();
         },
-        label: Text('new_sale'.tr()),
-        icon: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Colors.white),
         backgroundColor: AppColors.primary,
+        elevation: 8,
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: AnimatedBottomNavigationBar(
+        icons: _navIcons,
+        activeIndex: _bottomNavIndex,
+        gapLocation: GapLocation.center,
+        notchSmoothness: NotchSmoothness.softEdge,
+        leftCornerRadius: 32,
+        rightCornerRadius: 32,
+        activeColor: AppColors.primary,
+        inactiveColor: Colors.grey,
+        onTap: _onNavTap,
+        splashColor: AppColors.primary.withOpacity(0.3),
       ),
     );
+  }
+
+  void _onNavTap(int index) {
+    setState(() => _bottomNavIndex = index);
+    switch (index) {
+      case 0:
+        Navigator.pushNamed(context, Routes.customers);
+        break;
+      case 1:
+        _showPaymentDialog(context);
+        break;
+      case 2:
+        Navigator.pushNamed(context, Routes.reports);
+        break;
+      case 3:
+        Navigator.pushNamed(context, Routes.store);
+        break;
+    }
   }
 
   Widget _buildSummaryCards() {
@@ -143,69 +178,6 @@ class _HomeScreenState extends State<HomeScreen> {
               color: AppColors.error,
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuickActions(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _QuickActionBtn(
-              label: 'customers'.tr(),
-              icon: Icons.people,
-              color: AppColors.primary,
-              onTap: () => Navigator.pushNamed(context, Routes.customers),
-            ),
-            _QuickActionBtn(
-              label: 'cash_sale'.tr(),
-              icon: Icons.attach_money,
-              color: AppColors.success,
-              onTap: () async {
-                final result = await Navigator.pushNamed(
-                  context, 
-                  Routes.sale, 
-                  arguments: TransactionType.sale
-                );
-                if (result == true) _loadData();
-              },
-            ),
-            _QuickActionBtn(
-              label: 'add_debt'.tr(),
-              icon: Icons.remove_circle_outline,
-              color: AppColors.warning,
-              onTap: () async {
-                final result = await Navigator.pushNamed(
-                  context, 
-                  Routes.sale, 
-                  arguments: TransactionType.sale
-                );
-                if (result == true) _loadData();
-              },
-            ),
-          ],
-        ),
-        SizedBox(height: 15.h),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _QuickActionBtn(
-              label: 'get_payment'.tr(),
-              icon: Icons.account_balance_wallet,
-              color: AppColors.primary,
-              onTap: () => _showPaymentDialog(context),
-            ),
-            SizedBox(width: 40.w),
-            _QuickActionBtn(
-              label: 'reports'.tr(),
-              icon: Icons.analytics_outlined,
-              color: AppColors.secondary,
-              onTap: () => Navigator.pushNamed(context, Routes.reports),
-            ),
-          ],
         ),
       ],
     );
@@ -753,44 +725,3 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _QuickActionBtn extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _QuickActionBtn({
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(15.w),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 28.sp),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

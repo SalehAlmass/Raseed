@@ -288,7 +288,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                 TextField(
                   controller: amountController,
                   decoration: InputDecoration(
-                    labelText: 'Amount',
+                    labelText: 'amount'.tr(),
                     prefixText: '${CurrencyHelper.getSymbol(selectedCurrency)} ',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                   ),

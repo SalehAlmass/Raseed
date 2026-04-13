@@ -83,7 +83,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
     final totalPrice = widget.product.price * quantity;
 
     return AlertDialog(
-      title: Text('Sell ${widget.product.name}'),
+      title: Text('${'sale'.tr()}: ${widget.product.name}'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -98,8 +98,8 @@ class _SellProductDialogState extends State<SellProductDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Price: ${CurrencyHelper.getFormatter('YER').format(widget.product.price)} YER'),
-                  Text('Stock: ${widget.product.stockQuantity}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text('${'price'.tr()}: ${CurrencyHelper.getFormatter(widget.product.currency).format(widget.product.price)} ${widget.product.currency}'),
+                  Text('${'stock'.tr()}: ${widget.product.stockQuantity}', style: const TextStyle(fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -108,7 +108,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
               controller: _quantityController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: 'Quantity',
+                labelText: 'quantity'.tr(),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
               ),
               onChanged: (val) => setState(() {}),
@@ -128,7 +128,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
                 value: _selectedCustomer,
                 isExpanded: true,
                 decoration: InputDecoration(
-                  labelText: 'customers'.tr(),
+                  labelText: 'select_customer'.tr(),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                 ),
                 items: _customers.map((c) => DropdownMenuItem(value: c, child: Text(c.name))).toList(),
@@ -138,7 +138,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
             SizedBox(height: 20.h),
             Center(
               child: Text(
-                'Total: ${CurrencyHelper.getFormatter('YER').format(totalPrice)} YER',
+                '${'total'.tr()}: ${CurrencyHelper.getFormatter(widget.product.currency).format(totalPrice)} ${widget.product.currency}',
                 style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: AppColors.primary),
               ),
             ),

@@ -66,6 +66,7 @@ dependencies:
   pdf: ^3.11.1
   printing: ^5.13.2
   share_plus: ^10.1.4
+  animated_bottom_navigation_bar: ^1.4.0
 
 dev_dependencies:
   flutter_test:

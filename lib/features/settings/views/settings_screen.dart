@@ -47,7 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Settings saved successfully', style: TextStyle(color: Colors.white),),
+          content: Text('settings_saved_success'.tr(), style: TextStyle(color: Colors.white),),
           backgroundColor: Colors.green,
           duration: const Duration(seconds: 2),
           
@@ -99,7 +99,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SizedBox(height: 15.h),
                 _buildLanguageDropdown(context),
                 SizedBox(height: 30.h),
-                _buildSectionHeader('Advanced'),
+                _buildSectionHeader('advanced'.tr()),
                 SwitchListTile(
                   title: Text('strict_mode'.tr()),
                   subtitle: Text('strict_mode_desc'.tr()),
