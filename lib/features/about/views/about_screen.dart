@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:animate_do/animate_do.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/colors.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -10,186 +12,243 @@ class AboutScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('about'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: AppColors.textPrimary,
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(20.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // App Logo/Icon
-            Container(
-              width: 120.w,
-              height: 120.w,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(30.r),
-              ),
-              child: Icon(
-                Icons.store_mall_directory,
-                size: 60.sp,
-                color: AppColors.primary,
-              ),
-            ),
-            SizedBox(height: 24.h),
-
-            // App Name
-            Text(
-              'app_name'.tr(),
-              style: TextStyle(
-                fontSize: 28.sp,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(height: 8.h),
-
-            // Version
-            Text(
-              'version'.tr() + ' 1.0.0',
-              style: TextStyle(
-                fontSize: 16.sp,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            SizedBox(height: 32.h),
-
-            // Description
-            Container(
+      body: CustomScrollView(
+        slivers: [
+          _buildAppBar(context),
+          SliverToBoxAdapter(
+            child: Padding(
               padding: EdgeInsets.all(20.w),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
               child: Column(
                 children: [
-                  Text(
-                    'about_description'.tr(),
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      color: AppColors.textPrimary,
-                      height: 1.6,
-                    ),
-                    textAlign: TextAlign.center,
+                  FadeInDown(
+                    duration: const Duration(milliseconds: 600),
+                    child: _buildAppLogo(),
                   ),
+                  SizedBox(height: 24.h),
+                  FadeInUp(
+                    duration: const Duration(milliseconds: 600),
+                    child: _buildAppInfo(),
+                  ),
+                  SizedBox(height: 32.h),
+                  FadeInUp(
+                    delay: const Duration(milliseconds: 200),
+                    child: _buildDescriptionCard(),
+                  ),
+                  SizedBox(height: 32.h),
+                  FadeInUp(
+                    delay: const Duration(milliseconds: 400),
+                    child: _buildContactSection(context),
+                  ),
+                  SizedBox(height: 40.h),
+                  _buildCopyright(),
                   SizedBox(height: 20.h),
-                  _buildFeatureItem('onboarding_feature_1'.tr()),
-                  _buildFeatureItem('onboarding_feature_2'.tr()),
-                  _buildFeatureItem('onboarding_feature_3'.tr()),
                 ],
-              ),
-            ),
-            SizedBox(height: 32.h),
-
-            // Developer Info
-            Container(
-              padding: EdgeInsets.all(20.w),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'crafted_by'.tr(),
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    'Developer Name',
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          // TODO: Open email
-                        },
-                        icon: Icon(Icons.email, color: AppColors.primary),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          // TODO: Open website
-                        },
-                        icon: Icon(Icons.language, color: AppColors.primary),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          // TODO: Open social media
-                        },
-                        icon: Icon(Icons.share, color: AppColors.primary),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 32.h),
-
-            // Copyright
-            Text(
-              '© 2024 Raseed. All rights reserved.',
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFeatureItem(String feature) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4.h),
-      child: Row(
-        children: [
-          Icon(
-            Icons.check_circle,
-            color: AppColors.success,
-            size: 20.sp,
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Text(
-              feature,
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: AppColors.textPrimary,
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAppBar(BuildContext context) {
+    return SliverAppBar(
+      expandedHeight: 0,
+      floating: true,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
+        onPressed: () => Navigator.pop(context),
+      ),
+      title: Text(
+        'about'.tr(),
+        style: TextStyle(
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.bold,
+          fontSize: 20.sp,
+        ),
+      ),
+      centerTitle: true,
+    );
+  }
+
+  Widget _buildAppLogo() {
+    return Center(
+      child: Image.asset( 
+        'assets/images/logo.png',
+        width: 250.w,
+        height: 120.w,
+      )
+    );
+  }
+
+  Widget _buildAppInfo() {
+    return Column(
+      children: [
+        
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          child: Text(
+            '${'version'.tr()} 1.0.0',
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: AppColors.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDescriptionCard() {
+    return Container(
+      padding: EdgeInsets.all(24.w),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            'about_description'.tr(),
+            style: TextStyle(
+              fontSize: 16.sp,
+              color: AppColors.textPrimary,
+              height: 1.8,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 24.h),
+          const Divider(),
+          SizedBox(height: 24.h),
+          _buildFeatureRow(Icons.security_rounded, 'onboarding_feature_3'.tr()),
+          SizedBox(height: 16.h),
+          _buildFeatureRow(Icons.analytics_rounded, 'onboarding_feature_2'.tr()),
+          SizedBox(height: 16.h),
+          _buildFeatureRow(Icons.people_alt_rounded, 'onboarding_feature_1'.tr()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureRow(IconData icon, String text) {
+    return Row(
+      children: [
+        Container(
+          padding: EdgeInsets.all(8.w),
+          decoration: BoxDecoration(
+            color: AppColors.success.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: AppColors.success, size: 20.sp),
+        ),
+        SizedBox(width: 16.w),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContactSection(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          'crafted_by'.tr(),
+          style: TextStyle(
+            fontSize: 14.sp,
+            color: Colors.grey,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Text(
+          'App'.tr(),
+          style: TextStyle(
+            fontSize: 20.sp,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        SizedBox(height: 24.h),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildSocialButton(Icons.language_rounded, 'Website', () {}),
+            SizedBox(width: 20.w),
+            _buildSocialButton(Icons.email_rounded, 'Email', () {}),
+            SizedBox(width: 20.w),
+            _buildSocialButton(Icons.message_rounded, 'WhatsApp', () {}),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSocialButton(IconData icon, String tooltip, VoidCallback onTap) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.all(12.w),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 24.sp),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCopyright() {
+    return Column(
+      children: [
+        Text(
+          '© ${DateTime.now().year} Raseed Inc.',
+          style: TextStyle(
+            fontSize: 12.sp,
+            color: Colors.grey,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        SizedBox(height: 4.h),
+        Text(
+          'All rights reserved',
+          style: TextStyle(
+            fontSize: 10.sp,
+            color: Colors.grey.withOpacity(0.7),
+          ),
+        ),
+      ],
     );
   }
 }

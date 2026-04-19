@@ -202,6 +202,8 @@
   "backup": "Backup",
   "restore": "Restore",
   "data_management": "Data Management",
-  "about": "About",
-  "about_description": "Raseed is a comprehensive business management application designed to help small and medium-sized businesses manage their operations efficiently. From customer management to sales tracking and inventory control, Raseed provides all the tools you need to run your business smoothly."
+  "about": "About the App",
+  "about_description": "Raseed is a comprehensive business management application designed to help small and medium-sized businesses manage their operations efficiently. From customer management to sales tracking and inventory control, Raseed provides all the tools you need to run your business smoothly.",
+  "version": "Version",
+  "team_name": "Raseed Team"
 }
