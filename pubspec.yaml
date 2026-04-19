@@ -56,7 +56,7 @@ dev_dependencies:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/images/ar.png"
+  image_path: "assets/images/logo.png"
 
 flutter:
   uses-material-design: true
@@ -67,7 +67,6 @@ flutter:
     - assets/lang/
     - assets/fonts/
     - assets/icons/
-
   fonts:
     - family: Cairo
       fonts:
