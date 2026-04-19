@@ -15,6 +15,7 @@ import '../../features/reports/views/reports_dashboard_screen.dart';
 import '../../features/reports/bloc/reports_bloc.dart';
 import '../di/injection_container.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../features/about/views/about_screen.dart';
 
 /// Application Router
 class AppRouter {
@@ -50,6 +51,8 @@ class AppRouter {
           ),
           settings,
         );
+      case Routes.about:
+        return _buildRoute(const AboutScreen(), settings);
       default:
         return _buildRoute(
           Scaffold(

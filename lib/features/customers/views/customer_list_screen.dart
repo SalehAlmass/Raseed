@@ -65,6 +65,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text('customers'.tr()),
@@ -120,7 +121,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
         child: const Icon(Icons.person_add),
       ),
       bottomNavigationBar: AppBottomNavigationBar(
-        activeIndex: 0,
+        activeIndex: 1,
         onTap: _onNavTap,
       ),
     );
@@ -129,14 +130,17 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
   void _onNavTap(int index) {
     switch (index) {
       case 0:
-        break;
-      case 1:
         Navigator.pushReplacementNamed(context, Routes.home);
         break;
+      case 1:
+        break;
       case 2:
-        Navigator.pushReplacementNamed(context, Routes.reports);
+        Navigator.pushReplacementNamed(context, Routes.sale);
         break;
       case 3:
+        Navigator.pushReplacementNamed(context, Routes.reports);
+        break;
+      case 4:
         Navigator.pushReplacementNamed(context, Routes.store);
         break;
     }

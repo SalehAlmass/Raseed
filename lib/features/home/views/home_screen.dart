@@ -51,6 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
@@ -60,14 +61,25 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
+        leading: CircleAvatar(
+          radius: 40,
+          backgroundImage: AssetImage(             
+            'assets/images/ar.png',
+          ),
+          
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
-            onPressed: () => Navigator.pushNamed(context, '/settings').then((_) => _loadData()),
+            onPressed: () => Navigator.pushNamed(
+              context,
+              '/settings',
+            ).then((_) => _loadData()),
           ),
           IconButton(
             icon: const Icon(Icons.store_mall_directory),
-            onPressed: () => Navigator.pushNamed(context, '/store').then((_) => _loadData()),
+            onPressed: () =>
+                Navigator.pushNamed(context, '/store').then((_) => _loadData()),
           ),
           // IconButton(
           //   icon: const Icon(Icons.delete_forever),
@@ -77,7 +89,6 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.add),
             onPressed: () => _showPaymentDialog(context),
           ),
-        
         ],
       ),
       body: RefreshIndicator(
@@ -104,16 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Navigator.pushNamed(context, Routes.sale);
-          _loadData();
-        },
-        child: const Icon(Icons.add, color: Colors.white),
-        backgroundColor: AppColors.primary,
-        elevation: 8,
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
       bottomNavigationBar: AppBottomNavigationBar(
         activeIndex: _bottomNavIndex,
         onTap: _onNavTap,
@@ -128,12 +130,15 @@ class _HomeScreenState extends State<HomeScreen> {
         Navigator.pushReplacementNamed(context, Routes.home);
         break;
       case 1:
-       Navigator.pushReplacementNamed(context, Routes.customers);
+        Navigator.pushReplacementNamed(context, Routes.customers);
         break;
       case 2:
-        Navigator.pushReplacementNamed(context, Routes.reports);
+        Navigator.pushReplacementNamed(context, Routes.sale);
         break;
       case 3:
+        Navigator.pushReplacementNamed(context, Routes.reports);
+        break;
+      case 4:
         Navigator.pushReplacementNamed(context, Routes.store);
         break;
     }
@@ -147,9 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
             duration: const Duration(milliseconds: 600),
             child: _SummaryCard(
               title: 'daily_sales'.tr(),
-              amounts: {
-                'YER': _summary['daily_sales_yer'] ?? 0.0,
-              },
+              amounts: {'YER': _summary['daily_sales_yer'] ?? 0.0},
               icon: Icons.trending_up_rounded,
               color: AppColors.success,
             ),
@@ -161,9 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
             duration: const Duration(milliseconds: 600),
             child: _SummaryCard(
               title: 'total_debt'.tr(),
-              amounts: {
-                'YER': _summary['total_debt_yer'] ?? 0.0,
-              },
+              amounts: {'YER': _summary['total_debt_yer'] ?? 0.0},
               icon: Icons.account_balance_wallet_rounded,
               color: AppColors.error,
             ),
@@ -211,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _resetAllData() async {
     try {
       await DatabaseHelper.instance.deleteAllData();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -332,7 +333,11 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: Text(selectedType == TransactionType.payment ? 'get_payment'.tr() : 'add_debt'.tr()),
+          title: Text(
+            selectedType == TransactionType.payment
+                ? 'get_payment'.tr()
+                : 'add_debt'.tr(),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -340,22 +345,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 SegmentedButton<TransactionType>(
                   segments: [
                     ButtonSegment(
-                        value: TransactionType.payment, 
-                        label: Text('payment'.tr()), 
-                        icon: const Icon(Icons.payment)
+                      value: TransactionType.payment,
+                      label: Text('payment'.tr()),
+                      icon: const Icon(Icons.payment),
                     ),
                     ButtonSegment(
-                        value: TransactionType.sale, 
-                        label: Text('add_debt'.tr()), 
-                        icon: const Icon(Icons.add_circle_outline)
+                      value: TransactionType.sale,
+                      label: Text('add_debt'.tr()),
+                      icon: const Icon(Icons.add_circle_outline),
                     ),
                   ],
                   selected: {selectedType},
                   onSelectionChanged: (val) {
                     setState(() {
                       selectedType = val.first;
-                      if (selectedType == TransactionType.payment && selectedCustomer != null) {
-                        amountController.text = selectedCustomer!.totalDebt.toStringAsFixed(0);
+                      if (selectedType == TransactionType.payment &&
+                          selectedCustomer != null) {
+                        amountController.text = selectedCustomer!.totalDebt
+                            .toStringAsFixed(0);
                       } else {
                         amountController.clear();
                       }
@@ -367,7 +374,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   onChanged: (c) {
                     setState(() {
                       selectedCustomer = c;
-                      if (selectedType == TransactionType.payment && c != null) {
+                      if (selectedType == TransactionType.payment &&
+                          c != null) {
                         amountController.text = c.totalDebt.toStringAsFixed(0);
                       } else {
                         amountController.clear();
@@ -381,7 +389,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   controller: amountController,
                   decoration: InputDecoration(
                     labelText: 'amount'.tr(),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
                   ),
                   keyboardType: TextInputType.number,
                 ),
@@ -390,7 +400,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   controller: noteController,
                   decoration: InputDecoration(
                     labelText: 'note'.tr(),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
                   ),
                 ),
               ],
@@ -405,10 +417,13 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () async {
                 final amount = double.tryParse(amountController.text) ?? 0;
                 if (amount <= 0 || selectedCustomer == null) return;
-                
+
                 if (noteController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('مطلوب إدخال ملاحظة'), backgroundColor: AppColors.error),
+                    const SnackBar(
+                      content: Text('مطلوب إدخال ملاحظة'),
+                      backgroundColor: AppColors.error,
+                    ),
                   );
                   return;
                 }
@@ -416,14 +431,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (selectedType == TransactionType.payment) {
                   if (selectedCustomer!.totalDebt <= 0) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('no_debt_to_repay'.tr()), backgroundColor: AppColors.error),
+                      SnackBar(
+                        content: Text('no_debt_to_repay'.tr()),
+                        backgroundColor: AppColors.error,
+                      ),
                     );
                     return;
                   }
 
                   if (amount > selectedCustomer!.totalDebt) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('payment_exceeds_debt'.tr()), backgroundColor: AppColors.error),
+                      SnackBar(
+                        content: Text('payment_exceeds_debt'.tr()),
+                        backgroundColor: AppColors.error,
+                      ),
                     );
                     return;
                   }
@@ -450,18 +471,30 @@ class _HomeScreenState extends State<HomeScreen> {
                       } else {
                         currentDebt += amount;
                       }
-                      
-                      final formattedAmount = CurrencyHelper.getFormatter('YER').format(amount);
-                      final formattedDebt = CurrencyHelper.getFormatter('YER').format(currentDebt);
-                      
+
+                      final formattedAmount = CurrencyHelper.getFormatter(
+                        'YER',
+                      ).format(amount);
+                      final formattedDebt = CurrencyHelper.getFormatter(
+                        'YER',
+                      ).format(currentDebt);
+
                       final bool? sendWa = await showDialog<bool>(
                         context: context,
                         builder: (ctx) => AlertDialog(
                           title: const Text('إرسال إشعار عبر واتساب؟'),
-                          content: Text('هل ترغب في إرسال تفاصيل الإجراء للعميل ${selectedCustomer!.name}؟'),
+                          content: Text(
+                            'هل ترغب في إرسال تفاصيل الإجراء للعميل ${selectedCustomer!.name}؟',
+                          ),
                           actions: [
-                            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('لا')),
-                            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('نعم')),
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: const Text('لا'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              child: const Text('نعم'),
+                            ),
                           ],
                         ),
                       );
@@ -469,25 +502,38 @@ class _HomeScreenState extends State<HomeScreen> {
                       if (sendWa == true) {
                         String message = "";
                         if (selectedType == TransactionType.payment) {
-                          message = "مرحباً ${selectedCustomer!.name}،\nشكراً لك.. تم استلام دفعة نقدية (سداد) بمقدار $formattedAmount.\nبذلك يكون الرصيد المتبقي عليكم في تطبيق رصيد هو: $formattedDebt\nنتمنى لكم يوماً سعيداً!";
+                          message =
+                              "مرحباً ${selectedCustomer!.name}،\nشكراً لك.. تم استلام دفعة نقدية (سداد) بمقدار $formattedAmount.\nبذلك يكون الرصيد المتبقي عليكم في تطبيق رصيد هو: $formattedDebt\nنتمنى لكم يوماً سعيداً!";
                         } else {
-                          message = "مرحباً ${selectedCustomer!.name}،\nلقد تم تسجيل دين في حسابكم بمقدار $formattedAmount.\nبذلك يكون إجمالي الرصيد المتبقي عليكم في تطبيق رصيد هو: $formattedDebt\nنتمنى لكم يوماً سعيداً!";
+                          message =
+                              "مرحباً ${selectedCustomer!.name}،\nلقد تم تسجيل دين في حسابكم بمقدار $formattedAmount.\nبذلك يكون إجمالي الرصيد المتبقي عليكم في تطبيق رصيد هو: $formattedDebt\nنتمنى لكم يوماً سعيداً!";
                         }
 
-                        String phone = selectedCustomer!.phone.replaceAll(RegExp(r'[^\d+]'), '');
+                        String phone = selectedCustomer!.phone.replaceAll(
+                          RegExp(r'[^\d+]'),
+                          '',
+                        );
                         if (phone.startsWith('0')) phone = phone.substring(1);
-                        if (!phone.startsWith('+') && !phone.startsWith('00') && !phone.startsWith('967')) {
+                        if (!phone.startsWith('+') &&
+                            !phone.startsWith('00') &&
+                            !phone.startsWith('967')) {
                           phone = '967$phone';
                         }
                         phone = phone.replaceAll('+', '').replaceAll('00', '');
 
-                        final url = "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
+                        final url =
+                            "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
                         try {
-                          await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                          await launchUrl(
+                            Uri.parse(url),
+                            mode: LaunchMode.externalApplication,
+                          );
                         } catch (e) {
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Could not launch WhatsApp')),
+                              const SnackBar(
+                                content: Text('Could not launch WhatsApp'),
+                              ),
                             );
                           }
                         }
@@ -495,16 +541,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
                   }
                 } catch (e) {
-                   if (context.mounted) {
-                     String msg = 'error_occurred'.tr();
-                     if (e.toString().contains('no_debt_to_repay')) msg = 'no_debt_to_repay'.tr();
-                     if (e.toString().contains('payment_exceeds_debt')) msg = 'payment_exceeds_debt'.tr();
-                     if (e.toString().contains('over_limit')) msg = 'over_limit_error'.tr();
-                     
-                     ScaffoldMessenger.of(context).showSnackBar(
-                       SnackBar(content: Text(msg), backgroundColor: AppColors.error),
-                     );
-                   }
+                  if (context.mounted) {
+                    String msg = 'error_occurred'.tr();
+                    if (e.toString().contains('no_debt_to_repay'))
+                      msg = 'no_debt_to_repay'.tr();
+                    if (e.toString().contains('payment_exceeds_debt'))
+                      msg = 'payment_exceeds_debt'.tr();
+                    if (e.toString().contains('over_limit'))
+                      msg = 'over_limit_error'.tr();
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(msg),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
                 }
               },
               child: Text('save'.tr()),
@@ -519,11 +571,8 @@ class _HomeScreenState extends State<HomeScreen> {
 class _CustomerDropdown extends StatefulWidget {
   final Function(Customer?) onChanged;
   final bool isRequired;
-  
-  const _CustomerDropdown({
-    required this.onChanged,
-    this.isRequired = false,
-  });
+
+  const _CustomerDropdown({required this.onChanged, this.isRequired = false});
 
   @override
   State<_CustomerDropdown> createState() => _CustomerDropdownState();
@@ -554,10 +603,14 @@ class _CustomerDropdownState extends State<_CustomerDropdown> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
       ),
       items: _customers
-          .map((c) => DropdownMenuItem(
-                value: c, 
-                child: Text('${c.name} - ${CurrencyHelper.getFormatter('YER').format(c.totalDebt)} YER'),
-              ))
+          .map(
+            (c) => DropdownMenuItem(
+              value: c,
+              child: Text(
+                '${c.name} - ${CurrencyHelper.getFormatter('YER').format(c.totalDebt)} YER',
+              ),
+            ),
+          )
           .toList(),
       onChanged: (val) {
         setState(() => _selected = val);
@@ -678,17 +731,23 @@ class _ProductDropdownState extends State<_ProductDropdown> {
             isExpanded: true,
             decoration: InputDecoration(
               labelText: 'select_product'.tr(),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
             ),
             items: [
               DropdownMenuItem<Product>(
                 value: null,
                 child: Text('none_manual'.tr()),
               ),
-              ..._products.map((p) => DropdownMenuItem(
-                    value: p,
-                    child: Text('${p.name} - ${CurrencyHelper.getFormatter(p.currency).format(p.price)} ${p.currency}'),
-                  )),
+              ..._products.map(
+                (p) => DropdownMenuItem(
+                  value: p,
+                  child: Text(
+                    '${p.name} - ${CurrencyHelper.getFormatter(p.currency).format(p.price)} ${p.currency}',
+                  ),
+                ),
+              ),
             ],
             onChanged: (val) {
               setState(() => _selected = val);
@@ -714,7 +773,10 @@ class _ProductDropdownState extends State<_ProductDropdown> {
               } else {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('product_not_found'.tr()), backgroundColor: AppColors.error),
+                    SnackBar(
+                      content: Text('product_not_found'.tr()),
+                      backgroundColor: AppColors.error,
+                    ),
                   );
                 }
               }
@@ -723,14 +785,15 @@ class _ProductDropdownState extends State<_ProductDropdown> {
           icon: const Icon(Icons.qr_code_scanner),
           style: IconButton.styleFrom(
             backgroundColor: AppColors.primary,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
           ),
         ),
       ],
     );
   }
 }
-
 
 class _SummaryCard extends StatelessWidget {
   final String title;
@@ -755,10 +818,7 @@ class _SummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey.withOpacity(0.1), width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -778,11 +838,7 @@ class _SummaryCard extends StatelessWidget {
                   color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10.r),
                 ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 20.sp,
-                ),
+                child: Icon(icon, color: color, size: 20.sp),
               ),
               SizedBox(width: 10.w),
               Expanded(
@@ -824,4 +880,3 @@ class _SummaryCard extends StatelessWidget {
     );
   }
 }
-

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:rseed/core/routes/routes.dart';
+import 'package:rseed/core/widgets/app_bottom_navigation_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/di/injection_container.dart';
 import '../../../core/models/app_transaction.dart';
@@ -217,7 +219,11 @@ class _SaleScreenState extends State<SaleScreen> {
       }
 
       if (mounted) {
-        Navigator.pop(context, true);
+        setState(() {
+          _cart.clear();
+          _selectedCustomer = null;
+          _paidAmountController.clear();
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('sale_completed_success'.tr()), backgroundColor: AppColors.success),
         );
@@ -244,6 +250,7 @@ class _SaleScreenState extends State<SaleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       appBar: AppBar(
         title: Text('new_sale'.tr()),
         actions: [
@@ -259,6 +266,26 @@ class _SaleScreenState extends State<SaleScreen> {
           Expanded(child: _buildCartList()),
           _buildCheckoutSection(),
         ],
+      ),
+      bottomNavigationBar: AppBottomNavigationBar(
+        activeIndex: 2,
+        onTap: (index) {
+          if (index == 2) return;
+          switch (index) {
+            case 0:
+              Navigator.pushReplacementNamed(context, Routes.home);
+              break;
+            case 1:
+              Navigator.pushReplacementNamed(context, Routes.customers);
+              break;
+            case 3:
+              Navigator.pushReplacementNamed(context, Routes.reports);
+              break;
+            case 4:
+              Navigator.pushReplacementNamed(context, Routes.store);
+              break;
+          }
+        },
       ),
     );
   }

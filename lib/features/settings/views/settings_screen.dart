@@ -5,6 +5,7 @@ import '../../../core/di/injection_container.dart';
 import '../../../core/services/settings_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/models/app_settings.dart';
+import '../../../core/routes/routes.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -98,6 +99,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildSectionHeader('language'.tr()),
                 SizedBox(height: 15.h),
                 _buildLanguageDropdown(context),
+                SizedBox(height: 30.h),
+                _buildSectionHeader('about'.tr()),
+                SizedBox(height: 15.h),
+                _buildAboutTile(context),
+
                 SizedBox(height: 30.h),
                 _buildSectionHeader('advanced'.tr()),
                 SwitchListTile(
@@ -212,6 +218,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
             }
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildAboutTile(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(15.r),
+      ),
+      child: ListTile(
+        leading: Icon(Icons.info_outline, color: AppColors.primary),
+        title: Text('about'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600)),
+        trailing: Icon(Icons.arrow_forward_ios, color: AppColors.textSecondary, size: 16.sp),
+        onTap: () {
+          Navigator.of(context).pushNamed(Routes.about);
+        },
       ),
     );
   }

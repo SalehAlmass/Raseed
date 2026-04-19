@@ -41,6 +41,7 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text('reports'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -73,7 +74,7 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
         },
       ),
       bottomNavigationBar: AppBottomNavigationBar(
-        activeIndex: 2,
+        activeIndex: 3,
         onTap: _onNavTap,
       ),
     );
@@ -82,14 +83,17 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
   void _onNavTap(int index) {
     switch (index) {
       case 0:
-        Navigator.pushReplacementNamed(context, Routes.customers);
-        break;
-      case 1:
         Navigator.pushReplacementNamed(context, Routes.home);
         break;
+      case 1:
+        Navigator.pushReplacementNamed(context, Routes.customers);
+        break;
       case 2:
+        Navigator.pushReplacementNamed(context, Routes.sale);
         break;
       case 3:
+        break;
+      case 4:
         Navigator.pushReplacementNamed(context, Routes.store);
         break;
     }

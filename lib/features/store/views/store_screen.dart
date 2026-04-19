@@ -70,15 +70,18 @@ class _StoreScreenState extends State<StoreScreen> {
   void _onNavTap(int index) {
     switch (index) {
       case 0:
-        Navigator.pushReplacementNamed(context, Routes.customers);
-        break;
-      case 1:
         Navigator.pushReplacementNamed(context, Routes.home);
         break;
+      case 1:
+        Navigator.pushReplacementNamed(context, Routes.customers);
+        break;
       case 2:
-        Navigator.pushReplacementNamed(context, Routes.reports);
+        Navigator.pushReplacementNamed(context, Routes.sale);
         break;
       case 3:
+        Navigator.pushReplacementNamed(context, Routes.reports);
+        break;
+      case 4:
         break;
     }
   }
@@ -96,6 +99,7 @@ class _StoreScreenState extends State<StoreScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text('store'.tr()),
@@ -147,7 +151,7 @@ class _StoreScreenState extends State<StoreScreen> {
         child: const Icon(Icons.add),
       ),
       bottomNavigationBar: AppBottomNavigationBar(
-        activeIndex: 3,
+        activeIndex: 4,
         onTap: _onNavTap,
       ),
     );
