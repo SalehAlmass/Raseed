@@ -76,7 +76,9 @@ class _StoreScreenState extends State<StoreScreen> {
         Navigator.pushReplacementNamed(context, Routes.customers);
         break;
       case 2:
-        Navigator.pushReplacementNamed(context, Routes.sale);
+        Navigator.pushNamed(context, Routes.sale).then((result) {
+          if (result == true) _loadProducts();
+        });
         break;
       case 3:
         Navigator.pushReplacementNamed(context, Routes.reports);

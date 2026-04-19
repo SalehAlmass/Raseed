@@ -89,7 +89,11 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
         Navigator.pushReplacementNamed(context, Routes.customers);
         break;
       case 2:
-        Navigator.pushReplacementNamed(context, Routes.sale);
+        Navigator.pushNamed(context, Routes.sale).then((result) {
+          if (result == true) {
+            context.read<ReportsBloc>().add(LoadReportsEvent(_filter));
+          }
+        });
         break;
       case 3:
         break;

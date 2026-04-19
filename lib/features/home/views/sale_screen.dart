@@ -219,11 +219,7 @@ class _SaleScreenState extends State<SaleScreen> {
       }
 
       if (mounted) {
-        setState(() {
-          _cart.clear();
-          _selectedCustomer = null;
-          _paidAmountController.clear();
-        });
+        Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('sale_completed_success'.tr()), backgroundColor: AppColors.success),
         );
@@ -266,26 +262,6 @@ class _SaleScreenState extends State<SaleScreen> {
           Expanded(child: _buildCartList()),
           _buildCheckoutSection(),
         ],
-      ),
-      bottomNavigationBar: AppBottomNavigationBar(
-        activeIndex: 2,
-        onTap: (index) {
-          if (index == 2) return;
-          switch (index) {
-            case 0:
-              Navigator.pushReplacementNamed(context, Routes.home);
-              break;
-            case 1:
-              Navigator.pushReplacementNamed(context, Routes.customers);
-              break;
-            case 3:
-              Navigator.pushReplacementNamed(context, Routes.reports);
-              break;
-            case 4:
-              Navigator.pushReplacementNamed(context, Routes.store);
-              break;
-          }
-        },
       ),
     );
   }

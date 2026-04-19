@@ -135,7 +135,9 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       case 1:
         break;
       case 2:
-        Navigator.pushReplacementNamed(context, Routes.sale);
+        Navigator.pushNamed(context, Routes.sale).then((result) {
+          if (result == true) _loadCustomers();
+        });
         break;
       case 3:
         Navigator.pushReplacementNamed(context, Routes.reports);
