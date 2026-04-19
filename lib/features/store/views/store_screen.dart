@@ -7,6 +7,8 @@ import '../../../core/services/product_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/utils/currency_helper.dart';
 import 'widgets/add_edit_product_dialog.dart';
+import '../../../core/routes/routes.dart';
+import '../../../core/widgets/app_bottom_navigation_bar.dart';
 import 'widgets/sell_product_dialog.dart';
 
 class StoreScreen extends StatefulWidget {
@@ -62,6 +64,22 @@ class _StoreScreenState extends State<StoreScreen> {
     );
     if (result == true) {
       _loadProducts();
+    }
+  }
+
+  void _onNavTap(int index) {
+    switch (index) {
+      case 0:
+        Navigator.pushReplacementNamed(context, Routes.customers);
+        break;
+      case 1:
+        Navigator.pushReplacementNamed(context, Routes.home);
+        break;
+      case 2:
+        Navigator.pushReplacementNamed(context, Routes.reports);
+        break;
+      case 3:
+        break;
     }
   }
 
@@ -127,6 +145,10 @@ class _StoreScreenState extends State<StoreScreen> {
         onPressed: () => _showAddEditDialog(),
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add),
+      ),
+      bottomNavigationBar: AppBottomNavigationBar(
+        activeIndex: 3,
+        onTap: _onNavTap,
       ),
     );
   }

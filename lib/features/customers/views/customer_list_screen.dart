@@ -7,7 +7,9 @@ import '../../../core/theme/colors.dart';
 import '../../../core/models/customer.dart';
 import '../../../core/services/settings_service.dart';
 import '../../../core/models/app_settings.dart';
+import '../../../core/routes/routes.dart';
 import '../../../core/utils/currency_helper.dart';
+import '../../../core/widgets/app_bottom_navigation_bar.dart';
 
 class CustomerListScreen extends StatefulWidget {
   const CustomerListScreen({super.key});
@@ -117,7 +119,27 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.person_add),
       ),
+      bottomNavigationBar: AppBottomNavigationBar(
+        activeIndex: 0,
+        onTap: _onNavTap,
+      ),
     );
+  }
+
+  void _onNavTap(int index) {
+    switch (index) {
+      case 0:
+        break;
+      case 1:
+        Navigator.pushReplacementNamed(context, Routes.home);
+        break;
+      case 2:
+        Navigator.pushReplacementNamed(context, Routes.reports);
+        break;
+      case 3:
+        Navigator.pushReplacementNamed(context, Routes.store);
+        break;
+    }
   }
 
   void _showAddCustomerDialog(BuildContext context) {

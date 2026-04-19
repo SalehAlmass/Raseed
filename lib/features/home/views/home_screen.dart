@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../../core/di/injection_container.dart';
@@ -15,6 +14,7 @@ import '../../../core/services/product_service.dart';
 import '../../../core/widgets/barcode_scanner_view.dart';
 import '../../../core/utils/currency_helper.dart';
 import '../../../core/routes/routes.dart';
+import '../../../core/widgets/app_bottom_navigation_bar.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,13 +29,6 @@ class _HomeScreenState extends State<HomeScreen> {
   List<AppTransaction> _recentTransactions = [];
   bool _isLoading = true;
   int _bottomNavIndex = 0;
-
-  final List<IconData> _navIcons = [
-    Icons.people,
-    Icons.account_balance_wallet,
-    Icons.analytics_outlined,
-    Icons.store_mall_directory,
-  ];
 
   @override
   void initState() {
@@ -69,11 +62,11 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
-            onPressed: () => Navigator.pushNamed(context, '/settings'),
+            onPressed: () => Navigator.pushNamed(context, '/settings').then((_) => _loadData()),
           ),
           IconButton(
             icon: const Icon(Icons.store_mall_directory),
-            onPressed: () => Navigator.pushNamed(context, '/store'),
+            onPressed: () => Navigator.pushNamed(context, '/store').then((_) => _loadData()),
           ),
           IconButton(
             icon: const Icon(Icons.delete_forever),
@@ -108,25 +101,17 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final result = await Navigator.pushNamed(context, Routes.sale);
-          if (result == true) _loadData();
+          await Navigator.pushNamed(context, Routes.sale);
+          _loadData();
         },
         child: const Icon(Icons.add, color: Colors.white),
         backgroundColor: AppColors.primary,
         elevation: 8,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: AnimatedBottomNavigationBar(
-        icons: _navIcons,
+      bottomNavigationBar: AppBottomNavigationBar(
         activeIndex: _bottomNavIndex,
-        gapLocation: GapLocation.center,
-        notchSmoothness: NotchSmoothness.softEdge,
-        leftCornerRadius: 32,
-        rightCornerRadius: 32,
-        activeColor: AppColors.primary,
-        inactiveColor: Colors.grey,
         onTap: _onNavTap,
-        splashColor: AppColors.primary.withOpacity(0.3),
       ),
     );
   }
@@ -135,16 +120,16 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _bottomNavIndex = index);
     switch (index) {
       case 0:
-        Navigator.pushNamed(context, Routes.customers);
+        Navigator.pushReplacementNamed(context, Routes.customers);
         break;
       case 1:
         _showPaymentDialog(context);
         break;
       case 2:
-        Navigator.pushNamed(context, Routes.reports);
+        Navigator.pushReplacementNamed(context, Routes.reports);
         break;
       case 3:
-        Navigator.pushNamed(context, Routes.store);
+        Navigator.pushReplacementNamed(context, Routes.store);
         break;
     }
   }
@@ -333,32 +318,62 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showPaymentDialog(BuildContext context) {
-    // New simplified dialog for standalone customer payments (collections)
     final amountController = TextEditingController();
+    final noteController = TextEditingController();
     Customer? selectedCustomer;
+    TransactionType selectedType = TransactionType.payment;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: Text('get_payment'.tr()),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _CustomerDropdown(
-                onChanged: (c) => setState(() => selectedCustomer = c),
-                isRequired: true,
-              ),
-              SizedBox(height: 15.h),
-              TextField(
-                controller: amountController,
-                decoration: InputDecoration(
-                  labelText: 'amount'.tr(),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+          title: Text(selectedType == TransactionType.payment ? 'get_payment'.tr() : 'add_debt'.tr()),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SegmentedButton<TransactionType>(
+                  segments: [
+                    ButtonSegment(
+                        value: TransactionType.payment, 
+                        label: Text('payment'.tr()), 
+                        icon: const Icon(Icons.payment)
+                    ),
+                    ButtonSegment(
+                        value: TransactionType.sale, 
+                        label: Text('add_debt'.tr()), 
+                        icon: const Icon(Icons.add_circle_outline)
+                    ),
+                  ],
+                  selected: {selectedType},
+                  onSelectionChanged: (val) {
+                    setState(() => selectedType = val.first);
+                  },
                 ),
-                keyboardType: TextInputType.number,
-              ),
-            ],
+                SizedBox(height: 20.h),
+                _CustomerDropdown(
+                  onChanged: (c) => setState(() => selectedCustomer = c),
+                  isRequired: true,
+                ),
+                SizedBox(height: 15.h),
+                TextField(
+                  controller: amountController,
+                  decoration: InputDecoration(
+                    labelText: 'amount'.tr(),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                SizedBox(height: 15.h),
+                TextField(
+                  controller: noteController,
+                  decoration: InputDecoration(
+                    labelText: 'note'.tr(),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                  ),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -369,27 +384,36 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () async {
                 final amount = double.tryParse(amountController.text) ?? 0;
                 if (amount <= 0 || selectedCustomer == null) return;
-
-                if (selectedCustomer!.totalDebt <= 0) {
+                
+                if (noteController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('no_debt_to_repay'.tr()), backgroundColor: AppColors.error),
+                    const SnackBar(content: Text('مطلوب إدخال ملاحظة'), backgroundColor: AppColors.error),
                   );
                   return;
                 }
 
-                if (amount > selectedCustomer!.totalDebt) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('payment_exceeds_debt'.tr()), backgroundColor: AppColors.error),
-                  );
-                  return;
+                if (selectedType == TransactionType.payment) {
+                  if (selectedCustomer!.totalDebt <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('no_debt_to_repay'.tr()), backgroundColor: AppColors.error),
+                    );
+                    return;
+                  }
+
+                  if (amount > selectedCustomer!.totalDebt) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('payment_exceeds_debt'.tr()), backgroundColor: AppColors.error),
+                    );
+                    return;
+                  }
                 }
 
                 final tx = AppTransaction(
                   customerId: selectedCustomer!.id,
-                  type: TransactionType.payment,
+                  type: selectedType,
                   amount: amount,
                   date: DateTime.now(),
-                  note: 'Payment received',
+                  note: noteController.text.trim(),
                 );
 
                 try {
@@ -403,6 +427,7 @@ class _HomeScreenState extends State<HomeScreen> {
                      String msg = 'error_occurred'.tr();
                      if (e.toString().contains('no_debt_to_repay')) msg = 'no_debt_to_repay'.tr();
                      if (e.toString().contains('payment_exceeds_debt')) msg = 'payment_exceeds_debt'.tr();
+                     if (e.toString().contains('over_limit')) msg = 'over_limit_error'.tr();
                      
                      ScaffoldMessenger.of(context).showSnackBar(
                        SnackBar(content: Text(msg), backgroundColor: AppColors.error),

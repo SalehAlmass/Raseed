@@ -11,7 +11,11 @@ class BarcodeScannerView extends StatefulWidget {
 }
 
 class _BarcodeScannerViewState extends State<BarcodeScannerView> {
-  final MobileScannerController controller = MobileScannerController();
+  final MobileScannerController controller = MobileScannerController(
+    detectionSpeed: DetectionSpeed.noDuplicates,
+    returnImage: false,
+  );
+  bool _isScanned = false;
 
   @override
   Widget build(BuildContext context) {
@@ -38,10 +42,14 @@ class _BarcodeScannerViewState extends State<BarcodeScannerView> {
           MobileScanner(
             controller: controller,
             onDetect: (capture) {
+              if (_isScanned) return;
               final List<Barcode> barcodes = capture.barcodes;
               if (barcodes.isNotEmpty) {
                 final String? code = barcodes.first.rawValue;
                 if (code != null) {
+                  _isScanned = true;
+                  // Stop the camera gracefully to release buffer locks before popping
+                  controller.stop();
                   Navigator.pop(context, code);
                 }
               }

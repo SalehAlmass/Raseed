@@ -31,7 +31,7 @@ class _SaleScreenState extends State<SaleScreen> {
 
   final List<TransactionItem> _cart = [];
   final _paidAmountController = TextEditingController();
-  TransactionType _selectedType = TransactionType.sale;
+
   int _searchKey = 0;
   Customer? _selectedCustomer;
   List<Product> _products = [];
@@ -41,7 +41,7 @@ class _SaleScreenState extends State<SaleScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedType = widget.initialType;
+
     _loadData();
   }
 
@@ -84,10 +84,7 @@ class _SaleScreenState extends State<SaleScreen> {
           currency: product.currency,
         ));
       }
-      // Auto-update paid amount if it was empty or matching previous total
-      if (_paidAmountController.text.isEmpty || _selectedType == TransactionType.sale) {
-         _paidAmountController.text = _totalAmount.toStringAsFixed(0);
-      }
+      _paidAmountController.text = _totalAmount.toStringAsFixed(0);
     });
   }
 
@@ -107,9 +104,7 @@ class _SaleScreenState extends State<SaleScreen> {
           currency: item.currency,
         );
       }
-      if (_selectedType == TransactionType.sale) {
-         _paidAmountController.text = _totalAmount.toStringAsFixed(0);
-      }
+      _paidAmountController.text = _totalAmount.toStringAsFixed(0);
     });
   }
 
@@ -143,7 +138,7 @@ class _SaleScreenState extends State<SaleScreen> {
        return;
     }
 
-    final bool isCustomerRequired = _selectedType == TransactionType.payment || paid < _totalAmount;
+    final bool isCustomerRequired = paid < _totalAmount;
     if (isCustomerRequired && _selectedCustomer == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('please_select_customer'.tr()), backgroundColor: AppColors.error),
@@ -153,10 +148,12 @@ class _SaleScreenState extends State<SaleScreen> {
 
     setState(() => _isLoading = true);
     try {
+      final transactionAmount = _totalAmount;
+      
       final transaction = AppTransaction(
         customerId: _selectedCustomer?.id,
-        type: _selectedType,
-        amount: _totalAmount,
+        type: TransactionType.sale,
+        amount: transactionAmount,
         paidAmount: paid,
         date: DateTime.now(),
         items: _cart,
@@ -166,11 +163,7 @@ class _SaleScreenState extends State<SaleScreen> {
       
       if (mounted && _selectedCustomer != null && _selectedCustomer!.phone.isNotEmpty) {
         double newDebt = _selectedCustomer!.totalDebt;
-        if (_selectedType == TransactionType.sale) {
-          newDebt += (_totalAmount - paid);
-        } else {
-          newDebt -= paid;
-        }
+        newDebt += (_totalAmount - paid);
 
         final bool? sendWa = await showDialog<bool>(
           context: context,
@@ -211,13 +204,9 @@ class _SaleScreenState extends State<SaleScreen> {
           final String formattedTotal = CurrencyHelper.getFormatter('YER').format(_totalAmount);
 
           String message = "مرحباً ${_selectedCustomer!.name}،\n";
-          if (_selectedType == TransactionType.sale) {
-             message += "لقد تم تسجيل فاتورة مشتريات بقيمة $formattedTotal";
-             if (paid > 0) message += "، وسداد مبلغ $formattedPaid";
-             message += ".\n";
-          } else {
-             message += "لقد تم تسجيل سند قبض (سداد) بمبلغ $formattedPaid.\n";
-          }
+          message += "لقد تم تسجيل فاتورة مشتريات بقيمة $formattedTotal";
+          if (paid > 0) message += "، وسداد مبلغ $formattedPaid";
+          message += ".\n";
           message += "\nبذلك إجمالي الرصيد المتبقي عليكم في تطبيق رصيد هو: $yerBal\nنتمنى لكم يوماً سعيداً!";
 
           final url = "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
@@ -238,8 +227,10 @@ class _SaleScreenState extends State<SaleScreen> {
         String msg = 'error_occurred'.tr();
         final errorStr = e.toString();
         if (errorStr.contains('over_limit')) msg = 'over_limit_error'.tr();
-        if (errorStr.contains('uninsufficient_stock')) msg = 'insufficient_stock_error'.tr();
+        if (errorStr.contains('insufficient_stock')) msg = 'insufficient_stock_error'.tr();
         if (errorStr.contains('amount_exceeds_total')) msg = 'amount_exceeds_total'.tr();
+        if (errorStr.contains('no_debt_to_repay')) msg = 'ليس على العميل الحد الأدنى من الديون לסدادها';
+        if (errorStr.contains('payment_exceeds_debt')) msg = 'المبلغ المدفوع يتجاوز إجمالي الدين الفعلي للعميل';
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(msg), backgroundColor: AppColors.error),
@@ -380,6 +371,8 @@ class _SaleScreenState extends State<SaleScreen> {
 
   Widget _buildCheckoutSection() {
     final isOverpaid = _paidAmount > _totalAmount;
+    
+    bool isButtonDisabled = _isLoading || _cart.isEmpty || isOverpaid;
 
     return Container(
       padding: EdgeInsets.all(20.w),
@@ -394,37 +387,28 @@ class _SaleScreenState extends State<SaleScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SegmentedButton<TransactionType>(
-              segments: [
-                ButtonSegment(value: TransactionType.sale, label: Text('sale'.tr()), icon: const Icon(Icons.shopping_cart)),
-                ButtonSegment(value: TransactionType.payment, label: Text('payment'.tr()), icon: const Icon(Icons.payment)),
-              ],
-              selected: {_selectedType},
-              onSelectionChanged: (val) {
-                 setState(() {
-                    _selectedType = val.first;
-                    if (_selectedType == TransactionType.sale) {
-                       _paidAmountController.text = _totalAmount.toStringAsFixed(0);
-                    } else if (_paidAmountController.text == _totalAmount.toStringAsFixed(0)) {
-                       _paidAmountController.text = '0';
-                    }
-                 });
-              },
-            ),
-            SizedBox(height: 16.h),
-            DropdownButtonFormField<Customer>(
-              value: _selectedCustomer,
-              decoration: InputDecoration(
-                labelText: (_selectedType == TransactionType.payment || _paidAmount < _totalAmount)
-                    ? '${'select_customer'.tr()} *'
-                    : '${'select_customer'.tr()} (اختياري)',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
-              ),
-              items: _customers.map((c) => DropdownMenuItem(
-                value: c,
-                child: Text('${c.name} (${CurrencyHelper.getFormatter("YER").format(c.totalDebt)})'),
-              )).toList(),
-              onChanged: (val) => setState(() => _selectedCustomer = val),
+
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return DropdownMenu<Customer>(
+                  initialSelection: _selectedCustomer,
+                  width: constraints.maxWidth,
+                  enableFilter: true,
+                  requestFocusOnTap: true,
+                  leadingIcon: const Icon(Icons.search),
+                  label: Text(_paidAmount < _totalAmount
+                      ? '${'select_customer'.tr()} *'
+                      : '${'select_customer'.tr()} (اختياري)'),
+                  inputDecorationTheme: InputDecorationTheme(
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                  ),
+                  dropdownMenuEntries: _customers.map((c) => DropdownMenuEntry<Customer>(
+                    value: c,
+                    label: '${c.name} (${CurrencyHelper.getFormatter("YER").format(c.totalDebt)})',
+                  )).toList(),
+                  onSelected: (val) => setState(() => _selectedCustomer = val),
+                );
+              }
             ),
             SizedBox(height: 16.h),
             Row(
@@ -460,7 +444,7 @@ class _SaleScreenState extends State<SaleScreen> {
               width: double.infinity,
               height: 54.h,
               child: ElevatedButton(
-                onPressed: _isLoading || _cart.isEmpty || isOverpaid ? null : _completeSale,
+                onPressed: isButtonDisabled ? null : _completeSale,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,

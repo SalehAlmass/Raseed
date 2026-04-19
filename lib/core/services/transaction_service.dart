@@ -196,7 +196,7 @@ class TransactionService {
     
     Future<double> getDaily(String curr) async {
       final res = await db.rawQuery(
-        "SELECT SUM(amount) as total FROM transactions WHERE date >= ? AND type IN ('cash', 'debt') AND currency = ?",
+        "SELECT SUM(amount) as total FROM transactions WHERE date >= ? AND type = 'sale' AND is_void = 0 AND currency = ?",
         [todayStart, curr]
       );
       return (res.first['total'] as num?)?.toDouble() ?? 0.0;

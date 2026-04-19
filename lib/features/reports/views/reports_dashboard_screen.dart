@@ -11,6 +11,8 @@ import '../bloc/reports_event.dart';
 import '../bloc/reports_state.dart';
 import '../services/export_service.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/routes/routes.dart';
+import '../../../../core/widgets/app_bottom_navigation_bar.dart';
 import 'widgets/report_charts.dart';
 
 class ReportsDashboardScreen extends StatefulWidget {
@@ -70,7 +72,27 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
           return const SizedBox.shrink();
         },
       ),
+      bottomNavigationBar: AppBottomNavigationBar(
+        activeIndex: 2,
+        onTap: _onNavTap,
+      ),
     );
+  }
+
+  void _onNavTap(int index) {
+    switch (index) {
+      case 0:
+        Navigator.pushReplacementNamed(context, Routes.customers);
+        break;
+      case 1:
+        Navigator.pushReplacementNamed(context, Routes.home);
+        break;
+      case 2:
+        break;
+      case 3:
+        Navigator.pushReplacementNamed(context, Routes.store);
+        break;
+    }
   }
 
   void _handleExport(BuildContext context, String type) async {
