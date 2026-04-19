@@ -85,10 +85,12 @@ class _HomeScreenState extends State<HomeScreen> {
           //   icon: const Icon(Icons.delete_forever),
           //   onPressed: () => _showResetDataConfirmation(context),
           // ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _showPaymentDialog(context),
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.add),
+          //   onPressed: () =>
+          //   Navigator.pushNamed(context, '/sale').then((_) => _loadData()),
+          //   // onPressed: () => _showPaymentDialog(context),
+          // ),
         ],
       ),
       body: RefreshIndicator(
@@ -101,13 +103,36 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _buildSummaryCards(),
               SizedBox(height: 30.h),
-              Text(
-                'recent_activity'.tr(),
-                style: TextStyle(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [                 
+                  Text(
+                    'recent_activity'.tr(),
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () => Navigator.pushNamed(context, '/sale'),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      child: Text(
+                        'new_sale'.tr(),
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               SizedBox(height: 15.h),
               _buildRecentActivityList(),
@@ -133,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Navigator.pushReplacementNamed(context, Routes.customers);
         break;
       case 2:
-        Navigator.pushReplacementNamed(context, Routes.sale);
+         _showPaymentDialog(context);
         break;
       case 3:
         Navigator.pushReplacementNamed(context, Routes.reports);
