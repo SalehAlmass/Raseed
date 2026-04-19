@@ -143,7 +143,8 @@ class _SaleScreenState extends State<SaleScreen> {
        return;
     }
 
-    if ((_selectedType == TransactionType.sale || paid < _totalAmount) && _selectedCustomer == null) {
+    final bool isCustomerRequired = _selectedType == TransactionType.payment || paid < _totalAmount;
+    if (isCustomerRequired && _selectedCustomer == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('please_select_customer'.tr()), backgroundColor: AppColors.error),
       );
@@ -411,21 +412,21 @@ class _SaleScreenState extends State<SaleScreen> {
               },
             ),
             SizedBox(height: 16.h),
-            if (_selectedType == TransactionType.sale || _paidAmount < _totalAmount) ...[
-              DropdownButtonFormField<Customer>(
-                value: _selectedCustomer,
-                decoration: InputDecoration(
-                  labelText: 'select_customer'.tr(),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
-                ),
-                items: _customers.map((c) => DropdownMenuItem(
-                  value: c,
-                  child: Text('${c.name} (${CurrencyHelper.getFormatter("YER").format(c.totalDebt)})'),
-                )).toList(),
-                onChanged: (val) => setState(() => _selectedCustomer = val),
+            DropdownButtonFormField<Customer>(
+              value: _selectedCustomer,
+              decoration: InputDecoration(
+                labelText: (_selectedType == TransactionType.payment || _paidAmount < _totalAmount)
+                    ? '${'select_customer'.tr()} *'
+                    : '${'select_customer'.tr()} (اختياري)',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
               ),
-              SizedBox(height: 16.h),
-            ],
+              items: _customers.map((c) => DropdownMenuItem(
+                value: c,
+                child: Text('${c.name} (${CurrencyHelper.getFormatter("YER").format(c.totalDebt)})'),
+              )).toList(),
+              onChanged: (val) => setState(() => _selectedCustomer = val),
+            ),
+            SizedBox(height: 16.h),
             Row(
               children: [
                 Expanded(
