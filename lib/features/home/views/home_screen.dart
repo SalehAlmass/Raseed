@@ -12,6 +12,9 @@ import '../../../core/models/app_transaction.dart';
 import '../../../core/models/customer.dart';
 import '../../../core/models/product.dart';
 import '../../../core/services/product_service.dart';
+import '../../../core/services/subscription_service.dart';
+import '../../../core/models/app_feature.dart';
+import '../../../core/widgets/subscription_dialog.dart';
 import '../../../core/widgets/barcode_scanner_view.dart';
 import '../../../core/utils/currency_helper.dart';
 import '../../../core/routes/routes.dart';
@@ -115,7 +118,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   InkWell(
-                    onTap: () => Navigator.pushNamed(context, '/sale'),
+                    onTap: () {
+                      if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
+                        Navigator.pushNamed(context, '/sale');
+                      } else {
+                        SubscriptionDialog.show(context);
+                      }
+                    },
                     child: Container(
                       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                       decoration: BoxDecoration(
@@ -161,7 +170,11 @@ class _HomeScreenState extends State<HomeScreen> {
          _showPaymentDialog(context);
         break;
       case 3:
-        Navigator.pushReplacementNamed(context, Routes.reports);
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.viewReports)) {
+          Navigator.pushReplacementNamed(context, Routes.reports);
+        } else {
+          SubscriptionDialog.show(context);
+        }
         break;
       case 4:
         Navigator.pushReplacementNamed(context, Routes.store);

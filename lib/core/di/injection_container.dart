@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
@@ -11,6 +12,7 @@ import '../services/transaction_service.dart';
 import '../services/settings_service.dart';
 import '../services/auth_service.dart';
 import '../services/product_service.dart';
+import '../services/subscription_service.dart';
 import '../../features/reports/services/report_service.dart';
 import '../../features/reports/services/export_service.dart';
 import '../../features/reports/bloc/reports_bloc.dart';
@@ -60,8 +62,12 @@ Future<void> init() async {
   sl.registerLazySingleton<TransactionService>(() => TransactionService(sl<CustomerService>(), sl<SettingsService>()));
   sl.registerLazySingleton(() => SettingsService());
 
-  sl.registerLazySingleton<AuthService>(() => AuthService());
+  sl.registerLazySingleton<AuthService>(() => AuthService(sl<SubscriptionService>()));
   sl.registerLazySingleton<ProductService>(() => ProductService(sl<TransactionService>()));
+
+  final sharedPrefs = await SharedPreferences.getInstance();
+  sl.registerLazySingleton<SharedPreferences>(() => sharedPrefs);
+  sl.registerLazySingleton<SubscriptionService>(() => SubscriptionService(sl<SharedPreferences>()));
 
   //! Reports
   sl.registerLazySingleton(() => ReportService());

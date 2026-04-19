@@ -6,6 +6,9 @@ import '../../../core/services/customer_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/models/customer.dart';
 import '../../../core/services/settings_service.dart';
+import '../../../core/services/subscription_service.dart';
+import '../../../core/models/app_feature.dart';
+import '../../../core/widgets/subscription_dialog.dart';
 import '../../../core/models/app_settings.dart';
 import '../../../core/routes/routes.dart';
 import '../../../core/utils/currency_helper.dart';
@@ -116,7 +119,13 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddCustomerDialog(context),
+        onPressed: () {
+          if (sl<SubscriptionService>().canUseFeature(AppFeature.addCustomer)) {
+            _showAddCustomerDialog(context);
+          } else {
+            SubscriptionDialog.show(context);
+          }
+        },
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.person_add),
       ),
@@ -135,12 +144,20 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       case 1:
         break;
       case 2:
-        Navigator.pushNamed(context, Routes.sale).then((result) {
-          if (result == true) _loadCustomers();
-        });
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
+          Navigator.pushNamed(context, Routes.sale).then((result) {
+            if (result == true) _loadCustomers();
+          });
+        } else {
+          SubscriptionDialog.show(context);
+        }
         break;
       case 3:
-        Navigator.pushReplacementNamed(context, Routes.reports);
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.viewReports)) {
+          Navigator.pushReplacementNamed(context, Routes.reports);
+        } else {
+          SubscriptionDialog.show(context);
+        }
         break;
       case 4:
         Navigator.pushReplacementNamed(context, Routes.store);

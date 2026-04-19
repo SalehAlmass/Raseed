@@ -13,6 +13,9 @@ import '../services/export_service.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/widgets/app_bottom_navigation_bar.dart';
+import '../../../../core/services/subscription_service.dart';
+import '../../../../core/models/app_feature.dart';
+import '../../../../core/widgets/subscription_dialog.dart';
 import 'widgets/report_charts.dart';
 
 class ReportsDashboardScreen extends StatefulWidget {
@@ -89,11 +92,15 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
         Navigator.pushReplacementNamed(context, Routes.customers);
         break;
       case 2:
-        Navigator.pushNamed(context, Routes.sale).then((result) {
-          if (result == true) {
-            context.read<ReportsBloc>().add(LoadReportsEvent(_filter));
-          }
-        });
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
+          Navigator.pushNamed(context, Routes.sale).then((result) {
+            if (result == true) {
+              context.read<ReportsBloc>().add(LoadReportsEvent(_filter));
+            }
+          });
+        } else {
+          SubscriptionDialog.show(context);
+        }
         break;
       case 3:
         break;

@@ -4,6 +4,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/di/injection_container.dart';
 import '../../../core/models/product.dart';
 import '../../../core/services/product_service.dart';
+import '../../../core/services/subscription_service.dart';
+import '../../../core/models/app_feature.dart';
+import '../../../core/widgets/subscription_dialog.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/utils/currency_helper.dart';
 import 'widgets/add_edit_product_dialog.dart';
@@ -76,12 +79,20 @@ class _StoreScreenState extends State<StoreScreen> {
         Navigator.pushReplacementNamed(context, Routes.customers);
         break;
       case 2:
-        Navigator.pushNamed(context, Routes.sale).then((result) {
-          if (result == true) _loadProducts();
-        });
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
+          Navigator.pushNamed(context, Routes.sale).then((result) {
+            if (result == true) _loadProducts();
+          });
+        } else {
+          SubscriptionDialog.show(context);
+        }
         break;
       case 3:
-        Navigator.pushReplacementNamed(context, Routes.reports);
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.viewReports)) {
+          Navigator.pushReplacementNamed(context, Routes.reports);
+        } else {
+          SubscriptionDialog.show(context);
+        }
         break;
       case 4:
         break;
@@ -148,7 +159,13 @@ class _StoreScreenState extends State<StoreScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddEditDialog(),
+        onPressed: () {
+          if (sl<SubscriptionService>().canUseFeature(AppFeature.editInventory)) {
+            _showAddEditDialog();
+          } else {
+            SubscriptionDialog.show(context);
+          }
+        },
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add),
       ),

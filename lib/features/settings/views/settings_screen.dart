@@ -6,6 +6,7 @@ import '../../../core/services/settings_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/models/app_settings.dart';
 import '../../../core/routes/routes.dart';
+import '../../../core/services/subscription_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -76,64 +77,71 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ? const Center(child: CircularProgressIndicator())
         : Padding(
             padding: EdgeInsets.all(20.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildSectionHeader('merchant_config'.tr()),
-                SizedBox(height: 15.h),
-                _buildSettingTile(
-                  label: 'max_debt_limit'.tr(),
-                  controller: _maxDebtController,
-                  icon: Icons.money_off,
-                  keyboardType: TextInputType.number,
-                ),
-                SizedBox(height: 20.h),
-                _buildSettingTile(
-                  label: 'reminder_days'.tr(),
-                  controller: _reminderDaysController,
-                  icon: Icons.notification_important_outlined,
-                  keyboardType: TextInputType.number,
-                ),
-
-                SizedBox(height: 30.h),
-                _buildSectionHeader('language'.tr()),
-                SizedBox(height: 15.h),
-                _buildLanguageDropdown(context),
-                SizedBox(height: 30.h),
-                _buildSectionHeader('about'.tr()),
-                SizedBox(height: 15.h),
-                _buildAboutTile(context),
-
-                SizedBox(height: 30.h),
-                _buildSectionHeader('advanced'.tr()),
-                SwitchListTile(
-                  title: Text('strict_mode'.tr()),
-                  subtitle: Text('strict_mode_desc'.tr()),
-                  value: _settings.strictMode,
-                  onChanged: (val) {
-                    setState(() {
-                      _settings = _settings.copyWith(strictMode: val);
-                    });
-                  },
-                  activeColor: AppColors.primary,
-                ),
-                const Spacer(),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _saveSettings,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 15.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15.r),
-                      ),
-                    ),
-                    child: Text('save_changes'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionHeader('merchant_config'.tr()),
+                  SizedBox(height: 15.h),
+                  _buildSettingTile(
+                    label: 'max_debt_limit'.tr(),
+                    controller: _maxDebtController,
+                    icon: Icons.money_off,
+                    keyboardType: TextInputType.number,
                   ),
-                ),
-              ],
+                  SizedBox(height: 20.h),
+                  _buildSettingTile(
+                    label: 'reminder_days'.tr(),
+                    controller: _reminderDaysController,
+                    icon: Icons.notification_important_outlined,
+                    keyboardType: TextInputType.number,
+                  ),
+              
+                  SizedBox(height: 30.h),
+                  _buildSectionHeader('language'.tr()),
+                  SizedBox(height: 15.h),
+                  _buildLanguageDropdown(context),
+                  SizedBox(height: 30.h),
+                  _buildSectionHeader('about'.tr()),
+                  SizedBox(height: 15.h),
+                  _buildAboutTile(context),
+              
+                  SizedBox(height: 30.h),
+                  _buildSectionHeader('subscription'.tr()),
+                  SizedBox(height: 15.h),
+                  _buildSubscriptionTile(context),
+              
+                  SizedBox(height: 30.h),
+                  _buildSectionHeader('advanced'.tr()),
+                  SwitchListTile(
+                    title: Text('strict_mode'.tr()),
+                    subtitle: Text('strict_mode_desc'.tr()),
+                    value: _settings.strictMode,
+                    onChanged: (val) {
+                      setState(() {
+                        _settings = _settings.copyWith(strictMode: val);
+                      });
+                    },
+                    activeColor: AppColors.primary,
+                  ),
+                  SizedBox(height: 40.h),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _saveSettings,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 15.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15.r),
+                        ),
+                      ),
+                      child: Text('save_changes'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
     );
@@ -234,6 +242,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
         trailing: Icon(Icons.arrow_forward_ios, color: AppColors.textSecondary, size: 16.sp),
         onTap: () {
           Navigator.of(context).pushNamed(Routes.about);
+        },
+      ),
+    );
+  }
+
+  Widget _buildSubscriptionTile(BuildContext context) {
+    final subService = sl<SubscriptionService>();
+    final isPremium = subService.isSubscribed;
+    final remaining = subService.remainingDays;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(15.r),
+      ),
+      child: ListTile(
+        leading: Icon(
+          isPremium ? Icons.star_rounded : Icons.star_outline_rounded,
+          color: isPremium ? Colors.amber : AppColors.primary,
+        ),
+        title: Text('subscription'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600)),
+        subtitle: Text(
+          isPremium 
+            ? 'full_version'.tr() 
+            : 'trial_remaining'.tr(namedArgs: {'days': remaining.toString()}),
+          style: TextStyle(fontSize: 12.sp, color: isPremium ? Colors.amber : Colors.grey),
+        ),
+        trailing: Icon(Icons.arrow_forward_ios, color: AppColors.textSecondary, size: 16.sp),
+        onTap: () {
+          Navigator.of(context).pushNamed(Routes.subscription).then((_) => setState(() {}));
         },
       ),
     );
