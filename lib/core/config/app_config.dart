@@ -7,12 +7,12 @@ class AppConfig {
   static const String buildNumber = '1';
 
   // Developer Info
-  static const String developerName = 'Abdullah Essam';
-  static const String developerGithub = 'https://github.com/AbdalluhEssam';
-  static const String developerProfile = 'abdalluh-essam.com';
+  static const String developerName = 'Saleh Al-Mass';
+  static const String developerGithub = 'https://github.com/SalehAlMass';
+  static const String developerProfile = 'salehalmass.com';
   static const String developerLinkedIn =
-      'https://www.linkedin.com/in/abdalluh-essam';
-  static const String developerEmail = 'contact@abdalluh-essam.com';
+      'https://www.linkedin.com/in/salehalmass';
+  static const String developerEmail = 'salehalmass18@gmail.com';
 
   // Environment
   static const bool isProduction = false;

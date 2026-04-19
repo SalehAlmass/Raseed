@@ -123,24 +123,38 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
   void _showAddCustomerDialog(BuildContext context) {
     final nameController = TextEditingController();
     final phoneController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('add_new_customer'.tr()),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(labelText: 'name'.tr()),
-            ),
-            TextField(
-              controller: phoneController,
-              decoration: InputDecoration(labelText: 'phone_number'.tr()),
-              keyboardType: TextInputType.phone,
-            ),
-          ],
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: nameController,
+                decoration: InputDecoration(labelText: 'name'.tr()),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) return 'مطلوب إدخال الاسم';
+                  if (!RegExp(r'^[\u0600-\u06FFa-zA-Z\s]+$').hasMatch(val)) return 'يجب أن يحتوي الاسم على حروف فقط';
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: phoneController,
+                decoration: InputDecoration(labelText: 'phone_number'.tr()),
+                keyboardType: TextInputType.phone,
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) return 'مطلوب إدخال رقم الهاتف';
+                  if (val.trim().length < 9) return 'رقم الهاتف غير صحيح';
+                  return null;
+                },
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -149,7 +163,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (nameController.text.isNotEmpty && phoneController.text.isNotEmpty) {
+              if (formKey.currentState!.validate()) {
                 await _customerService.createCustomer(Customer(
                   name: nameController.text,
                   phone: phoneController.text,

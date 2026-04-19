@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/di/injection_container.dart';
 import '../../../core/models/app_transaction.dart';
 import '../../../core/models/customer.dart';
@@ -161,6 +162,70 @@ class _SaleScreenState extends State<SaleScreen> {
       );
 
       await _transactionService.addTransaction(transaction);
+      
+      if (mounted && _selectedCustomer != null && _selectedCustomer!.phone.isNotEmpty) {
+        double newDebt = _selectedCustomer!.totalDebt;
+        if (_selectedType == TransactionType.sale) {
+          newDebt += (_totalAmount - paid);
+        } else {
+          newDebt -= paid;
+        }
+
+        final bool? sendWa = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('إرسال تذكير عبر واتساب', style: TextStyle(fontWeight: FontWeight.bold)),
+            content: const Text('تمت العملية بنجاح. هل تريد إرسال تفاصيل العملية والرصيد المتبقي إلى العميل عبر واتساب؟'),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.r)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('cancel'.tr(), style: const TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('إرسال الآن'),
+              ),
+            ],
+          ),
+        );
+
+        if (sendWa == true) {
+          final String yerBal = CurrencyHelper.getFormatter('YER').format(newDebt);
+          
+          String phone = _selectedCustomer!.phone;
+          phone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+          if (phone.startsWith('0')) phone = phone.substring(1);
+          if (!phone.startsWith('+') && !phone.startsWith('00') && !phone.startsWith('967')) {
+            phone = '967$phone';
+          }
+          phone = phone.replaceAll('+', '').replaceAll('00', '');
+
+          final String formattedPaid = CurrencyHelper.getFormatter('YER').format(paid);
+          final String formattedTotal = CurrencyHelper.getFormatter('YER').format(_totalAmount);
+
+          String message = "مرحباً ${_selectedCustomer!.name}،\n";
+          if (_selectedType == TransactionType.sale) {
+             message += "لقد تم تسجيل فاتورة مشتريات بقيمة $formattedTotal";
+             if (paid > 0) message += "، وسداد مبلغ $formattedPaid";
+             message += ".\n";
+          } else {
+             message += "لقد تم تسجيل سند قبض (سداد) بمبلغ $formattedPaid.\n";
+          }
+          message += "\nبذلك إجمالي الرصيد المتبقي عليكم في تطبيق رصيد هو: $yerBal\nنتمنى لكم يوماً سعيداً!";
+
+          final url = "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
+          try {
+            await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+          } catch (_) {}
+        }
+      }
+
       if (mounted) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(

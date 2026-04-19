@@ -36,7 +36,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    final transactions = await _transactionService.getCustomerTransactions(_currentCustomer.id!);
+    final transactions = await _transactionService.getCustomerTransactions(
+      _currentCustomer.id!,
+    );
     final customer = await _customerService.getCustomer(_currentCustomer.id!);
     setState(() {
       _transactions = transactions;
@@ -46,14 +48,27 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   }
 
   Future<void> _openWhatsApp() async {
-    final String yerBal = CurrencyHelper.getFormatter('YER').format(_currentCustomer.totalDebt);
+    final String yerBal = CurrencyHelper.getFormatter(
+      'YER',
+    ).format(_currentCustomer.totalDebt);
     String balanceMsg = yerBal;
 
-    final message = "Hello ${_currentCustomer.name}, your current balance at Raseed is $balanceMsg.";
-    final url = "https://wa.me/${_currentCustomer.phone}?text=${Uri.encodeComponent(message)}";
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url));
-    } else {
+    String phone = _currentCustomer.phone;
+    phone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    if (phone.startsWith('0')) phone = phone.substring(1);
+    if (!phone.startsWith('+') && !phone.startsWith('00') && !phone.startsWith('967')) {
+      phone = '967$phone';
+    }
+    phone = phone.replaceAll('+', '').replaceAll('00', '');
+
+    final message =
+        "مرحباً ${_currentCustomer.name}، نود تذكيركم بأن إجمالي الرصيد المتبقي عليكم في تطبيق رصيد هو $balanceMsg. نرجوا منكم تسديد ما عليكم كما نتمنى لكم يوماً سعيداً!";
+    final url =
+        "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
+        
+    try {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Could not launch WhatsApp')),
@@ -78,30 +93,30 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
           ),
         ],
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : SingleChildScrollView(
-            padding: EdgeInsets.all(20.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildCustomerHeader(),
-                SizedBox(height: 30.h),
-                _buildActionButtons(),
-                SizedBox(height: 30.h),
-                Text(
-                  'transaction_history'.tr(),
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: EdgeInsets.all(20.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildCustomerHeader(),
+                  SizedBox(height: 30.h),
+                  _buildActionButtons(),
+                  SizedBox(height: 30.h),
+                  Text(
+                    'transaction_history'.tr(),
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
-                SizedBox(height: 15.h),
-                _buildTransactionList(),
-              ],
+                  SizedBox(height: 15.h),
+                  _buildTransactionList(),
+                ],
+              ),
             ),
-          ),
     );
   }
 
@@ -124,47 +139,61 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
         children: [
           Text(
             'current_balance'.tr(),
-            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13.sp, fontWeight: FontWeight.w500, letterSpacing: 1),
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.8),
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 1,
+            ),
           ),
           SizedBox(height: 15.h),
-            FittedBox(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    CurrencyHelper.getFormatter('YER').format(_currentCustomer.totalDebt),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28.sp,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -1,
-                    ),
-                  ),
-                  SizedBox(width: 8.w),
-                  Text(
+          FittedBox(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  CurrencyHelper.getFormatter(
                     'YER',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  ).format(_currentCustomer.totalDebt),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28.sp,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -1,
                   ),
-                ],
-              ),
+                ),
+                SizedBox(width: 8.w),
+                Text(
+                  'YER',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
+          ),
           SizedBox(height: 20.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.phone, color: Colors.white70, size: 14),
-              SizedBox(width: 8.w),
-              Text(
-                _currentCustomer.phone,
-                style: TextStyle(color: Colors.white70, fontSize: 14.sp, fontWeight: FontWeight.w500),
-              ),
-            ],
+          InkWell(
+            onTap: _openWhatsApp,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.phone, color: Colors.white70, size: 14),
+                SizedBox(width: 8.w),
+                Text(
+                  _currentCustomer.phone,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -215,7 +244,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
         final tx = _transactions[index];
         final isRefund = tx.type == TransactionType.refund;
         final isSale = tx.type == TransactionType.sale;
-        
+
         return Container(
           margin: EdgeInsets.only(bottom: 15.h),
           padding: EdgeInsets.all(15.w),
@@ -228,11 +257,14 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
               Container(
                 padding: EdgeInsets.all(10.w),
                 decoration: BoxDecoration(
-                  color: (isRefund ? AppColors.error : AppColors.success).withOpacity(0.1),
+                  color: (isRefund ? AppColors.error : AppColors.success)
+                      .withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  isRefund ? Icons.keyboard_return : (isSale ? Icons.shopping_cart : Icons.payment),
+                  isRefund
+                      ? Icons.keyboard_return
+                      : (isSale ? Icons.shopping_cart : Icons.payment),
                   color: isRefund ? AppColors.error : AppColors.success,
                   size: 20,
                 ),
@@ -243,8 +275,13 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isSale ? 'sale'.tr() : (isRefund ? 'refund'.tr() : 'payment'.tr()),
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15.sp),
+                      isSale
+                          ? 'sale'.tr()
+                          : (isRefund ? 'refund'.tr() : 'payment'.tr()),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15.sp,
+                      ),
                     ),
                     Text(
                       DateFormat('MMM dd, yyyy').format(tx.date),
@@ -271,43 +308,63 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   void _showTransactionDialog(TransactionType type) {
     final amountController = TextEditingController();
     final noteController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
     String selectedCurrency = 'YER';
     DateTime selectedDate = DateTime.now();
- 
+
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: Text(type == TransactionType.sale ? 'add_debt'.tr() : 'get_payment'.tr()),
+          title: Text(
+            type == TransactionType.sale ? 'add_debt'.tr() : 'get_payment'.tr(),
+          ),
           content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-
-                SizedBox(height: 20.h),
-                TextField(
-                  controller: amountController,
-                  decoration: InputDecoration(
-                    labelText: 'amount'.tr(),
-                    prefixText: '${CurrencyHelper.getSymbol(selectedCurrency)} ',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(height: 20.h),
+                  TextFormField(
+                    controller: amountController,
+                    decoration: InputDecoration(
+                      labelText: 'amount'.tr(),
+                      prefixText:
+                          '${CurrencyHelper.getSymbol(selectedCurrency)} ',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) return 'مطلوب إدخال المبلغ';
+                      final amount = double.tryParse(val.trim());
+                      if (amount == null || amount <= 0) return 'قيمة المبلغ غير صحيحة';
+                      return null;
+                    },
                   ),
-                  keyboardType: TextInputType.number,
-                ),
-                SizedBox(height: 15.h),
-                TextField(
-                  controller: noteController,
-                  decoration: InputDecoration(
-                    labelText: 'note'.tr(),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                  SizedBox(height: 15.h),
+                  TextFormField(
+                    controller: noteController,
+                    decoration: InputDecoration(
+                      labelText: 'note'.tr(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) return 'مطلوب إدخال ملاحظة';
+                      return null;
+                    },
                   ),
-                ),
-                SizedBox(height: 15.h),
-                DateSelector(
-                  initialDate: selectedDate,
-                  onDateSelected: (date) => setState(() => selectedDate = date),
-                ),
-              ],
+                  SizedBox(height: 15.h),
+                  DateSelector(
+                    initialDate: selectedDate,
+                    onDateSelected: (date) => setState(() => selectedDate = date),
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
@@ -317,19 +374,22 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
+                if (!formKey.currentState!.validate()) return;
                 final amount = double.tryParse(amountController.text);
                 if (amount == null || amount <= 0) return;
- 
+
                 try {
-                  await _transactionService.addTransaction(AppTransaction(
-                    customerId: _currentCustomer.id,
-                    type: type,
-                    amount: amount,
-                    currency: selectedCurrency,
-                    date: selectedDate,
-                    note: noteController.text,
-                  ));
-                  
+                  await _transactionService.addTransaction(
+                    AppTransaction(
+                      customerId: _currentCustomer.id,
+                      type: type,
+                      amount: amount,
+                      currency: selectedCurrency,
+                      date: selectedDate,
+                      note: noteController.text,
+                    ),
+                  );
+
                   if (context.mounted) {
                     Navigator.pop(context);
                     _loadData();
@@ -338,9 +398,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(e.toString().contains('over_limit') 
-                          ? 'over_limit_error'.tr() 
-                          : 'error_occurred'.tr()),
+                        content: Text(
+                          e.toString().contains('over_limit')
+                              ? 'over_limit_error'.tr()
+                              : 'error_occurred'.tr(),
+                        ),
                         backgroundColor: AppColors.error,
                       ),
                     );
