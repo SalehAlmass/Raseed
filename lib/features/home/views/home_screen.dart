@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/di/injection_container.dart';
 import '../../../core/services/transaction_service.dart';
 import '../../../core/services/customer_service.dart';
@@ -68,9 +69,13 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.store_mall_directory),
             onPressed: () => Navigator.pushNamed(context, '/store').then((_) => _loadData()),
           ),
+          // IconButton(
+          //   icon: const Icon(Icons.delete_forever),
+          //   onPressed: () => _showResetDataConfirmation(context),
+          // ),
           IconButton(
-            icon: const Icon(Icons.delete_forever),
-            onPressed: () => _showResetDataConfirmation(context),
+            icon: const Icon(Icons.add),
+            onPressed: () => _showPaymentDialog(context),
           ),
         
         ],
@@ -120,10 +125,10 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _bottomNavIndex = index);
     switch (index) {
       case 0:
-        Navigator.pushReplacementNamed(context, Routes.customers);
+        Navigator.pushReplacementNamed(context, Routes.home);
         break;
       case 1:
-        _showPaymentDialog(context);
+       Navigator.pushReplacementNamed(context, Routes.customers);
         break;
       case 2:
         Navigator.pushReplacementNamed(context, Routes.reports);
@@ -347,12 +352,28 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                   selected: {selectedType},
                   onSelectionChanged: (val) {
-                    setState(() => selectedType = val.first);
+                    setState(() {
+                      selectedType = val.first;
+                      if (selectedType == TransactionType.payment && selectedCustomer != null) {
+                        amountController.text = selectedCustomer!.totalDebt.toStringAsFixed(0);
+                      } else {
+                        amountController.clear();
+                      }
+                    });
                   },
                 ),
                 SizedBox(height: 20.h),
                 _CustomerDropdown(
-                  onChanged: (c) => setState(() => selectedCustomer = c),
+                  onChanged: (c) {
+                    setState(() {
+                      selectedCustomer = c;
+                      if (selectedType == TransactionType.payment && c != null) {
+                        amountController.text = c.totalDebt.toStringAsFixed(0);
+                      } else {
+                        amountController.clear();
+                      }
+                    });
+                  },
                   isRequired: true,
                 ),
                 SizedBox(height: 15.h),
@@ -421,6 +442,57 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (context.mounted) {
                     Navigator.pop(context);
                     _loadData();
+
+                    if (selectedCustomer!.phone.isNotEmpty) {
+                      double currentDebt = selectedCustomer!.totalDebt;
+                      if (selectedType == TransactionType.payment) {
+                        currentDebt -= amount;
+                      } else {
+                        currentDebt += amount;
+                      }
+                      
+                      final formattedAmount = CurrencyHelper.getFormatter('YER').format(amount);
+                      final formattedDebt = CurrencyHelper.getFormatter('YER').format(currentDebt);
+                      
+                      final bool? sendWa = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('إرسال إشعار عبر واتساب؟'),
+                          content: Text('هل ترغب في إرسال تفاصيل الإجراء للعميل ${selectedCustomer!.name}؟'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('لا')),
+                            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('نعم')),
+                          ],
+                        ),
+                      );
+
+                      if (sendWa == true) {
+                        String message = "";
+                        if (selectedType == TransactionType.payment) {
+                          message = "مرحباً ${selectedCustomer!.name}،\nشكراً لك.. تم استلام دفعة نقدية (سداد) بمقدار $formattedAmount.\nبذلك يكون الرصيد المتبقي عليكم في تطبيق رصيد هو: $formattedDebt\nنتمنى لكم يوماً سعيداً!";
+                        } else {
+                          message = "مرحباً ${selectedCustomer!.name}،\nلقد تم تسجيل دين في حسابكم بمقدار $formattedAmount.\nبذلك يكون إجمالي الرصيد المتبقي عليكم في تطبيق رصيد هو: $formattedDebt\nنتمنى لكم يوماً سعيداً!";
+                        }
+
+                        String phone = selectedCustomer!.phone.replaceAll(RegExp(r'[^\d+]'), '');
+                        if (phone.startsWith('0')) phone = phone.substring(1);
+                        if (!phone.startsWith('+') && !phone.startsWith('00') && !phone.startsWith('967')) {
+                          phone = '967$phone';
+                        }
+                        phone = phone.replaceAll('+', '').replaceAll('00', '');
+
+                        final url = "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
+                        try {
+                          await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Could not launch WhatsApp')),
+                            );
+                          }
+                        }
+                      }
+                    }
                   }
                 } catch (e) {
                    if (context.mounted) {
@@ -482,7 +554,10 @@ class _CustomerDropdownState extends State<_CustomerDropdown> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
       ),
       items: _customers
-          .map((c) => DropdownMenuItem(value: c, child: Text(c.name)))
+          .map((c) => DropdownMenuItem(
+                value: c, 
+                child: Text('${c.name} - ${CurrencyHelper.getFormatter('YER').format(c.totalDebt)} YER'),
+              ))
           .toList(),
       onChanged: (val) {
         setState(() => _selected = val);
