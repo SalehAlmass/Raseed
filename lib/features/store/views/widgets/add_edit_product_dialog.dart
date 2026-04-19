@@ -21,6 +21,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   final _nameController = TextEditingController();
   final _priceController = TextEditingController();
   final _stockController = TextEditingController();
+  final _costPriceController = TextEditingController();
   final _barcodeController = TextEditingController();
   String _selectedCurrency = 'YER';
   bool _isLoading = false;
@@ -31,6 +32,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     if (widget.product != null) {
       _nameController.text = widget.product!.name;
       _priceController.text = widget.product!.price.toStringAsFixed(0);
+      _costPriceController.text = widget.product!.costPrice.toStringAsFixed(0);
       _stockController.text = widget.product!.stockQuantity.toString();
       _selectedCurrency = widget.product!.currency;
       _barcodeController.text = widget.product!.barcode ?? '';
@@ -44,12 +46,14 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
 
     final name = _nameController.text;
     final price = double.tryParse(_priceController.text) ?? 0.0;
+    final costPrice = double.tryParse(_costPriceController.text) ?? 0.0;
     final stock = int.tryParse(_stockController.text) ?? 0;
 
     final product = Product(
       id: widget.product?.id,
       name: name,
       price: price,
+      costPrice: costPrice,
       stockQuantity: stock,
       currency: _selectedCurrency,
       barcode: _barcodeController.text.isEmpty ? null : _barcodeController.text,
@@ -95,7 +99,17 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
               controller: _priceController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: 'price'.tr(),
+                labelText: 'selling_price'.tr(),
+                prefixText: 'YER ',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+              ),
+            ),
+            SizedBox(height: 15.h),
+            TextField(
+              controller: _costPriceController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'purchase_price'.tr(),
                 prefixText: 'YER ',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
               ),

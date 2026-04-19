@@ -221,7 +221,7 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
           children: [
             Expanded(child: _metricCard('total_sales'.tr(), report.totalSales, AppColors.success, Icons.trending_up)),
             SizedBox(width: 12.w),
-            Expanded(child: _metricCard('total_profit'.tr(), report.totalProfit, AppColors.info, Icons.payments_outlined)),
+            Expanded(child: _metricCard('net_income'.tr(), report.totalProfit, AppColors.info, Icons.payments_outlined)),
           ],
         ),
         SizedBox(height: 12.h),

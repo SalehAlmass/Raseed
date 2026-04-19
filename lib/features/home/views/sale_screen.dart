@@ -479,7 +479,7 @@ class _SaleScreenState extends State<SaleScreen> {
                 ),
                 child: _isLoading 
                   ? const CircularProgressIndicator(color: Colors.white)
-                  : Text('complete_sale'.tr(), style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold)),
+                  : Text('complete_sale'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
               ),
             ),
           ],

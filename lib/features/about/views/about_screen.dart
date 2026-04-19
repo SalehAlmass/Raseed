@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:rseed/core/config/app_config.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/colors.dart';
 
@@ -183,7 +184,7 @@ class AboutScreen extends StatelessWidget {
         ),
         SizedBox(height: 8.h),
         Text(
-          'App'.tr(),
+          AppConfig.developerName,
           style: TextStyle(
             fontSize: 20.sp,
             fontWeight: FontWeight.bold,
@@ -194,11 +195,26 @@ class AboutScreen extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildSocialButton(Icons.language_rounded, 'Website', () {}),
+            _buildSocialButton(Icons.language_rounded, 'Website', () async {
+              final url = Uri.parse(AppConfig.developerGithub);
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              }
+            }),
             SizedBox(width: 20.w),
-            _buildSocialButton(Icons.email_rounded, 'Email', () {}),
+            _buildSocialButton(Icons.email_rounded, 'Email', () async {
+              final url = Uri.parse('mailto:${AppConfig.developerEmail}');
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url);
+              }
+            }),
             SizedBox(width: 20.w),
-            _buildSocialButton(Icons.message_rounded, 'WhatsApp', () {}),
+            _buildSocialButton(Icons.message_rounded, 'WhatsApp', () async {
+              final url = Uri.parse(AppConfig.developerWhatsApp);
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              }
+            }),
           ],
         ),
       ],
