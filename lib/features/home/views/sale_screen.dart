@@ -31,6 +31,7 @@ class _SaleScreenState extends State<SaleScreen> {
   final List<TransactionItem> _cart = [];
   final _paidAmountController = TextEditingController();
   TransactionType _selectedType = TransactionType.sale;
+  int _searchKey = 0;
   Customer? _selectedCustomer;
   List<Product> _products = [];
   List<Customer> _customers = [];
@@ -209,24 +210,33 @@ class _SaleScreenState extends State<SaleScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       color: AppColors.surface,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          DropdownButtonFormField<Product>(
-            decoration: InputDecoration(
-              labelText: 'select_product'.tr(),
-              prefixIcon: const Icon(Icons.search),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return DropdownMenu<Product>(
+            key: ValueKey(_searchKey),
+            width: constraints.maxWidth,
+            enableFilter: true,
+            requestFocusOnTap: true,
+            leadingIcon: const Icon(Icons.search),
+            label: Text('select_product'.tr()),
+            inputDecorationTheme: InputDecorationTheme(
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
             ),
-            items: _products.map((p) => DropdownMenuItem(
+            dropdownMenuEntries: _products.map((p) => DropdownMenuEntry<Product>(
               value: p,
-              child: Text('${p.name} (${p.stockQuantity}) - ${CurrencyHelper.getSymbol(p.currency)}${p.price}'),
+              label: '${p.name} (${p.stockQuantity}) - ${CurrencyHelper.getSymbol(p.currency)}${p.price}',
             )).toList(),
-            onChanged: (val) {
-              if (val != null) _addToCart(val);
+            onSelected: (val) {
+              if (val != null) {
+                _addToCart(val);
+                setState(() {
+                  _searchKey++;
+                });
+                FocusScope.of(context).unfocus();
+              }
             },
-          ),
-        ],
+          );
+        }
       ),
     );
   }
