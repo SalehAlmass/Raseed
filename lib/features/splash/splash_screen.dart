@@ -49,16 +49,16 @@ class _SplashScreenState extends State<SplashScreen>
       if (mounted) {
         final authService = sl<AuthService>();
         final isAuthenticated = await authService.isAuthenticated();
-        
+
         if (mounted) {
           if (isAuthenticated) {
             final settings = await sl<SettingsService>().getSettings();
             if (mounted) {
-               if (!settings.onboardingCompleted) {
-                 Navigator.pushReplacementNamed(context, Routes.onboarding);
-               } else {
-                 Navigator.pushReplacementNamed(context, Routes.home);
-               }
+              if (!settings.onboardingCompleted) {
+                Navigator.pushReplacementNamed(context, Routes.onboarding);
+              } else {
+                Navigator.pushReplacementNamed(context, Routes.home);
+              }
             }
           } else {
             Navigator.pushReplacementNamed(context, Routes.auth);
@@ -103,7 +103,7 @@ class _SplashScreenState extends State<SplashScreen>
                       ],
                     ),
                     child: Image.asset(
-                      'assets/images/app_logo.png',
+                      'assets/images/ar.png',
                       width: 140,
                       height: 140,
                       fit: BoxFit.cover,
