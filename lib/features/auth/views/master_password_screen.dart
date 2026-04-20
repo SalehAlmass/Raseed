@@ -22,7 +22,7 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
   String? _errorText;
 
   void _verifyPassword() async {
-    final isValid = await _authService.verifyPassword(_passwordController.text);
+    final isValid = await _authService.verifyMasterPassword(_passwordController.text);
     if (isValid) {
       if (mounted) {
         final settings = await sl<SettingsService>().getSettings();

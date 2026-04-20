@@ -138,6 +138,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildSectionHeader('about'.tr()),
                   SizedBox(height: 15.h),
                   _buildAboutTile(context),
+                  SizedBox(height: 30.h),
+                  _buildSectionHeader('account_backup'.tr()),
+                  SizedBox(height: 15.h),
+                  _buildBackupTile(context),
               
                   SizedBox(height: 30.h),
                   _buildSectionHeader('subscription'.tr()),
@@ -275,6 +279,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
         trailing: Icon(Icons.arrow_forward_ios, color: AppColors.textSecondary, size: 16.sp),
         onTap: () {
           Navigator.of(context).pushNamed(Routes.about);
+        },
+      ),
+    );
+  }
+
+  Widget _buildBackupTile(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(15.r),
+      ),
+      child: ListTile(
+        leading: Icon(Icons.cloud_sync_outlined, color: AppColors.primary),
+        title: Text('account_backup'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600)),
+        trailing: Icon(Icons.arrow_forward_ios, color: AppColors.textSecondary, size: 16.sp),
+        onTap: () {
+          Navigator.of(context).pushNamed(Routes.backup);
         },
       ),
     );

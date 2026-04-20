@@ -47,6 +47,10 @@ dependencies:
   animated_bottom_navigation_bar: ^1.4.0
   timeago: ^3.7.0
   firebase_core: ^3.11.0
+  firebase_auth: ^5.5.0
+  firebase_storage: ^12.4.10
+  google_sign_in: ^6.2.2
+  file_picker: ^8.1.7
 
 dev_dependencies:
   flutter_test:

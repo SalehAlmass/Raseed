@@ -17,4 +17,5 @@ class Routes {
   static const String reports = '/reports';
   static const String about = '/about';
   static const String subscription = '/subscription';
+  static const String backup = '/backup';
 }
