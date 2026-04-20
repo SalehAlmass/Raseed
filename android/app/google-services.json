@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "761135292455",
+    "project_id": "rseed-770db",
+    "storage_bucket": "rseed-770db.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:761135292455:android:9c4cf4a32ec379a23e6e02",
+        "android_client_info": {
+          "package_name": "com.example.rseed"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpcZPoYqszhKxyn4WnbpncrXiQeM1s2l8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

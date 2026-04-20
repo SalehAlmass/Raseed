@@ -128,8 +128,12 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildFilterBar(),
+          SizedBox(height: 20.h),
+          _buildInsightsSection(report),
           SizedBox(height: 25.h),
           _buildSummaryCards(report),
+          SizedBox(height: 25.h),
+          _buildInventoryCard(report),
           SizedBox(height: 30.h),
           _buildSectionHeader('sales_trend'.tr()),
           SizedBox(height: 15.h),
@@ -149,12 +153,42 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
             child: TopProductsChart(products: report.topProducts),
           ),
           SizedBox(height: 30.h),
+          _buildSectionHeader('product_performance'.tr()),
+          SizedBox(height: 15.h),
+          _buildPerformanceList(report.productPerformance),
+          SizedBox(height: 30.h),
+          _buildSectionHeader('dead_stock'.tr()),
+          SizedBox(height: 15.h),
+          _buildDeadStockList(report.deadStock),
+          SizedBox(height: 30.h),
           _buildSectionHeader('top_customers'.tr()),
           SizedBox(height: 15.h),
           _buildCustomerList(report.topCustomers),
         ],
       ),
     );
+  }
+
+  Widget _buildInsightsSection(DashboardReport report) {
+    if (report.insights.isEmpty) return const SizedBox.shrink();
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(15.r),
+        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+      ),
+      child: Column(
+        children: report.insights.map((insight) => ListTile(
+          dense: true,
+          leading: Icon(Icons.lightbulb_outline, color: AppColors.primary, size: 20.sp),
+          title: Text(insight, style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w500)),
+        )).toList(),
+      ),
+    );
+  }
+
+  Widget _buildInventoryCard(DashboardReport report) {
+    return _metricCard('inventory_value'.tr(), report.inventoryValue, Colors.blueGrey, Icons.warehouse_outlined, fullWidth: true);
   }
 
   Widget _buildFilterBar() {
@@ -230,9 +264,20 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
       children: [
         Row(
           children: [
-            Expanded(child: _metricCard('total_sales'.tr(), report.totalSales, AppColors.success, Icons.trending_up)),
+            Expanded(child: _metricCard(
+              'total_sales'.tr(), 
+              report.totalSales, 
+              AppColors.success, 
+              Icons.trending_up,
+              growth: report.salesGrowth,
+            )),
             SizedBox(width: 12.w),
-            Expanded(child: _metricCard('net_income'.tr(), report.totalProfit, AppColors.info, Icons.payments_outlined)),
+            Expanded(child: _metricCard(
+              'net_income'.tr(), 
+              report.totalProfit, 
+              AppColors.info, 
+              Icons.payments_outlined
+            )),
           ],
         ),
         SizedBox(height: 12.h),
@@ -241,7 +286,7 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
     );
   }
 
-  Widget _metricCard(String title, double value, Color color, IconData icon, {bool fullWidth = false}) {
+  Widget _metricCard(String title, double value, Color color, IconData icon, {bool fullWidth = false, double? growth}) {
     return Container(
       width: fullWidth ? double.infinity : null,
       padding: EdgeInsets.all(16.w),
@@ -250,10 +295,33 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(icon, color: color, size: 20.sp),
-              SizedBox(width: 8.w),
-              Text(title, style: TextStyle(color: AppColors.textSecondary, fontSize: 13.sp)),
+              Row(
+                children: [
+                  Icon(icon, color: color, size: 20.sp),
+                  SizedBox(width: 8.w),
+                  Text(title, style: TextStyle(color: AppColors.textSecondary, fontSize: 13.sp)),
+                ],
+              ),
+              if (growth != null)
+                Row(
+                  children: [
+                    Icon(
+                      growth >= 0 ? Icons.arrow_upward : Icons.arrow_downward,
+                      color: growth >= 0 ? AppColors.success : AppColors.error,
+                      size: 14.sp,
+                    ),
+                    Text(
+                      '${growth.abs().toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        color: growth >= 0 ? AppColors.success : AppColors.error,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
           SizedBox(height: 12.h),
@@ -288,6 +356,60 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
             trailing: Text(
               CurrencyHelper.getFormatter(_filter.currency ?? 'YER').format(c.value),
               style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPerformanceList(List<ProductProfitItem> performance) {
+    return Container(
+      decoration: _cardDecoration(),
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: performance.length > 10 ? 10 : performance.length,
+        separatorBuilder: (context, index) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final p = performance[index];
+          return ListTile(
+            title: Text(p.productName, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text('${'sold'.tr()}: ${p.soldCount}'),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  CurrencyHelper.getFormatter(_filter.currency ?? 'YER').format(p.netProfit),
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.success),
+                ),
+                Text('profit'.tr(), style: TextStyle(fontSize: 10.sp, color: Colors.grey)),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDeadStockList(List<DeadStockItem> deadStock) {
+    if (deadStock.isEmpty) return Center(child: Text('no_dead_stock'.tr()));
+    return Container(
+      decoration: _cardDecoration(),
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: deadStock.length > 5 ? 5 : deadStock.length,
+        separatorBuilder: (context, index) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final p = deadStock[index];
+          return ListTile(
+            title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text('${'stock'.tr()}: ${p.remainingStock}'),
+            trailing: Text(
+              '${p.daysSinceLastSale} ${'days_ago'.tr()}',
+              style: TextStyle(color: AppColors.error, fontSize: 12.sp),
             ),
           );
         },

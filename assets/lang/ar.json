@@ -241,5 +241,18 @@
   "dead": "خامل",
   "vip": "VIP",
   "last_deal": "آخر تعامل",
-  "spent": "إجمالي المشتريات"
+  "spent": "إجمالي المشتريات",
+  "inventory_value": "قيمة المخزون الحالي",
+  "product_performance": "أداء المنتجات والأرباح",
+  "dead_stock": "المنتجات الراكدة",
+  "no_dead_stock": "لا توجد منتجات راكدة حالياً",
+  "sold": "مباع",
+  "days_ago": "يوم مضى",
+  "profit": "الربح",
+  "stock": "المخزون",
+  "insight_sales_growing": "المبيعات في تحسن مستمر بنسبة {}%",
+  "insight_sales_dropping": "تنبيه: انخفاض في المبيعات بنسبة {}%",
+  "insight_dead_stock": "يوجد {} منتجات راكدة تحتاج للمراجعة",
+  "insight_top_product": "المنتج الأفضل أداءً حالياً هو {}",
+  "insight_debt_increasing": "ملاحظة: معدل الديون الجديدة أعلى من التحصيل"
 }

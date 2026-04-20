@@ -241,5 +241,18 @@
   "dead": "Dead",
   "vip": "VIP",
   "last_deal": "Last Deal",
-  "spent": "Total Spent"
+  "spent": "Total Spent",
+  "inventory_value": "Inventory Valuation",
+  "product_performance": "Product Performance & Profit",
+  "dead_stock": "Dead Stock Analysis",
+  "no_dead_stock": "No dead stock identified currently",
+  "sold": "Sold",
+  "days_ago": "days ago",
+  "profit": "Profit",
+  "stock": "Stock",
+  "insight_sales_growing": "Sales are growing steadily by {}%",
+  "insight_sales_dropping": "Warning: Sales dropped by {}%",
+  "insight_dead_stock": "{} products are inactive and need review",
+  "insight_top_product": "Best performing product is {}",
+  "insight_debt_increasing": "Notice: Debt collection rate is lower than new debt"
 }

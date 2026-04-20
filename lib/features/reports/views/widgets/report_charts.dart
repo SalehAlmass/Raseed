@@ -1,4 +1,5 @@
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/colors.dart';
@@ -16,6 +17,21 @@ class SalesTrendChart extends StatelessWidget {
     return LineChart(
       LineChartData(
         gridData: const FlGridData(show: false),
+        lineTouchData: LineTouchData(
+          enabled: true,
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipColor: (_) => AppColors.surface,
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map((spot) {
+                final isSales = spot.barIndex == 0;
+                return LineTooltipItem(
+                  '${isSales ? 'sales'.tr() : 'profit'.tr()}: ${spot.y.toStringAsFixed(0)}',
+                  TextStyle(color: isSales ? AppColors.primary : AppColors.success, fontWeight: FontWeight.bold),
+                );
+              }).toList();
+            },
+          ),
+        ),
         titlesData: FlTitlesData(
           leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -39,6 +55,7 @@ class SalesTrendChart extends StatelessWidget {
         ),
         borderData: FlBorderData(show: false),
         lineBarsData: [
+          // Sales Line
           LineChartBarData(
             spots: trend.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.value)).toList(),
             isCurved: true,
@@ -49,11 +66,21 @@ class SalesTrendChart extends StatelessWidget {
             belowBarData: BarAreaData(
               show: true,
               gradient: LinearGradient(
-                colors: [AppColors.primary.withOpacity(0.3), AppColors.secondary.withOpacity(0.0)],
+                colors: [AppColors.primary.withOpacity(0.1), AppColors.secondary.withOpacity(0.0)],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
             ),
+          ),
+          // Profit Line
+          LineChartBarData(
+            spots: trend.asMap().entries.where((e) => e.value.secondaryValue != null).map((e) => FlSpot(e.key.toDouble(), e.value.secondaryValue!)).toList(),
+            isCurved: true,
+            color: AppColors.success,
+            barWidth: 2,
+            isStrokeCapRound: true,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(show: false),
           ),
         ],
       ),
