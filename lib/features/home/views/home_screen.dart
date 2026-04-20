@@ -120,7 +120,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   InkWell(
                     onTap: () {
                       if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
-                        Navigator.pushNamed(context, '/sale');
+                        Navigator.pushNamed(context, '/sale').then((result) {
+                          if (result == true) _loadData();
+                        });
                       } else {
                         SubscriptionDialog.show(context);
                       }
@@ -167,7 +169,13 @@ class _HomeScreenState extends State<HomeScreen> {
         Navigator.pushReplacementNamed(context, Routes.customers);
         break;
       case 2:
-         _showPaymentDialog(context);
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
+          Navigator.pushNamed(context, Routes.sale).then((result) {
+            if (result == true) _loadData();
+          });
+        } else {
+          SubscriptionDialog.show(context);
+        }
         break;
       case 3:
         if (sl<SubscriptionService>().canUseFeature(AppFeature.viewReports)) {
