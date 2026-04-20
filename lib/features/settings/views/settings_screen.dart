@@ -22,6 +22,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   final TextEditingController _maxDebtController = TextEditingController();
   final TextEditingController _reminderDaysController = TextEditingController();
+  final TextEditingController _vipThresholdController = TextEditingController();
+  final TextEditingController _inactiveDaysController = TextEditingController();
+  final TextEditingController _deadDaysController = TextEditingController();
 
   @override
   void initState() {
@@ -35,6 +38,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _settings = settings;
       _maxDebtController.text = settings.maxDebt.toString();
       _reminderDaysController.text = settings.reminderDays.toString();
+      _vipThresholdController.text = settings.vipThreshold.toString();
+      _inactiveDaysController.text = settings.inactiveDays.toString();
+      _deadDaysController.text = settings.deadDays.toString();
       _isLoading = false;
     });
   }
@@ -43,6 +49,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final newSettings = _settings.copyWith(
       maxDebt: double.tryParse(_maxDebtController.text) ?? _settings.maxDebt,
       reminderDays: int.tryParse(_reminderDaysController.text) ?? _settings.reminderDays,
+      vipThreshold: double.tryParse(_vipThresholdController.text) ?? _settings.vipThreshold,
+      inactiveDays: int.tryParse(_inactiveDaysController.text) ?? _settings.inactiveDays,
+      deadDays: int.tryParse(_deadDaysController.text) ?? _settings.deadDays,
     );
     await _settingsService.updateSettings(newSettings);
     if (mounted) {
@@ -90,10 +99,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     keyboardType: TextInputType.number,
                   ),
                   SizedBox(height: 20.h),
-                  _buildSettingTile(
+                   _buildSettingTile(
                     label: 'reminder_days'.tr(),
                     controller: _reminderDaysController,
                     icon: Icons.notification_important_outlined,
+                    keyboardType: TextInputType.number,
+                  ),
+              
+                  SizedBox(height: 30.h),
+                  _buildSectionHeader('crm_config'.tr()),
+                  SizedBox(height: 15.h),
+                  _buildSettingTile(
+                    label: 'vip_threshold'.tr(),
+                    controller: _vipThresholdController,
+                    icon: Icons.star_border_rounded,
+                    keyboardType: TextInputType.number,
+                  ),
+                  SizedBox(height: 15.h),
+                  _buildSettingTile(
+                    label: 'inactive_days'.tr(),
+                    controller: _inactiveDaysController,
+                    icon: Icons.timer_outlined,
+                    keyboardType: TextInputType.number,
+                  ),
+                   SizedBox(height: 15.h),
+                  _buildSettingTile(
+                    label: 'dead_days'.tr(),
+                    controller: _deadDaysController,
+                    icon: Icons.hourglass_empty,
                     keyboardType: TextInputType.number,
                   ),
               

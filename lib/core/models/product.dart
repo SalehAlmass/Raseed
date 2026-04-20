@@ -1,3 +1,5 @@
+import 'batch.dart';
+
 class Product {
   final int? id;
   final String name;
@@ -7,6 +9,10 @@ class Product {
   final int stockQuantity;
   final String? barcode;
 
+  final int unitsPerPackage;
+  final double packagePrice;
+  final List<Batch> batches;
+
   Product({
     this.id,
     required this.name,
@@ -15,7 +21,15 @@ class Product {
     this.currency = 'YER',
     this.stockQuantity = 0,
     this.barcode,
+    this.unitsPerPackage = 1,
+    this.packagePrice = 0.0,
+    this.batches = const [],
   });
+
+  double get unitPrice => unitsPerPackage > 0 ? packagePrice / unitsPerPackage : price;
+  
+  bool get hasExpiredBatch => batches.any((b) => b.isExpired);
+  bool get hasNearExpiryBatch => batches.any((b) => b.isNearExpiry);
 
   Map<String, dynamic> toMap() {
     return {
@@ -26,6 +40,8 @@ class Product {
       'currency': currency,
       'stock_quantity': stockQuantity,
       'barcode': barcode,
+      'units_per_package': unitsPerPackage,
+      'package_price': packagePrice,
     };
   }
 
@@ -38,6 +54,8 @@ class Product {
       currency: map['currency'] ?? 'YER',
       stockQuantity: map['stock_quantity'] ?? 0,
       barcode: map['barcode'],
+      unitsPerPackage: map['units_per_package'] ?? 1,
+      packagePrice: (map['package_price'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -49,6 +67,9 @@ class Product {
     String? currency,
     int? stockQuantity,
     String? barcode,
+    int? unitsPerPackage,
+    double? packagePrice,
+    List<Batch>? batches,
   }) {
     return Product(
       id: id ?? this.id,
@@ -58,6 +79,9 @@ class Product {
       currency: currency ?? this.currency,
       stockQuantity: stockQuantity ?? this.stockQuantity,
       barcode: barcode ?? this.barcode,
+      unitsPerPackage: unitsPerPackage ?? this.unitsPerPackage,
+      packagePrice: packagePrice ?? this.packagePrice,
+      batches: batches ?? this.batches,
     );
   }
 }

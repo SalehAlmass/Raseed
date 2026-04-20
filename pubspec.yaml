@@ -45,6 +45,7 @@ dependencies:
   printing: ^5.13.2
   share_plus: ^10.1.4
   animated_bottom_navigation_bar: ^1.4.0
+  timeago: ^3.7.0
 
 dev_dependencies:
   flutter_test:

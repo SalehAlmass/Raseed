@@ -7,6 +7,9 @@ class AppSettings {
   final DebtMode debtMode;
   final String currency;
   final bool onboardingCompleted;
+  final double vipThreshold;
+  final int inactiveDays;
+  final int deadDays;
 
   AppSettings({
     this.maxDebt = 1000.0,
@@ -15,6 +18,9 @@ class AppSettings {
     this.debtMode = DebtMode.block,
     this.currency = 'YER',
     this.onboardingCompleted = false,
+    this.vipThreshold = 100000.0,
+    this.inactiveDays = 30,
+    this.deadDays = 90,
   });
 
   Map<String, dynamic> toMap() {
@@ -25,6 +31,9 @@ class AppSettings {
       'debt_mode': debtMode.name,
       'currency': currency,
       'onboarding_completed': onboardingCompleted ? 1 : 0,
+      'vip_threshold': vipThreshold,
+      'inactive_days': inactiveDays,
+      'dead_days': deadDays,
     };
   }
 
@@ -38,6 +47,9 @@ class AppSettings {
           : DebtMode.block,
       currency: map['currency'] ?? 'YER',
       onboardingCompleted: (map['onboarding_completed'] ?? 0) == 1,
+      vipThreshold: (map['vip_threshold'] as num?)?.toDouble() ?? 100000.0,
+      inactiveDays: map['inactive_days'] ?? 30,
+      deadDays: map['dead_days'] ?? 90,
     );
   }
 
@@ -48,6 +60,9 @@ class AppSettings {
     DebtMode? debtMode,
     String? currency,
     bool? onboardingCompleted,
+    double? vipThreshold,
+    int? inactiveDays,
+    int? deadDays,
   }) {
     return AppSettings(
       maxDebt: maxDebt ?? this.maxDebt,
@@ -56,6 +71,9 @@ class AppSettings {
       debtMode: debtMode ?? this.debtMode,
       currency: currency ?? this.currency,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+      vipThreshold: vipThreshold ?? this.vipThreshold,
+      inactiveDays: inactiveDays ?? this.inactiveDays,
+      deadDays: deadDays ?? this.deadDays,
     );
   }
 }

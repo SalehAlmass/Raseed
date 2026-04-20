@@ -36,7 +36,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 11,
+      version: 13,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -90,7 +90,10 @@ class DatabaseHelper {
         strict_mode INTEGER DEFAULT 0,
         debt_mode TEXT DEFAULT 'block',
         currency TEXT DEFAULT 'YER',
-        onboarding_completed INTEGER DEFAULT 0
+        onboarding_completed INTEGER DEFAULT 0,
+        vip_threshold REAL DEFAULT 100000.0,
+        inactive_days INTEGER DEFAULT 30,
+        dead_days INTEGER DEFAULT 90
       )
     ''');
 
@@ -100,17 +103,29 @@ class DatabaseHelper {
       'strict_mode': 0,
       'currency': 'YER',
       'onboarding_completed': 0,
+      'vip_threshold': 100000.0,
+      'inactive_days': 30,
+      'dead_days': 90,
     });
 
     await db.execute('''
-      CREATE TABLE products (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        price REAL NOT NULL,
-        cost_price REAL DEFAULT 0,
-        currency TEXT DEFAULT 'YER',
         stock_quantity INTEGER DEFAULT 0,
-        barcode TEXT
+        barcode TEXT,
+        units_per_package INTEGER DEFAULT 1,
+        package_price REAL DEFAULT 0,
+        total_spent REAL DEFAULT 0
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE product_batches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER NOT NULL,
+        quantity INTEGER NOT NULL,
+        cost_price REAL NOT NULL,
+        created_at TEXT NOT NULL,
+        expiry_date TEXT,
+        FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
       )
     ''');
 
@@ -184,6 +199,43 @@ class DatabaseHelper {
     if (oldVersion < 11) {
       await db.execute("ALTER TABLE products ADD COLUMN cost_price REAL DEFAULT 0");
       await db.execute("ALTER TABLE transaction_items ADD COLUMN cost_price REAL DEFAULT 0");
+    }
+    if (oldVersion < 12) {
+      await db.execute("ALTER TABLE products ADD COLUMN units_per_package INTEGER DEFAULT 1");
+      await db.execute("ALTER TABLE products ADD COLUMN package_price REAL DEFAULT 0");
+      
+      await db.execute('''
+        CREATE TABLE product_batches (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          product_id INTEGER NOT NULL,
+          quantity INTEGER NOT NULL,
+          cost_price REAL NOT NULL,
+          created_at TEXT NOT NULL,
+          expiry_date TEXT,
+          FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Migrate existing products to batches
+      final products = await db.query('products');
+      final now = DateTime.now().toIso8601String();
+      for (var product in products) {
+        final stock = (product['stock_quantity'] as num?)?.toInt() ?? 0;
+        if (stock > 0) {
+          await db.insert('product_batches', {
+            'product_id': product['id'],
+            'quantity': stock,
+            'cost_price': product['cost_price'] ?? 0.0,
+            'created_at': now,
+          });
+        }
+      }
+    }
+    if (oldVersion < 13) {
+       await db.execute("ALTER TABLE settings ADD COLUMN vip_threshold REAL DEFAULT 100000.0");
+       await db.execute("ALTER TABLE settings ADD COLUMN inactive_days INTEGER DEFAULT 30");
+       await db.execute("ALTER TABLE settings ADD COLUMN dead_days INTEGER DEFAULT 90");
+       await db.execute("ALTER TABLE customers ADD COLUMN total_spent REAL DEFAULT 0");
     }
   }
 

@@ -90,10 +90,57 @@ class TransactionService {
       // 2. Insert items and update stock
       if (transaction.items.isNotEmpty) {
         for (final item in transaction.items) {
-          await txn.insert('transaction_items', item.toMap()..['transaction_id'] = transactionId);
+          final itemId = await txn.insert('transaction_items', item.toMap()..['transaction_id'] = transactionId);
           
           if (transaction.type == TransactionType.sale) {
-            // Deduct stock
+            // FIFO Logic: Deduct from batches
+            int remainingToDeduct = item.quantity;
+            double totalCostForThisItem = 0;
+
+            final List<Map<String, dynamic>> batches = await txn.query(
+              'product_batches',
+              where: 'product_id = ? AND quantity > 0',
+              orderBy: 'created_at ASC',
+            );
+
+            for (var batchMap in batches) {
+              if (remainingToDeduct <= 0) break;
+
+              final int batchId = batchMap['id'];
+              final int batchQty = batchMap['quantity'];
+              final double batchCost = (batchMap['cost_price'] as num).toDouble();
+
+              if (batchQty <= remainingToDeduct) {
+                // Consume entire batch
+                totalCostForThisItem += batchQty * batchCost;
+                remainingToDeduct -= batchQty;
+                await txn.delete('product_batches', where: 'id = ?', whereArgs: [batchId]);
+              } else {
+                // Consume partial batch
+                totalCostForThisItem += remainingToDeduct * batchCost;
+                await txn.execute(
+                  'UPDATE product_batches SET quantity = quantity - ? WHERE id = ?',
+                  [remainingToDeduct, batchId]
+                );
+                remainingToDeduct = 0;
+              }
+            }
+
+            // If there's still quantity remaining but no batches found (fallback for old products)
+            if (remainingToDeduct > 0) {
+              totalCostForThisItem += remainingToDeduct * item.costPrice;
+            }
+
+            // Update the cost price in the transaction item row to the actual FIFO cost
+            final avgCost = totalCostForThisItem / item.quantity;
+            await txn.update(
+              'transaction_items',
+              {'cost_price': avgCost},
+              where: 'id = ?',
+              whereArgs: [itemId]
+            );
+
+            // Update total stock in products table
             await txn.execute(
               'UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
               [item.quantity, item.productId]
@@ -126,12 +173,14 @@ class TransactionService {
           debtChange = transaction.amount;
         }
 
-        if (debtChange != 0) {
-          await _customerService.updateCustomerDebt(
-            transaction.customerId!,
-            debtChange,
-            transaction.currency,
-            transaction.date,
+        if (debtChange != 0 || transaction.type == TransactionType.sale || transaction.type == TransactionType.refund) {
+          await _customerService.updateCustomerStats(
+            id: transaction.customerId!,
+            debtChange: debtChange,
+            date: transaction.date,
+            totalSpentChange: transaction.type == TransactionType.sale 
+                ? transaction.amount 
+                : (transaction.type == TransactionType.refund ? transaction.amount : 0.0),
             executor: txn,
           );
         }
@@ -260,12 +309,14 @@ class TransactionService {
           debtChange = -transaction.amount;
         }
         
-        if (debtChange != 0) {
-          await _customerService.updateCustomerDebt(
-            transaction.customerId!,
-            debtChange,
-            transaction.currency,
-            DateTime.now(),
+        if (debtChange != 0 || transaction.type == TransactionType.sale || transaction.type == TransactionType.refund) {
+          await _customerService.updateCustomerStats(
+            id: transaction.customerId!,
+            debtChange: debtChange,
+            date: DateTime.now(),
+            totalSpentChange: transaction.type == TransactionType.sale 
+                ? -transaction.amount 
+                : (transaction.type == TransactionType.refund ? -transaction.amount : 0.0),
             executor: txn,
           );
         }

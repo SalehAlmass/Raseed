@@ -1,6 +1,9 @@
+import 'package:easy_localization/easy_localization.dart';
+
 import '../models/product.dart';
 import '../models/app_transaction.dart';
 import '../models/transaction_item.dart';
+import '../models/batch.dart';
 import 'database_helper.dart';
 import 'transaction_service.dart';
 
@@ -18,14 +21,33 @@ class ProductService {
   Future<List<Product>> getAllProducts() async {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query('products', orderBy: 'name ASC');
-    return List.generate(maps.length, (i) => Product.fromMap(maps[i]));
+    
+    final List<Product> products = [];
+    for (var map in maps) {
+      final product = Product.fromMap(map);
+      final batches = await _getBatches(product.id!);
+      products.add(product.copyWith(batches: batches));
+    }
+    return products;
+  }
+
+  Future<List<Batch>> _getBatches(int productId) async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'product_batches',
+      where: 'product_id = ? AND quantity > 0',
+      orderBy: 'created_at ASC',
+    );
+    return List.generate(maps.length, (i) => Batch.fromMap(maps[i]));
   }
 
   Future<Product?> getProduct(int id) async {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query('products', where: 'id = ?', whereArgs: [id]);
     if (maps.isEmpty) return null;
-    return Product.fromMap(maps.first);
+    final product = Product.fromMap(maps.first);
+    final batches = await _getBatches(id);
+    return product.copyWith(batches: batches);
   }
 
   Future<int> updateProduct(Product product) async {
@@ -83,5 +105,31 @@ class ProductService {
         items: [item],
       ),
     );
+  }
+
+  /// Adds a new batch to a product
+  Future<int> addBatch(Batch batch) async {
+    final db = await _dbHelper.database;
+    return await db.transaction((txn) async {
+      final id = await txn.insert('product_batches', batch.toMap());
+      // Update total stock quantity in products table
+      await txn.execute(
+        'UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?',
+        [batch.quantity, batch.productId]
+      );
+      return id;
+    });
+  }
+
+  String formatStock(int totalStock, int unitsPerPackage) {
+    if (unitsPerPackage <= 1) return "$totalStock ${'units'.tr()}";
+    
+    final cartons = totalStock ~/ unitsPerPackage;
+    final units = totalStock % unitsPerPackage;
+    
+    if (cartons == 0) return "$units ${'units'.tr()}";
+    if (units == 0) return "$cartons ${'packages'.tr()}";
+    
+    return "$cartons ${'packages'.tr()} + $units ${'units'.tr()}";
   }
 }

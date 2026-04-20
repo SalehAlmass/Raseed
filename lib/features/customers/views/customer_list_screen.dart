@@ -13,6 +13,9 @@ import '../../../core/models/app_settings.dart';
 import '../../../core/routes/routes.dart';
 import '../../../core/utils/currency_helper.dart';
 import '../../../core/widgets/app_bottom_navigation_bar.dart';
+import 'package:timeago/timeago.dart' as timeago;
+
+enum CustomerFilter { all, debtor, noDebt, active, inactive, vip }
 
 class CustomerListScreen extends StatefulWidget {
   const CustomerListScreen({super.key});
@@ -29,6 +32,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
   AppSettings? _settings;
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
+  CustomerFilter _selectedFilter = CustomerFilter.all;
+  Map<String, dynamic> _analytics = {};
 
   @override
   void initState() {
@@ -47,22 +52,57 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
     setState(() => _isLoading = true);
     final customers = await _customerService.getAllCustomers();
     final settings = await _settingsService.getSettings();
+    final analytics = await _customerService.getCustomerAnalytics();
     setState(() {
       _customers = customers;
-      _filteredCustomers = customers;
       _settings = settings;
+      _analytics = analytics;
+      _applyFilters();
       _isLoading = false;
     });
   }
 
-  void _onSearchChanged() {
+  void _applyFilters() {
     final query = _searchController.text.toLowerCase();
     setState(() {
       _filteredCustomers = _customers.where((customer) {
-        return customer.name.toLowerCase().contains(query) || 
-               customer.phone.contains(query);
+        // 1. Search Query
+        final matchesSearch = customer.name.toLowerCase().contains(query) || 
+                             customer.phone.contains(query);
+        if (!matchesSearch) return false;
+
+        // 2. Chip Filter
+        switch (_selectedFilter) {
+          case CustomerFilter.all:
+            return true;
+          case CustomerFilter.debtor:
+            return customer.totalDebt > 0;
+          case CustomerFilter.noDebt:
+            return customer.totalDebt == 0;
+          case CustomerFilter.active:
+            if (customer.lastTransactionDate == null) return false;
+            final diff = DateTime.now().difference(customer.lastTransactionDate!).inDays;
+            return diff <= (_settings?.inactiveDays ?? 30);
+          case CustomerFilter.inactive:
+            if (customer.lastTransactionDate == null) return true; // Dead is also inactive
+            final diff = DateTime.now().difference(customer.lastTransactionDate!).inDays;
+            return diff > (_settings?.inactiveDays ?? 30);
+          case CustomerFilter.vip:
+            return customer.totalSpent >= (_settings?.vipThreshold ?? 100000);
+        }
       }).toList();
+
+      // Handle VIP sorting
+      if (_selectedFilter == CustomerFilter.vip) {
+        _filteredCustomers.sort((a, b) => b.totalSpent.compareTo(a.totalSpent));
+      } else {
+        _filteredCustomers.sort((a, b) => a.name.compareTo(b.name));
+      }
     });
+  }
+
+  void _onSearchChanged() {
+    _applyFilters();
   }
 
   @override
@@ -78,8 +118,9 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       ),
       body: Column(
         children: [
+          _buildAnalyticsDashboard(),
           Padding(
-            padding: EdgeInsets.all(20.w),
+            padding: EdgeInsets.fromLTRB(20.w, 10.h, 20.w, 10.h),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -94,13 +135,14 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
               ),
             ),
           ),
+          _buildFilterChips(),
           Expanded(
             child: _isLoading 
               ? const Center(child: CircularProgressIndicator())
               : _filteredCustomers.isEmpty
                 ? Center(child: Text('no_customers'.tr()))
                 : ListView.builder(
-                    padding: EdgeInsets.symmetric(horizontal: 20.w),
+                    padding: EdgeInsets.fromLTRB(20.w, 10.h, 20.w, 100.h),
                     itemCount: _filteredCustomers.length,
                     itemBuilder: (context, index) {
                       final customer = _filteredCustomers[index];
@@ -225,6 +267,94 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       ),
     );
   }
+
+  Widget _buildAnalyticsDashboard() {
+    return Container(
+      margin: EdgeInsets.fromLTRB(20.w, 10.h, 20.w, 0),
+      padding: EdgeInsets.all(15.w),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildStatItem('total'.tr(), _analytics['total_customers']?.toString() ?? '0'),
+          _buildStatDivider(),
+          _buildStatItem('debtors'.tr(), _analytics['debtors_count']?.toString() ?? '0'),
+          _buildStatDivider(),
+          _buildStatItem('active'.tr(), _analytics['active_count']?.toString() ?? '0'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
+        ),
+        Text(
+          label,
+          style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12.sp),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatDivider() {
+    return Container(height: 30.h, width: 1, color: Colors.white.withOpacity(0.3));
+  }
+
+  Widget _buildFilterChips() {
+    return Container(
+      height: 50.h,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: 20.w),
+        children: CustomerFilter.values.map((filter) {
+          final isSelected = _selectedFilter == filter;
+          return Padding(
+            padding: EdgeInsets.only(right: 8.w),
+            child: ChoiceChip(
+              label: Text(filter.name.tr()),
+              selected: isSelected,
+              onSelected: (val) {
+                if (val) {
+                  setState(() {
+                    _selectedFilter = filter;
+                    _applyFilters();
+                  });
+                }
+              },
+              backgroundColor: AppColors.surface,
+              selectedColor: AppColors.primary,
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : AppColors.textPrimary,
+                fontSize: 12.sp,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+              side: BorderSide.none,
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
 }
 
 class _CustomerTile extends StatelessWidget {
@@ -236,6 +366,23 @@ class _CustomerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDebtor = customer.totalDebt > 0;
+    final bool isVIP = customer.totalSpent >= (settings?.vipThreshold ?? 100000);
+    
+    // Activity Status
+    Color statusColor = Colors.grey;
+    String statusLabel = 'dead'.tr();
+    if (customer.lastTransactionDate != null) {
+      final days = DateTime.now().difference(customer.lastTransactionDate!).inDays;
+      if (days <= (settings?.inactiveDays ?? 30)) {
+        statusColor = AppColors.success;
+        statusLabel = 'active'.tr();
+      } else if (days < (settings?.deadDays ?? 90)) {
+        statusColor = Colors.orange;
+        statusLabel = 'inactive'.tr();
+      }
+    }
+
     return Container(
       margin: EdgeInsets.only(bottom: 15.h),
       decoration: BoxDecoration(
@@ -252,35 +399,77 @@ class _CustomerTile extends StatelessWidget {
       child: ListTile(
         contentPadding: EdgeInsets.all(15.w),
         onTap: onTap,
-        leading: CircleAvatar(
-          backgroundColor: AppColors.primary.withOpacity(0.1),
-          child: Text(
-            customer.name.substring(0, 1).toUpperCase(),
-            style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
-          ),
-        ),
-        title: Text(
-          customer.name,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
-        ),
-        subtitle: Text(customer.phone),
-        trailing: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${CurrencyHelper.getFormatter('YER').format(customer.totalDebt)} YER',
-                style: TextStyle(
-                  color: customer.totalDebt > 0 ? AppColors.error : AppColors.success,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13.sp,
+        leading: Stack(
+          children: [
+            CircleAvatar(
+              backgroundColor: AppColors.primary.withOpacity(0.1),
+              child: Text(
+                customer.name.substring(0, 1).toUpperCase(),
+                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+              ),
+            ),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                width: 12.w,
+                height: 12.w,
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
                 ),
               ),
-              Text('debt'.tr(), style: const TextStyle(fontSize: 10, color: Colors.grey)),
-            ],
-          ),
+            ),
+          ],
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                customer.name,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
+              ),
+            ),
+            if (isVIP)
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(6.r),
+                ),
+                child: Text('VIP', style: TextStyle(color: Colors.amber[800], fontSize: 10.sp, fontWeight: FontWeight.bold)),
+              ),
+          ],
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(customer.phone, style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+            if (customer.lastTransactionDate != null)
+              Text(
+                '${'last_deal'.tr()}: ${timeago.format(customer.lastTransactionDate!, locale: context.locale.languageCode)}',
+                style: TextStyle(fontSize: 10.sp, color: AppColors.primary.withOpacity(0.7)),
+              ),
+          ],
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              '${CurrencyHelper.getFormatter('YER').format(customer.totalDebt)} YER',
+              style: TextStyle(
+                color: isDebtor ? AppColors.error : AppColors.success,
+                fontWeight: FontWeight.bold,
+                fontSize: 13.sp,
+              ),
+            ),
+            Text(
+              '${'spent'.tr()}: ${CurrencyHelper.getFormatter('YER').format(customer.totalSpent)}',
+              style: TextStyle(fontSize: 10.sp, color: Colors.grey[400]),
+            ),
+          ],
         ),
       ),
     );

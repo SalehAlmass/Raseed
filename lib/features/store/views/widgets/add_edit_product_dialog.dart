@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:rseed/core/models/batch.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/models/product.dart';
 import '../../../../core/services/product_service.dart';
@@ -23,6 +24,11 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   final _stockController = TextEditingController();
   final _costPriceController = TextEditingController();
   final _barcodeController = TextEditingController();
+  final _unitsPerPackageController = TextEditingController(text: '1');
+  final _packagePriceController = TextEditingController();
+  final _packageStockController = TextEditingController(text: '0');
+  final _unitStockController = TextEditingController(text: '0');
+  DateTime? _expiryDate;
   String _selectedCurrency = 'YER';
   bool _isLoading = false;
 
@@ -33,9 +39,15 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       _nameController.text = widget.product!.name;
       _priceController.text = widget.product!.price.toStringAsFixed(0);
       _costPriceController.text = widget.product!.costPrice.toStringAsFixed(0);
-      _stockController.text = widget.product!.stockQuantity.toString();
       _selectedCurrency = widget.product!.currency;
       _barcodeController.text = widget.product!.barcode ?? '';
+      _unitsPerPackageController.text = widget.product!.unitsPerPackage.toString();
+      _packagePriceController.text = widget.product!.packagePrice.toStringAsFixed(0);
+      
+      final totalStock = widget.product!.stockQuantity;
+      final upp = widget.product!.unitsPerPackage;
+      _packageStockController.text = (totalStock ~/ upp).toString();
+      _unitStockController.text = (totalStock % upp).toString();
     }
   }
 
@@ -47,23 +59,43 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     final name = _nameController.text;
     final price = double.tryParse(_priceController.text) ?? 0.0;
     final costPrice = double.tryParse(_costPriceController.text) ?? 0.0;
-    final stock = int.tryParse(_stockController.text) ?? 0;
+    final upp = int.tryParse(_unitsPerPackageController.text) ?? 1;
+    final packagePrice = double.tryParse(_packagePriceController.text) ?? 0.0;
+    
+    final pStock = int.tryParse(_packageStockController.text) ?? 0;
+    final uStock = int.tryParse(_unitStockController.text) ?? 0;
+    final totalStock = (pStock * upp) + uStock;
 
     final product = Product(
       id: widget.product?.id,
       name: name,
       price: price,
       costPrice: costPrice,
-      stockQuantity: stock,
+      stockQuantity: totalStock,
       currency: _selectedCurrency,
       barcode: _barcodeController.text.isEmpty ? null : _barcodeController.text,
+      unitsPerPackage: upp,
+      packagePrice: packagePrice,
     );
 
     try {
+      int productId;
       if (widget.product == null) {
-        await _productService.addProduct(product);
+        productId = await _productService.addProduct(product);
       } else {
         await _productService.updateProduct(product);
+        productId = widget.product!.id!;
+      }
+
+      // If stock was provided, create an initial batch
+      if (totalStock > 0 && widget.product == null) {
+        await _productService.addBatch(Batch(
+          productId: productId,
+          quantity: totalStock,
+          costPrice: costPrice > 0 ? costPrice : (packagePrice / upp),
+          createdAt: DateTime.now(),
+          expiryDate: _expiryDate,
+        ));
       }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -115,14 +147,35 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
               ),
             ),
             SizedBox(height: 15.h),
-            TextField(
-              controller: _stockController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'stock_quantity'.tr(),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _unitsPerPackageController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'units_per_package'.tr(),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: TextField(
+                    controller: _packagePriceController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'package_price'.tr(),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                    ),
+                  ),
+                ),
+              ],
             ),
+            SizedBox(height: 15.h),
+            _buildStockSection(),
+            SizedBox(height: 15.h),
+            _buildExpiryPicker(),
             SizedBox(height: 15.h),
             Row(
               children: [
@@ -177,6 +230,73 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
             : Text('save'.tr()),
         ),
       ],
+    );
+  }
+
+  Widget _buildStockSection() {
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('stock_quantity'.tr(), style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+          SizedBox(height: 10.h),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _packageStockController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'packages'.tr(),
+                    isDense: true,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.w),
+                child: const Text('+'),
+              ),
+              Expanded(
+                child: TextField(
+                  controller: _unitStockController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'units'.tr(),
+                    isDense: true,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExpiryPicker() {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: const Icon(Icons.calendar_today_outlined, color: AppColors.primary),
+      title: Text('expiry_date'.tr()),
+      subtitle: Text(_expiryDate == null ? 'not_set'.tr() : DateFormat('dd/MM/yyyy').format(_expiryDate!)),
+      trailing: TextButton(
+        onPressed: () async {
+          final date = await showDatePicker(
+            context: context,
+            initialDate: DateTime.now().add(const Duration(days: 365)),
+            firstDate: DateTime.now(),
+            lastDate: DateTime.now().add(const Duration(days: 3650)),
+          );
+          if (date != null) setState(() => _expiryDate = date);
+        },
+        child: Text('select'.tr()),
+      ),
     );
   }
 }

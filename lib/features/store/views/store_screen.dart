@@ -191,6 +191,12 @@ class _ProductTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final inStock = product.stockQuantity > 0;
+    final isExpired = product.hasExpiredBatch;
+    final isNearExpiry = product.hasNearExpiryBatch;
+    
+    final statusColor = isExpired 
+        ? AppColors.error 
+        : (isNearExpiry ? Colors.orange : (inStock ? AppColors.success : AppColors.error));
 
     return Container(
       margin: EdgeInsets.only(bottom: 15.h),
@@ -210,21 +216,33 @@ class _ProductTile extends StatelessWidget {
         leading: Container(
           padding: EdgeInsets.all(12.w),
           decoration: BoxDecoration(
-            color: (inStock ? AppColors.success : AppColors.error).withOpacity(0.1),
+            color: statusColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12.r),
           ),
           child: Icon(
             Icons.inventory_2_outlined,
-            color: inStock ? AppColors.success : AppColors.error,
+            color: statusColor,
           ),
         ),
         title: Text(
           product.name,
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
         ),
-        subtitle: Text(
-          '${product.stockQuantity} ${'in_stock'.tr()}',
-          style: TextStyle(color: inStock ? Colors.grey : AppColors.error),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              sl<ProductService>().formatStock(product.stockQuantity, product.unitsPerPackage),
+              style: TextStyle(
+                color: statusColor, 
+                fontWeight: (isExpired || isNearExpiry) ? FontWeight.bold : FontWeight.normal
+              ),
+            ),
+            if (isExpired) 
+              Text('expired'.tr(), style: TextStyle(color: AppColors.error, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+            if (!isExpired && isNearExpiry)
+              Text('near_expiry'.tr(), style: TextStyle(color: Colors.orange, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+          ],
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
