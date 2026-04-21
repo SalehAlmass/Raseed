@@ -7,6 +7,7 @@ import '../../../core/theme/colors.dart';
 import '../../../core/models/app_settings.dart';
 import '../../../core/routes/routes.dart';
 import '../../../core/services/subscription_service.dart';
+import '../../../core/services/auth_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -17,6 +18,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final SettingsService _settingsService = sl<SettingsService>();
+  final AuthService _authService = sl<AuthService>();
   late AppSettings _settings;
   bool _isLoading = true;
 
@@ -147,6 +149,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildSectionHeader('subscription'.tr()),
                   SizedBox(height: 15.h),
                   _buildSubscriptionTile(context),
+              
+                   SizedBox(height: 30.h),
+                  _buildSectionHeader('account'.tr()),
+                  SizedBox(height: 15.h),
+                  _buildLogoutTile(context),
               
                   SizedBox(height: 30.h),
                   _buildSectionHeader('advanced'.tr()),
@@ -326,6 +333,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
         trailing: Icon(Icons.arrow_forward_ios, color: AppColors.textSecondary, size: 16.sp),
         onTap: () {
           Navigator.of(context).pushNamed(Routes.subscription).then((_) => setState(() {}));
+        },
+      ),
+    );
+  }
+
+  Widget _buildLogoutTile(BuildContext context) {
+    final user = _authService.currentUser;
+    if (user == null) return const SizedBox.shrink();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(15.r),
+      ),
+      child: ListTile(
+        leading: const Icon(Icons.logout, color: AppColors.error),
+        title: Text('logout'.tr(), style:  TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: AppColors.error)),
+        subtitle: Text(user.email ?? '', style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+        onTap: () async {
+          await _authService.logout();
+          setState(() {});
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('logout_success'.tr())),
+            );
+          }
         },
       ),
     );

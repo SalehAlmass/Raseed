@@ -311,5 +311,19 @@
   "unit_price": "Unit Price",
   "cash_sale": "Cash Sale",
   "debt_sale": "Debt Sale",
-  "not_enough_stock": "Requested quantity is not available in stock"
+  "not_enough_stock": "Requested quantity is not available in stock",
+  "backup_cloud_drive": "Backup to Google Drive",
+  "backup_drive_desc": "Upload database to your personal Google Drive",
+  "restore_drive_desc": "Restore latest backup from Google Drive",
+  "drive_active": "Google Drive Active",
+  "grant_drive_permission": "Please grant Drive access permissions",
+  "backup_success": "Backup successful",
+  "restore_success": "Restore successful",
+  "logout": "Log Out",
+  "account": "Account",
+  "logout_success": "Logged out successfully",
+  "drive_disconnected": "Google Drive Disconnected",
+  "connect_drive": "Connect Google Drive",
+  "google_drive_disconnected": "Please connect Google Drive first",
+  "drive_permission_denied": "Drive permission denied. Please click Connect and grant permission."
 }

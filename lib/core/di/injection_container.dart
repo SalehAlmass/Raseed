@@ -16,6 +16,8 @@ import '../services/subscription_service.dart';
 import '../services/backup_service.dart';
 import '../services/category_service.dart';
 import '../services/unit_service.dart';
+import '../services/google_drive_service.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../features/reports/services/report_service.dart';
 import '../../features/reports/services/export_service.dart';
 import '../../features/reports/bloc/reports_bloc.dart';
@@ -65,13 +67,23 @@ Future<void> init() async {
   sl.registerLazySingleton<TransactionService>(() => TransactionService(sl<CustomerService>(), sl<SettingsService>()));
   sl.registerLazySingleton(() => SettingsService());
 
-  sl.registerLazySingleton<AuthService>(() => AuthService(sl<SubscriptionService>()));
+  sl.registerLazySingleton<GoogleSignIn>(() => GoogleSignIn(
+    scopes: [
+      'https://www.googleapis.com/auth/drive.file',
+      'email',
+    ],
+  ));
+
+  sl.registerLazySingleton<AuthService>(() => AuthService(sl<SubscriptionService>(), sl<GoogleSignIn>()));
   sl.registerLazySingleton<ProductService>(() => ProductService(sl<TransactionService>()));
 
   final sharedPrefs = await SharedPreferences.getInstance();
   sl.registerLazySingleton<SharedPreferences>(() => sharedPrefs);
   sl.registerLazySingleton<SubscriptionService>(() => SubscriptionService(sl<SharedPreferences>()));
-  sl.registerLazySingleton<BackupService>(() => BackupService(sl<SharedPreferences>()));
+  
+  sl.registerLazySingleton<GoogleDriveService>(() => GoogleDriveService(sl<GoogleSignIn>()));
+  sl.registerLazySingleton<BackupService>(() => BackupService(sl<SharedPreferences>(), sl<GoogleDriveService>()));
+  
   sl.registerLazySingleton<CategoryService>(() => CategoryService());
   sl.registerLazySingleton<UnitService>(() => UnitService());
 

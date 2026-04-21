@@ -1,7 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:rseed/core/services/unit_service.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/models/product.dart';
 import '../../../../core/models/batch.dart';
@@ -30,8 +29,8 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   final _nameController = TextEditingController();
   final _barcodeController = TextEditingController();
   final _conversionController = TextEditingController(text: '1');
-  final _purchasePriceController = TextEditingController(); // Price for Main Unit
-  final _salePriceController = TextEditingController();     // Price for Sub Unit (per piece)
+  final _purchasePriceController = TextEditingController();
+  final _salePriceController = TextEditingController();
   
   final _mainStockController = TextEditingController(text: '0');
   final _subStockController = TextEditingController(text: '0');
@@ -85,18 +84,14 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
 
   Future<void> _save() async {
     if (_nameController.text.isEmpty || _mainUnit == null || _subUnit == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all required fields')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
       return;
     }
 
     setState(() => _isSaving = true);
-
     final factor = int.tryParse(_conversionController.text) ?? 1;
     final purchasePrice = double.tryParse(_purchasePriceController.text) ?? 0.0;
     final salePrice = double.tryParse(_salePriceController.text) ?? 0.0;
-    
     final mStock = int.tryParse(_mainStockController.text) ?? 0;
     final sStock = int.tryParse(_subStockController.text) ?? 0;
     final totalStock = (mStock * factor) + sStock;
@@ -109,7 +104,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       stockQuantity: totalStock,
       barcode: _barcodeController.text.isEmpty ? null : _barcodeController.text,
       conversionFactor: factor,
-      packagePrice: purchasePrice, // We use packagePrice field for Main unit price
+      packagePrice: purchasePrice,
       categoryId: _selectedCategory?.id,
       mainUnitId: _mainUnit?.id,
       subUnitId: _subUnit?.id,
@@ -119,7 +114,6 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       int productId;
       if (widget.product == null) {
         productId = await _productService.addProduct(product);
-        // Add initial batch if quantity > 0
         if (totalStock > 0) {
           await _productService.addBatch(Batch(
             productId: productId,
@@ -134,11 +128,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('error_occurred'.tr()), backgroundColor: AppColors.error),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('error_occurred'.tr())));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -148,59 +138,128 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   Widget build(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
 
-    return AlertDialog(
-      title: Text(widget.product == null ? 'add_product'.tr() : 'edit_product'.tr()),
-      contentPadding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 0),
-      content: SingleChildScrollView(
+    return Dialog(
+      insetPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 24.h),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
+      child: Container(
+        constraints: BoxConstraints(maxHeight: 1.sh * 0.85),
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
         child: Column(
           children: [
-            _buildTextField(_nameController, 'product_name'.tr(), Icons.shopping_basket_outlined),
-            SizedBox(height: 12.h),
-            _buildBarcodeField(),
-            SizedBox(height: 12.h),
-            _buildCategoryDropdown(),
-            const Divider(height: 30),
-            _buildSectionHeader('stock_and_units'.tr()),
-            SizedBox(height: 12.h),
-            _buildUnitSelection(),
-            SizedBox(height: 12.h),
-            _buildQuantitySection(),
-            const Divider(height: 30),
-            _buildSectionHeader('pricing_and_expiry'.tr()),
-            SizedBox(height: 12.h),
-            _buildPriceSection(),
-            SizedBox(height: 12.h),
-            _buildExpiryPicker(),
-            SizedBox(height: 20.h),
+            _buildHeader(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(vertical: 20.h),
+                child: Column(
+                  children: [
+                    _buildSection(
+                      title: 'product_identity'.tr(),
+                      icon: Icons.info_outline,
+                      child: Column(
+                        children: [
+                          _buildModernField(_nameController, 'product_name'.tr(), Icons.drive_file_rename_outline),
+                          SizedBox(height: 12.h),
+                          _buildBarcodeField(),
+                          SizedBox(height: 12.h),
+                          _buildCategoryDropdown(),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 16.h),
+                    _buildSection(
+                      title: 'stock_and_units'.tr(),
+                      icon: Icons.inventory_2_outlined,
+                      child: Column(
+                        children: [
+                          _buildUnitPairSelection(),
+                          SizedBox(height: 12.h),
+                          _buildModernField(_conversionController, 'units_per_package'.tr(), Icons.unfold_more, type: TextInputType.number),
+                          SizedBox(height: 16.h),
+                          _buildQuantityGrid(),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 16.h),
+                    _buildSection(
+                      title: 'pricing_and_expiry'.tr(),
+                      icon: Icons.payments_outlined,
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(child: _buildModernField(_purchasePriceController, 'purchase_price'.tr(), Icons.shopping_basket_outlined, type: TextInputType.number)),
+                              SizedBox(width: 8.w),
+                              Expanded(child: _buildModernField(_salePriceController, 'selling_price'.tr(), Icons.sell_outlined, type: TextInputType.number)),
+                            ],
+                          ),
+                          SizedBox(height: 12.h),
+                          _buildExpirySelector(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            _buildActions(),
           ],
         ),
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text('cancel'.tr())),
-        ElevatedButton(
-          onPressed: _isSaving ? null : _save,
-          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-          child: _isSaving ? const CircularProgressIndicator(color: Colors.white) : Text('save'.tr()),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          widget.product == null ? 'add_product'.tr() : 'edit_product'.tr(),
+          style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
         ),
+        IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
       ],
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 14.sp)),
+  Widget _buildSection({required String title, required IconData icon, required Widget child}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.05),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, size: 18.sp, color: AppColors.primary),
+                SizedBox(width: 8.w),
+                Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 13.sp)),
+              ],
+            ),
+          ),
+          Padding(padding: EdgeInsets.all(16.w), child: child),
+        ],
+      ),
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {TextInputType type = TextInputType.text}) {
+  Widget _buildModernField(TextEditingController controller, String label, IconData icon, {TextInputType type = TextInputType.text}) {
     return TextField(
       controller: controller,
       keyboardType: type,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, size: 20.sp),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+        prefixIcon: Icon(icon, size: 20.sp, color: Colors.grey[600]),
+        filled: true,
+        fillColor: Colors.grey[50],
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: BorderSide.none),
         isDense: true,
       ),
     );
@@ -209,7 +268,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   Widget _buildBarcodeField() {
     return Row(
       children: [
-        Expanded(child: _buildTextField(_barcodeController, 'barcode'.tr(), Icons.qr_code_outlined)),
+        Expanded(child: _buildModernField(_barcodeController, 'barcode'.tr(), Icons.qr_code_outlined)),
         SizedBox(width: 8.w),
         IconButton.filled(
           onPressed: () async {
@@ -217,6 +276,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
             if (code != null) setState(() => _barcodeController.text = code);
           },
           icon: const Icon(Icons.qr_code_scanner),
+          style: IconButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r))),
         ),
       ],
     );
@@ -228,7 +288,9 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       decoration: InputDecoration(
         labelText: 'category'.tr(),
         prefixIcon: const Icon(Icons.category_outlined),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+        filled: true,
+        fillColor: Colors.grey[50],
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: BorderSide.none),
         isDense: true,
       ),
       items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c.name))).toList(),
@@ -236,28 +298,24 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     );
   }
 
-  Widget _buildUnitSelection() {
-    return Column(
+  Widget _buildUnitPairSelection() {
+    return Row(
       children: [
-        Row(
-          children: [
-            Expanded(child: _buildUnitDropdown(label: 'main_unit'.tr(), value: _mainUnit, onChanged: (v) => setState(() => _mainUnit = v))),
-            SizedBox(width: 8.w),
-            Expanded(child: _buildUnitDropdown(label: 'sub_unit'.tr(), value: _subUnit, onChanged: (v) => setState(() => _subUnit = v))),
-          ],
-        ),
-        SizedBox(height: 12.h),
-        _buildTextField(_conversionController, 'units_per_package'.tr(), Icons.swap_horiz, type: TextInputType.number),
+        Expanded(child: _buildSimpleDropdown(label: 'main_unit'.tr(), value: _mainUnit, onChanged: (v) => setState(() => _mainUnit = v))),
+        SizedBox(width: 8.w),
+        Expanded(child: _buildSimpleDropdown(label: 'sub_unit'.tr(), value: _subUnit, onChanged: (v) => setState(() => _subUnit = v))),
       ],
     );
   }
 
-  Widget _buildUnitDropdown({required String label, Unit? value, required Function(Unit?) onChanged}) {
+  Widget _buildSimpleDropdown({required String label, Unit? value, required Function(Unit?) onChanged}) {
     return DropdownButtonFormField<Unit>(
       value: value,
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+        filled: true,
+        fillColor: Colors.grey[50],
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: BorderSide.none),
         isDense: true,
       ),
       items: _units.map((u) => DropdownMenuItem(value: u, child: Text(u.name))).toList(),
@@ -265,48 +323,69 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     );
   }
 
-  Widget _buildQuantitySection() {
+  Widget _buildQuantityGrid() {
     return Container(
       padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12.r)),
+      decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(12.r)),
       child: Row(
         children: [
-          Expanded(child: _buildTextField(_mainStockController, _mainUnit?.name ?? 'Main', Icons.inventory_2_outlined, type: TextInputType.number)),
-          Padding(padding: EdgeInsets.symmetric(horizontal: 8.w), child: const Text('+')),
-          Expanded(child: _buildTextField(_subStockController, _subUnit?.name ?? 'Sub', Icons.inventory_outlined, type: TextInputType.number)),
+          Expanded(child: _buildModernField(_mainStockController, _mainUnit?.name ?? 'Main', Icons.inventory_2_outlined, type: TextInputType.number)),
+          Padding(padding: EdgeInsets.symmetric(horizontal: 8.w), child: Icon(Icons.add, color: Colors.grey[400], size: 16)),
+          Expanded(child: _buildModernField(_subStockController, _subUnit?.name ?? 'Sub', Icons.inventory_outlined, type: TextInputType.number)),
         ],
       ),
     );
   }
 
-  Widget _buildPriceSection() {
-    return Row(
-      children: [
-        Expanded(child: _buildTextField(_purchasePriceController, 'purchase_price'.tr(), Icons.shopping_cart_outlined, type: TextInputType.number)),
-        SizedBox(width: 8.w),
-        Expanded(child: _buildTextField(_salePriceController, 'selling_price'.tr(), Icons.sell_outlined, type: TextInputType.number)),
-      ],
+  Widget _buildExpirySelector() {
+    return InkWell(
+      onTap: () async {
+        final date = await showDatePicker(
+          context: context,
+          initialDate: DateTime.now().add(const Duration(days: 365)),
+          firstDate: DateTime.now(),
+          lastDate: DateTime.now().add(const Duration(days: 3650)),
+        );
+        if (date != null) setState(() => _expiryDate = date);
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+        decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(12.r)),
+        child: Row(
+          children: [
+            const Icon(Icons.calendar_month_outlined, color: Colors.grey),
+            SizedBox(width: 12.w),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('expiry_date'.tr(), style: TextStyle(fontSize: 11.sp, color: Colors.grey[600])),
+                Text(_expiryDate == null ? 'not_set'.tr() : DateFormat('dd/MM/yyyy').format(_expiryDate!), style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const Spacer(),
+            const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildExpiryPicker() {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: const Icon(Icons.calendar_month_outlined, color: AppColors.primary),
-      title: Text('expiry_date'.tr()),
-      subtitle: Text(_expiryDate == null ? 'not_set'.tr() : DateFormat('dd/MM/yyyy').format(_expiryDate!)),
-      trailing: TextButton(
-        onPressed: () async {
-          final date = await showDatePicker(
-            context: context,
-            initialDate: DateTime.now().add(const Duration(days: 365)),
-            firstDate: DateTime.now(),
-            lastDate: DateTime.now().add(const Duration(days: 3650)),
-          );
-          if (date != null) setState(() => _expiryDate = date);
-        },
-        child: Text('select'.tr()),
-      ),
+  Widget _buildActions() {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _isSaving ? null : _save,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(vertical: 14.h),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.r)),
+            ),
+            child: _isSaving ? const CircularProgressIndicator(color: Colors.white) : Text('save'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ),
+      ],
     );
   }
 }

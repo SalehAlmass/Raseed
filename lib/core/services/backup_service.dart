@@ -1,6 +1,5 @@
 
 import 'dart:io';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -9,50 +8,44 @@ import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'database_helper.dart';
+import 'google_drive_service.dart';
 
 class BackupService {
-  final FirebaseStorage _storage = FirebaseStorage.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final SharedPreferences _prefs;
+  final GoogleDriveService _googleDriveService;
 
   static const String _lastBackupKey = 'last_backup_time';
   static const String _autoBackupEnabledKey = 'auto_backup_enabled';
 
-  BackupService(this._prefs);
+  BackupService(this._prefs, this._googleDriveService);
 
   String? get uid => _auth.currentUser?.uid;
 
-  // 1. Cloud Backup (Latest Only)
+  // 1. Cloud Backup (To Google Drive)
   Future<void> backupToCloud({Function(double)? onProgress}) async {
-    if (uid == null) throw Exception('User not authenticated');
+    if (_auth.currentUser == null) throw Exception('User not authenticated');
 
     final dbPath = join(await getDatabasesPath(), 'raseed.db');
     final dbFile = File(dbPath);
     if (!await dbFile.exists()) throw Exception('Database file not found');
 
-    final ref = _storage.ref().child('backups/$uid/latest_backup.db');
-    final uploadTask = ref.putFile(dbFile);
-
-    uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
-      if (onProgress != null) {
-        final progress = snapshot.bytesTransferred / snapshot.totalBytes;
-        onProgress(progress);
-      }
-    });
-
-    await uploadTask;
+    if (onProgress != null) onProgress(0.5); // Google Drive API doesn't support progress streams easily, so we show 50%
+    
+    await _googleDriveService.uploadBackup(dbFile);
+    
+    if (onProgress != null) onProgress(1.0);
     await _prefs.setString(_lastBackupKey, DateTime.now().toIso8601String());
   }
 
-  // 2. Cloud Restore
+  // 2. Cloud Restore (From Google Drive)
   Future<void> restoreFromCloud() async {
-    if (uid == null) throw Exception('User not authenticated');
+    if (_auth.currentUser == null) throw Exception('User not authenticated');
 
-    final ref = _storage.ref().child('backups/$uid/latest_backup.db');
     final directory = await getApplicationDocumentsDirectory();
     final tempFile = File(join(directory.path, 'temp_restore.db'));
 
-    await ref.writeToFile(tempFile);
+    await _googleDriveService.downloadLatestBackup(tempFile);
     await _replaceLocalDatabase(tempFile);
   }
 
@@ -62,7 +55,6 @@ class BackupService {
     final dbFile = File(dbPath);
     if (!await dbFile.exists()) throw Exception('Database not found');
 
-    // Create a copy with a friendly name
     final tempDir = await getTemporaryDirectory();
     final backupFile = await dbFile.copy(join(tempDir.path, 'raseed_backup_${DateTime.now().millisecondsSinceEpoch}.db'));
 
@@ -72,7 +64,7 @@ class BackupService {
   // 4. Local Import
   Future<void> importLocalBackup() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.any, // sqflite files don't have a specific extension always, but usually .db
+      type: FileType.any,
     );
 
     if (result != null && result.files.single.path != null) {
@@ -83,28 +75,23 @@ class BackupService {
 
   // Helper to replace the database
   Future<void> _replaceLocalDatabase(File sourceFile) async {
-    // Close existing connection
     await DatabaseHelper.instance.close();
     
     final dbPath = join(await getDatabasesPath(), 'raseed.db');
     
-    // Create backup of current before overwriting (safety)
     final dbFile = File(dbPath);
     if (await dbFile.exists()) {
       await dbFile.copy('$dbPath.bak');
     }
 
-    // Overwrite
     await sourceFile.copy(dbPath);
-    
-    // Reset DatabaseHelper so it re-opens with the new file
     DatabaseHelper.reset();
   }
 
   // Auto-backup check
   Future<void> checkAutoBackup() async {
     final enabled = _prefs.getBool(_autoBackupEnabledKey) ?? false;
-    if (!enabled || uid == null) return;
+    if (!enabled || _auth.currentUser == null) return;
 
     final lastBackupStr = _prefs.getString(_lastBackupKey);
     if (lastBackupStr != null) {

@@ -1,17 +1,18 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'subscription_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn;
   final SubscriptionService _subService;
   
   static const String _authKey = 'is_authenticated';
 
-  AuthService(this._subService);
+  AuthService(this._subService, this._googleSignIn);
 
   // Getter for current user
   User? get currentUser => _auth.currentUser;
@@ -79,6 +80,35 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_authKey) ?? false;
   }
+
+  // Google Drive Authorization Checks
+  Future<bool> isGoogleDriveAuthorized() async {
+    if (_auth.currentUser == null) return false;
+    
+    var googleAccount = _googleSignIn.currentUser;
+    googleAccount ??= await _googleSignIn.signInSilently();
+    
+    if (googleAccount == null) return false;
+    
+    const driveScope = 'https://www.googleapis.com/auth/drive.file';
+    return await _googleSignIn.canAccessScopes([driveScope]);
+  }
+
+  // Force re-connect Google Drive
+  Future<bool> connectGoogleDrive() async {
+    try {
+      final account = await _googleSignIn.signIn();  
+      return account != null;
+    } catch (e) {
+      if (e is PlatformException && e.code == 'sign_in_failed') {
+        if (e.message?.contains('10') ?? false) {
+           throw Exception('google_api_config_error');
+        }
+      }
+      rethrow;
+    }
+  }
+
 
   // Legacy Master Password Check (Keep for fallback or if needed)
   Future<bool> verifyMasterPassword(String password) async {

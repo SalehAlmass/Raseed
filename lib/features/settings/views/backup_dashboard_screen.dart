@@ -20,6 +20,24 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
   final AuthService _authService = sl<AuthService>();
   bool _isLoading = false;
   double _progress = 0;
+  bool _isDriveAuthorized = false;
+  bool _checkingStatus = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkDriveStatus();
+  }
+
+  Future<void> _checkDriveStatus() async {
+    final status = await _authService.isGoogleDriveAuthorized();
+    if (mounted) {
+      setState(() {
+        _isDriveAuthorized = status;
+        _checkingStatus = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +58,7 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
           children: [
             _buildUserSection(user),
             SizedBox(height: 30.h),
-            _buildCloudSection(user != null),
+            _buildDriveSection(user != null),
             SizedBox(height: 30.h),
             _buildLocalSection(),
             SizedBox(height: 30.h),
@@ -75,10 +93,13 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
                   user != null ? user.email ?? 'Connected Account' : 'guest_mode'.tr(),
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
                 ),
-                Text(
-                  user != null ? 'cloud_active'.tr() : 'login_to_sync'.tr(),
-                  style: TextStyle(color: user != null ? Colors.green : Colors.grey, fontSize: 12.sp),
-                ),
+                if (_checkingStatus)
+                  SizedBox(height: 5.h, child: LinearProgressIndicator(minHeight: 2.h))
+                else
+                  Text(
+                    _isDriveAuthorized ? 'drive_active'.tr() : 'drive_disconnected'.tr(),
+                    style: TextStyle(color: _isDriveAuthorized ? Colors.green : Colors.orange, fontSize: 12.sp),
+                  ),
               ],
             ),
           ),
@@ -88,30 +109,60 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
               child: Text('login'.tr()),
             )
-          else
-            IconButton(
-              icon: const Icon(Icons.logout, color: AppColors.error),
-              onPressed: () async {
-                await _authService.logout();
-                setState(() {});
-              },
+          else 
+            Row(
+              children: [
+                if (!_isDriveAuthorized && !_checkingStatus)
+                   IconButton(
+                    icon: const Icon(Icons.link_off, color: Colors.orange),
+                    onPressed: _handleConnectDrive,
+                    tooltip: 'connect_drive'.tr(),
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.logout, color: AppColors.error),
+                  onPressed: () async {
+                    await _authService.logout();
+                    setState(() {});
+                  },
+                ),
+              ],
             ),
         ],
       ),
     );
   }
 
-  Widget _buildCloudSection(bool isLogged) {
+  Widget _buildDriveSection(bool isLogged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('cloud_backup'.tr(), Icons.cloud_done_outlined),
+        _buildSectionHeader('cloud_backup'.tr(), Icons.add_to_drive_outlined),
+        if (!isLogged) ...[
+          SizedBox(height: 10.h),
+          Text('login_to_sync'.tr(), style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+        ] else if (!_isDriveAuthorized && !_checkingStatus) ...[
+           SizedBox(height: 15.h),
+           SizedBox(
+             width: double.infinity,
+             child: ElevatedButton.icon(
+               onPressed: _handleConnectDrive,
+               icon: const Icon(Icons.add_to_drive),
+               label: Text('connect_drive'.tr()),
+               style: ElevatedButton.styleFrom(
+                 backgroundColor: Colors.orange,
+                 foregroundColor: Colors.white,
+                 padding: EdgeInsets.symmetric(vertical: 12.h),
+                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.r)),
+               ),
+             ),
+           ),
+        ],
         SizedBox(height: 15.h),
         _buildActionCard(
-          title: 'backup_now'.tr(),
-          subtitle: 'backup_cloud_desc'.tr(),
-          icon: Icons.upload_file_rounded,
-          onTap: isLogged ? _handleCloudBackup : null,
+          title: 'backup_cloud_drive'.tr(),
+          subtitle: 'backup_drive_desc'.tr(),
+          icon: Icons.cloud_upload_outlined,
+          onTap: (isLogged && _isDriveAuthorized) ? _handleDriveBackup : null,
           color: AppColors.success,
           loading: _isLoading,
           progress: _progress,
@@ -119,9 +170,9 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
         SizedBox(height: 12.h),
         _buildActionCard(
           title: 'restore_latest'.tr(),
-          subtitle: 'restore_cloud_desc'.tr(),
-          icon: Icons.download_rounded,
-          onTap: isLogged ? _handleCloudRestore : null,
+          subtitle: 'restore_drive_desc'.tr(),
+          icon: Icons.cloud_download_outlined,
+          onTap: (isLogged && _isDriveAuthorized) ? _handleDriveRestore : null,
           color: AppColors.info,
         ),
         if (isLogged && _backupService.lastBackupTime != null)
@@ -246,19 +297,44 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
   }
 
   // Action Handlers
-  Future<void> _handleCloudBackup() async {
-    setState(() => _isLoading = true);
+  Future<void> _handleConnectDrive() async {
+    try {
+      final success = await _authService.connectGoogleDrive();
+      if (success) {
+        await _checkDriveStatus();
+      }
+    } catch (e) {
+      final errorMsg = e.toString();
+      if (errorMsg.contains('google_api_config_error')) {
+        _showError(errorMsg.replaceAll('Exception: ', '').tr());
+      } else {
+        _showError(errorMsg);
+      }
+    }
+  }
+
+  Future<void> _handleDriveBackup() async {
+    setState(() {
+      _isLoading = true;
+      _progress = 0.1;
+    });
     try {
       await _backupService.backupToCloud(onProgress: (p) => setState(() => _progress = p));
       _showSuccess('backup_success'.tr());
     } catch (e) {
-      _showError(e.toString());
+      final errorMsg = e.toString();
+      if (errorMsg.contains('google_drive_disconnected') || errorMsg.contains('drive_permission_denied')) {
+        _showError(errorMsg.replaceAll('Exception: ', '').tr());
+        await _checkDriveStatus();
+      } else {
+        _showError(errorMsg);
+      }
     } finally {
       setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _handleCloudRestore() async {
+  Future<void> _handleDriveRestore() async {
     final confirm = await _showConfirmDialog('restore_cloud_confirm'.tr(), 'restore_warning'.tr());
     if (!confirm) return;
 

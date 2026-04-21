@@ -311,5 +311,20 @@
   "unit_price": "سعر الوحدة",
   "cash_sale": "بيع نقدي",
   "debt_sale": "بيع آجل",
-  "not_enough_stock": "الكمية المطلوبة غير متوفرة في المخزون"
+  "not_enough_stock": "الكمية المطلوبة غير متوفرة في المخزون",
+  "backup_cloud_drive": "نسخة احتياطية على Google Drive",
+  "backup_drive_desc": "ارفع قاعدة البيانات إلى حسابك الشخصي في قوقل درايف",
+  "restore_drive_desc": "استعد آخر نسخة من ملفاتك في قوقل درايف",
+  "drive_active": "قوقل درايف مفعل",
+  "grant_drive_permission": "يرجى منح صلاحية الوصول لملفات الدرايف",
+  "backup_success": "تم النسخ الاحتياطي بنجاح",
+  "restore_success": "تم استعادة البيانات بنجاح",
+  "logout": "تسجيل الخروج",
+  "account": "الحساب",
+  "logout_success": "تم تسجيل الخروج بنجاح",
+  "drive_disconnected": "قوقل درايف غير متصل",
+  "connect_drive": "ربط قوقل درايف",
+  "google_drive_disconnected": "يرجى ربط حساب قوقل درايف أولاً",
+  "drive_permission_denied": "لم يتم منح صلاحية الوصول للملفات. يرجى الضغط على ربط الدرايف والموافقة على الصلاحية.",
+  "google_api_config_error": "خطأ في إعدادات قوقل (الخطأ 10). يرجى التأكد من تفعيل Google Drive API في الكونسول وإضافة بصمة SHA-1 لجهازك في Firebase."
 }
