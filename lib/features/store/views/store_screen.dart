@@ -119,6 +119,18 @@ class _StoreScreenState extends State<StoreScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.category_outlined),
+            onPressed: () => Navigator.pushNamed(context, Routes.categories),
+            tooltip: 'manage_categories'.tr(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.straighten),
+            onPressed: () => Navigator.pushNamed(context, Routes.units),
+            tooltip: 'manage_units'.tr(),
+          ),
+        ],
       ),
       body: Column(
         children: [

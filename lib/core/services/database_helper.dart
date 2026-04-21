@@ -36,7 +36,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 13,
+      version: 14,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -236,6 +236,39 @@ class DatabaseHelper {
        await db.execute("ALTER TABLE settings ADD COLUMN inactive_days INTEGER DEFAULT 30");
        await db.execute("ALTER TABLE settings ADD COLUMN dead_days INTEGER DEFAULT 90");
        await db.execute("ALTER TABLE customers ADD COLUMN total_spent REAL DEFAULT 0");
+    }
+    if (oldVersion < 14) {
+      // 1. Create categories table
+      await db.execute('''
+        CREATE TABLE categories (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL
+        )
+      ''');
+
+      // 2. Create units table
+      await db.execute('''
+        CREATE TABLE units (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL
+        )
+      ''');
+
+      // 3. Add default data
+      await db.insert('categories', {'name': 'العام'});
+      await db.insert('categories', {'name': 'مشروبات'});
+      await db.insert('categories', {'name': 'مواد غذائية'});
+      
+      await db.insert('units', {'name': 'حبة'});
+      await db.insert('units', {'name': 'كرتون'});
+      await db.insert('units', {'name': 'كيلو'});
+      await db.insert('units', {'name': 'جرام'});
+
+      // 4. Update products table
+      await db.execute("ALTER TABLE products ADD COLUMN category_id INTEGER");
+      await db.execute("ALTER TABLE products ADD COLUMN main_unit_id INTEGER");
+      await db.execute("ALTER TABLE products ADD COLUMN sub_unit_id INTEGER");
+      await db.execute("ALTER TABLE products ADD COLUMN conversion_factor INTEGER DEFAULT 1");
     }
   }
 

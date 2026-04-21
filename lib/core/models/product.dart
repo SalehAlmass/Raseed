@@ -6,11 +6,17 @@ class Product {
   final double price;
   final double costPrice;
   final String currency;
-  final int stockQuantity;
+  final int stockQuantity; // Stored in sub-units
   final String? barcode;
 
-  final int unitsPerPackage;
-  final double packagePrice;
+  final int unitsPerPackage; // Legacy, will use conversionFactor
+  final double packagePrice; // Purchase price for main unit
+  
+  final int? categoryId;
+  final int? mainUnitId;
+  final int? subUnitId;
+  final int conversionFactor;
+
   final List<Batch> batches;
 
   Product({
@@ -23,10 +29,16 @@ class Product {
     this.barcode,
     this.unitsPerPackage = 1,
     this.packagePrice = 0.0,
+    this.categoryId,
+    this.mainUnitId,
+    this.subUnitId,
+    this.conversionFactor = 1,
     this.batches = const [],
   });
 
-  double get unitPrice => unitsPerPackage > 0 ? packagePrice / unitsPerPackage : price;
+  // Convenience getters
+  double get purchasePricePerMainUnit => packagePrice;
+  double get salePricePerSubUnit => price;
   
   bool get hasExpiredBatch => batches.any((b) => b.isExpired);
   bool get hasNearExpiryBatch => batches.any((b) => b.isNearExpiry);
@@ -42,6 +54,10 @@ class Product {
       'barcode': barcode,
       'units_per_package': unitsPerPackage,
       'package_price': packagePrice,
+      'category_id': categoryId,
+      'main_unit_id': mainUnitId,
+      'sub_unit_id': subUnitId,
+      'conversion_factor': conversionFactor,
     };
   }
 
@@ -56,6 +72,10 @@ class Product {
       barcode: map['barcode'],
       unitsPerPackage: map['units_per_package'] ?? 1,
       packagePrice: (map['package_price'] as num?)?.toDouble() ?? 0.0,
+      categoryId: map['category_id'],
+      mainUnitId: map['main_unit_id'],
+      subUnitId: map['sub_unit_id'],
+      conversionFactor: map['conversion_factor'] ?? 1,
     );
   }
 
@@ -69,6 +89,10 @@ class Product {
     String? barcode,
     int? unitsPerPackage,
     double? packagePrice,
+    int? categoryId,
+    int? mainUnitId,
+    int? subUnitId,
+    int? conversionFactor,
     List<Batch>? batches,
   }) {
     return Product(
@@ -81,6 +105,10 @@ class Product {
       barcode: barcode ?? this.barcode,
       unitsPerPackage: unitsPerPackage ?? this.unitsPerPackage,
       packagePrice: packagePrice ?? this.packagePrice,
+      categoryId: categoryId ?? this.categoryId,
+      mainUnitId: mainUnitId ?? this.mainUnitId,
+      subUnitId: subUnitId ?? this.subUnitId,
+      conversionFactor: conversionFactor ?? this.conversionFactor,
       batches: batches ?? this.batches,
     );
   }

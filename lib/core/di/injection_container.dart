@@ -14,6 +14,8 @@ import '../services/auth_service.dart';
 import '../services/product_service.dart';
 import '../services/subscription_service.dart';
 import '../services/backup_service.dart';
+import '../services/category_service.dart';
+import '../services/unit_service.dart';
 import '../../features/reports/services/report_service.dart';
 import '../../features/reports/services/export_service.dart';
 import '../../features/reports/bloc/reports_bloc.dart';
@@ -70,6 +72,8 @@ Future<void> init() async {
   sl.registerLazySingleton<SharedPreferences>(() => sharedPrefs);
   sl.registerLazySingleton<SubscriptionService>(() => SubscriptionService(sl<SharedPreferences>()));
   sl.registerLazySingleton<BackupService>(() => BackupService(sl<SharedPreferences>()));
+  sl.registerLazySingleton<CategoryService>(() => CategoryService());
+  sl.registerLazySingleton<UnitService>(() => UnitService());
 
   //! Reports
   sl.registerLazySingleton(() => ReportService());

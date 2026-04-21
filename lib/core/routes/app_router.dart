@@ -14,6 +14,8 @@ import '../models/app_transaction.dart';
 import '../../features/reports/views/reports_dashboard_screen.dart';
 import '../../features/auth/views/auth_screen.dart';
 import '../../features/settings/views/backup_dashboard_screen.dart';
+import '../../features/store/views/category_management_screen.dart';
+import '../../features/store/views/unit_management_screen.dart';
 import '../../features/reports/bloc/reports_bloc.dart';
 import '../di/injection_container.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -43,6 +45,10 @@ class AppRouter {
         return _buildRoute(const AuthScreen(), settings);
       case Routes.backup:
         return _buildRoute(const BackupDashboardScreen(), settings);
+      case Routes.categories:
+        return _buildRoute(const CategoryManagementScreen(), settings);
+      case Routes.units:
+        return _buildRoute(const UnitManagementScreen(), settings);
       case Routes.store:
         return _buildRoute(const StoreScreen(), settings);
       case Routes.sale:

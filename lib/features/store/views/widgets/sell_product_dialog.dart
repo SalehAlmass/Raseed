@@ -5,8 +5,10 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/models/app_transaction.dart';
 import '../../../../core/models/customer.dart';
 import '../../../../core/models/product.dart';
+import '../../../../core/models/unit.dart';
 import '../../../../core/services/customer_service.dart';
 import '../../../../core/services/product_service.dart';
+import '../../../../core/services/unit_service.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/utils/currency_helper.dart';
 
@@ -22,31 +24,47 @@ class SellProductDialog extends StatefulWidget {
 class _SellProductDialogState extends State<SellProductDialog> {
   final _productService = sl<ProductService>();
   final _customerService = sl<CustomerService>();
+  final _unitService = sl<UnitService>();
   final _quantityController = TextEditingController(text: '1');
   
   TransactionType _selectedType = TransactionType.sale;
   List<Customer> _customers = [];
   Customer? _selectedCustomer;
+  Unit? _mainUnit;
+  Unit? _subUnit;
+  bool _sellByMainUnit = false;
   bool _isLoading = false;
+  bool _dataLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadCustomers();
+    _loadData();
   }
 
-  Future<void> _loadCustomers() async {
-    final list = await _customerService.getAllCustomers();
-    if (mounted) setState(() => _customers = list);
+  Future<void> _loadData() async {
+    final customers = await _customerService.getAllCustomers();
+    final allUnits = await _unitService.getAllUnits();
+    
+    if (mounted) {
+      setState(() {
+        _customers = customers;
+        _mainUnit = allUnits.where((u) => u.id == widget.product.mainUnitId).firstOrNull;
+        _subUnit = allUnits.where((u) => u.id == widget.product.subUnitId).firstOrNull;
+        _dataLoading = false;
+      });
+    }
   }
 
   Future<void> _sell() async {
-    final quantity = int.tryParse(_quantityController.text) ?? 0;
-    if (quantity <= 0) return;
+    final inputQty = int.tryParse(_quantityController.text) ?? 0;
+    if (inputQty <= 0) return;
     
+    final realQuantity = _sellByMainUnit ? inputQty * widget.product.conversionFactor : inputQty;
+
     if (_selectedType == TransactionType.sale && _selectedCustomer == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select a customer'), backgroundColor: AppColors.error),
+        SnackBar(content: Text('select_customer'.tr()), backgroundColor: AppColors.error),
       );
       return;
     }
@@ -56,7 +74,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
     try {
       await _productService.sellProduct(
         product: widget.product,
-        quantity: quantity,
+        quantity: realQuantity,
         type: _selectedType,
         customerId: _selectedType == TransactionType.sale ? _selectedCustomer!.id : null,
       );
@@ -65,9 +83,8 @@ class _SellProductDialogState extends State<SellProductDialog> {
     } catch (e) {
       if (mounted) {
         String errMsg = 'error_occurred'.tr();
-        if (e.toString().contains('uninsufficient_stock')) errMsg = 'Not enough stock!';
-        if (e.toString().contains('over_limit')) errMsg = 'over_limit_error'.tr();
-
+        if (e.toString().contains('uninsufficient_stock')) errMsg = 'not_enough_stock'.tr();
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errMsg), backgroundColor: AppColors.error),
         );
@@ -79,8 +96,11 @@ class _SellProductDialogState extends State<SellProductDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final quantity = int.tryParse(_quantityController.text) ?? 1;
-    final totalPrice = widget.product.price * quantity;
+    if (_dataLoading) return const Center(child: CircularProgressIndicator());
+
+    final inputQty = int.tryParse(_quantityController.text) ?? 1;
+    final unitPrice = _sellByMainUnit ? (widget.product.price * widget.product.conversionFactor) : widget.product.price;
+    final totalPrice = unitPrice * inputQty;
 
     return AlertDialog(
       title: Text('${'sale'.tr()}: ${widget.product.name}'),
@@ -89,26 +109,16 @@ class _SellProductDialogState extends State<SellProductDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: EdgeInsets.all(12.w),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('${'price'.tr()}: ${CurrencyHelper.getFormatter(widget.product.currency).format(widget.product.price)} ${widget.product.currency}'),
-                  Text('${'stock'.tr()}: ${widget.product.stockQuantity}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ),
+            _buildStockInfo(),
             SizedBox(height: 20.h),
+            _buildUnitSelector(),
+            SizedBox(height: 15.h),
             TextField(
               controller: _quantityController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 labelText: 'quantity'.tr(),
+                suffixText: _sellByMainUnit ? (_mainUnit?.name ?? 'Main') : (_subUnit?.name ?? 'Sub'),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
               ),
               onChanged: (val) => setState(() {}),
@@ -117,7 +127,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
             SegmentedButton<TransactionType>(
               segments: [
                 ButtonSegment(value: TransactionType.sale, label: Text('cash_sale'.tr())),
-                ButtonSegment(value: TransactionType.payment, label: Text('payment'.tr())),
+                ButtonSegment(value: TransactionType.payment, label: Text('debt_sale'.tr())),
               ],
               selected: {_selectedType},
               onSelectionChanged: (set) => setState(() => _selectedType = set.first),
@@ -136,28 +146,77 @@ class _SellProductDialogState extends State<SellProductDialog> {
               ),
             ],
             SizedBox(height: 20.h),
-            Center(
-              child: Text(
-                '${'total'.tr()}: ${CurrencyHelper.getFormatter(widget.product.currency).format(totalPrice)} ${widget.product.currency}',
-                style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: AppColors.primary),
-              ),
-            ),
+            _buildTotalDisplay(totalPrice),
           ],
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text('cancel'.tr()),
-        ),
+        TextButton(onPressed: () => Navigator.pop(context, false), child: Text('cancel'.tr())),
         ElevatedButton(
           onPressed: _isLoading ? null : _sell,
           style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white),
-          child: _isLoading 
-            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-            : Text('confirm_sale'.tr()),
+          child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : Text('confirm_sale'.tr()),
         ),
       ],
+    );
+  }
+
+  Widget _buildStockInfo() {
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.05), borderRadius: BorderRadius.circular(10.r)),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text('${'stock'.tr()}: ${_productService.formatStock(widget.product.stockQuantity, widget.product.conversionFactor)}', 
+               style: const TextStyle(fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUnitSelector() {
+    if (widget.product.conversionFactor <= 1) return const SizedBox.shrink();
+
+    return Container(
+      padding: EdgeInsets.all(4.w),
+      decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(12.r)),
+      child: Row(
+        children: [
+          Expanded(
+            child: ChoiceChip(
+              label: Container(width: double.infinity, alignment: Alignment.center, child: Text(_subUnit?.name ?? 'Sub')),
+              selected: !_sellByMainUnit,
+              onSelected: (val) => setState(() => _sellByMainUnit = false),
+            ),
+          ),
+          Expanded(
+            child: ChoiceChip(
+              label: Container(width: double.infinity, alignment: Alignment.center, child: Text(_mainUnit?.name ?? 'Main')),
+              selected: _sellByMainUnit,
+              onSelected: (val) => setState(() => _sellByMainUnit = true),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTotalDisplay(double totalPrice) {
+    return Center(
+      child: Column(
+        children: [
+          Text(
+            '${'unit_price'.tr()}: ${CurrencyHelper.getFormatter(widget.product.currency).format(_sellByMainUnit ? (widget.product.price * widget.product.conversionFactor) : widget.product.price)}',
+            style: TextStyle(fontSize: 14.sp, color: Colors.grey),
+          ),
+          SizedBox(height: 5.h),
+          Text(
+            '${'total'.tr()}: ${CurrencyHelper.getFormatter(widget.product.currency).format(totalPrice)} ${widget.product.currency}',
+            style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold, color: AppColors.primary),
+          ),
+        ],
+      ),
     );
   }
 }
