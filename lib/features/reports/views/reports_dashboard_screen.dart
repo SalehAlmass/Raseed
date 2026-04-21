@@ -297,12 +297,20 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(icon, color: color, size: 20.sp),
-                  SizedBox(width: 8.w),
-                  Text(title, style: TextStyle(color: AppColors.textSecondary, fontSize: 13.sp)),
-                ],
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(icon, color: color, size: 20.sp),
+                    SizedBox(width: 8.w),
+                    Flexible(
+                      child: Text(
+                        title, 
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13.sp),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               if (growth != null)
                 Row(
