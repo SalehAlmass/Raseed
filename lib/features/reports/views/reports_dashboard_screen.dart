@@ -1,4 +1,3 @@
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -47,7 +46,10 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
       extendBody: true,
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('reports'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          'reports'.tr(),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
@@ -129,8 +131,8 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
         children: [
           _buildFilterBar(),
           SizedBox(height: 20.h),
-          _buildInsightsSection(report),
-          SizedBox(height: 25.h),
+          //_buildInsightsSection(report),
+          //SizedBox(height: 25.h),
           _buildSummaryCards(report),
           SizedBox(height: 25.h),
           _buildInventoryCard(report),
@@ -178,17 +180,37 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
         border: Border.all(color: AppColors.primary.withOpacity(0.1)),
       ),
       child: Column(
-        children: report.insights.map((insight) => ListTile(
-          dense: true,
-          leading: Icon(Icons.lightbulb_outline, color: AppColors.primary, size: 20.sp),
-          title: Text(insight, style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w500)),
-        )).toList(),
+        children: report.insights
+            .map(
+              (insight) => ListTile(
+                dense: true,
+                leading: Icon(
+                  Icons.lightbulb_outline,
+                  color: AppColors.primary,
+                  size: 20.sp,
+                ),
+                title: Text(
+                  insight,
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            )
+            .toList(),
       ),
     );
   }
 
   Widget _buildInventoryCard(DashboardReport report) {
-    return _metricCard('inventory_value'.tr(), report.inventoryValue, Colors.blueGrey, Icons.warehouse_outlined, fullWidth: true);
+    return _metricCard(
+      'inventory_value'.tr(),
+      report.inventoryValue,
+      Colors.blueGrey,
+      Icons.warehouse_outlined,
+      fullWidth: true,
+    );
   }
 
   Widget _buildFilterBar() {
@@ -222,12 +244,19 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
         if (val) {
           final now = DateTime.now();
           DateTime start;
-          if (period == ReportPeriod.daily) start = DateTime(now.year, now.month, now.day);
-          else if (period == ReportPeriod.monthly) start = DateTime(now.year, now.month, 1);
-          else start = DateTime(now.year, 1, 1);
+          if (period == ReportPeriod.daily)
+            start = DateTime(now.year, now.month, now.day);
+          else if (period == ReportPeriod.monthly)
+            start = DateTime(now.year, now.month, 1);
+          else
+            start = DateTime(now.year, 1, 1);
 
           setState(() {
-            _filter = _filter.copyWith(period: period, startDate: start, endDate: now);
+            _filter = _filter.copyWith(
+              period: period,
+              startDate: start,
+              endDate: now,
+            );
           });
           context.read<ReportsBloc>().add(LoadReportsEvent(_filter));
         }
@@ -245,7 +274,10 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
       context: context,
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
-      initialDateRange: DateTimeRange(start: _filter.startDate, end: _filter.endDate),
+      initialDateRange: DateTimeRange(
+        start: _filter.startDate,
+        end: _filter.endDate,
+      ),
     );
     if (picked != null) {
       setState(() {
@@ -264,29 +296,46 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
       children: [
         Row(
           children: [
-            Expanded(child: _metricCard(
-              'total_sales'.tr(), 
-              report.totalSales, 
-              AppColors.success, 
-              Icons.trending_up,
-              growth: report.salesGrowth,
-            )),
+            Expanded(
+              child: _metricCard(
+                'total_sales'.tr(),
+                report.totalSales,
+                AppColors.success,
+                Icons.trending_up,
+                growth: report.salesGrowth,
+              ),
+            ),
             SizedBox(width: 12.w),
-            Expanded(child: _metricCard(
-              'net_income'.tr(), 
-              report.totalProfit, 
-              AppColors.info, 
-              Icons.payments_outlined
-            )),
+            Expanded(
+              child: _metricCard(
+                'net_income'.tr(),
+                report.totalProfit,
+                AppColors.info,
+                Icons.payments_outlined,
+              ),
+            ),
           ],
         ),
         SizedBox(height: 12.h),
-        _metricCard('total_debt'.tr(), report.totalDebt, AppColors.error, Icons.account_balance_wallet, fullWidth: true),
+        _metricCard(
+          'total_debt'.tr(),
+          report.totalDebt,
+          AppColors.error,
+          Icons.account_balance_wallet,
+          fullWidth: true,
+        ),
       ],
     );
   }
 
-  Widget _metricCard(String title, double value, Color color, IconData icon, {bool fullWidth = false, double? growth}) {
+  Widget _metricCard(
+    String title,
+    double value,
+    Color color,
+    IconData icon, {
+    bool fullWidth = false,
+    double? growth,
+  }) {
     return Container(
       width: fullWidth ? double.infinity : null,
       padding: EdgeInsets.all(16.w),
@@ -304,8 +353,11 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
                     SizedBox(width: 8.w),
                     Flexible(
                       child: Text(
-                        title, 
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13.sp),
+                        title,
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 13.sp,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -323,7 +375,9 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
                     Text(
                       '${growth.abs().toStringAsFixed(1)}%',
                       style: TextStyle(
-                        color: growth >= 0 ? AppColors.success : AppColors.error,
+                        color: growth >= 0
+                            ? AppColors.success
+                            : AppColors.error,
                         fontSize: 12.sp,
                         fontWeight: FontWeight.bold,
                       ),
@@ -334,7 +388,9 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
           ),
           SizedBox(height: 12.h),
           Text(
-            CurrencyHelper.getFormatter(_filter.currency ?? 'YER').format(value),
+            CurrencyHelper.getFormatter(
+              _filter.currency ?? 'YER',
+            ).format(value),
             style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
           ),
         ],
@@ -345,7 +401,11 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+      style: TextStyle(
+        fontSize: 18.sp,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+      ),
     );
   }
 
@@ -360,10 +420,18 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
         itemBuilder: (context, index) {
           final c = customers[index];
           return ListTile(
-            title: Text(c.label, style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              c.label,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             trailing: Text(
-              CurrencyHelper.getFormatter(_filter.currency ?? 'YER').format(c.value),
-              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+              CurrencyHelper.getFormatter(
+                _filter.currency ?? 'YER',
+              ).format(c.value),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
             ),
           );
         },
@@ -382,17 +450,28 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
         itemBuilder: (context, index) {
           final p = performance[index];
           return ListTile(
-            title: Text(p.productName, style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              p.productName,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text('${'sold'.tr()}: ${p.soldCount}'),
             trailing: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  CurrencyHelper.getFormatter(_filter.currency ?? 'YER').format(p.netProfit),
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.success),
+                  CurrencyHelper.getFormatter(
+                    _filter.currency ?? 'YER',
+                  ).format(p.netProfit),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.success,
+                  ),
                 ),
-                Text('profit'.tr(), style: TextStyle(fontSize: 10.sp, color: Colors.grey)),
+                Text(
+                  'profit'.tr(),
+                  style: TextStyle(fontSize: 10.sp, color: Colors.grey),
+                ),
               ],
             ),
           );
@@ -413,7 +492,10 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
         itemBuilder: (context, index) {
           final p = deadStock[index];
           return ListTile(
-            title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              p.name,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text('${'stock'.tr()}: ${p.remainingStock}'),
             trailing: Text(
               '${p.daysSinceLastSale} ${'days_ago'.tr()}',

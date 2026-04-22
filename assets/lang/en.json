@@ -325,5 +325,21 @@
   "drive_disconnected": "Google Drive Disconnected",
   "connect_drive": "Connect Google Drive",
   "google_drive_disconnected": "Please connect Google Drive first",
-  "drive_permission_denied": "Drive permission denied. Please click Connect and grant permission."
+  "drive_permission_denied": "Drive permission denied. Please click Connect and grant permission.",
+  "wholesale_price": "Wholesale Price",
+  "reorder_level": "Reorder Level",
+  "reorder_level_desc": "You will be alerted when stock reaches this level",
+  "shelf_location": "Shelf Location",
+  "general": "General",
+  "inventory": "Inventory",
+  "pricing": "Pricing",
+  "opening_stock": "Opening Stock",
+  "please_fill_all_fields": "Please fill all required fields",
+  "more_details": "More Details",
+  "hide_details": "Hide Details",
+  "detailed_stock": "Stock Details (by unit)",
+  "pricing_and_organization": "Pricing & Organization",
+  "invalid_number": "Invalid number",
+  "cannot_be_negative": "Cannot be negative",
+  "min_value_1": "Minimum value is 1"
 }

@@ -36,7 +36,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 14,
+      version: 15,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -109,11 +109,24 @@ class DatabaseHelper {
     });
 
     await db.execute('''
+      CREATE TABLE products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        price REAL NOT NULL,
+        cost_price REAL DEFAULT 0,
+        currency TEXT DEFAULT 'YER',
         stock_quantity INTEGER DEFAULT 0,
         barcode TEXT,
         units_per_package INTEGER DEFAULT 1,
         package_price REAL DEFAULT 0,
-        total_spent REAL DEFAULT 0
+        total_spent REAL DEFAULT 0,
+        reorder_level INTEGER DEFAULT 0,
+        wholesale_price REAL DEFAULT 0,
+        shelf_location TEXT,
+        category_id INTEGER,
+        main_unit_id INTEGER,
+        sub_unit_id INTEGER,
+        conversion_factor INTEGER DEFAULT 1
       )
     ''');
 
@@ -269,6 +282,11 @@ class DatabaseHelper {
       await db.execute("ALTER TABLE products ADD COLUMN main_unit_id INTEGER");
       await db.execute("ALTER TABLE products ADD COLUMN sub_unit_id INTEGER");
       await db.execute("ALTER TABLE products ADD COLUMN conversion_factor INTEGER DEFAULT 1");
+    }
+    if (oldVersion < 15) {
+      await db.execute("ALTER TABLE products ADD COLUMN reorder_level INTEGER DEFAULT 0");
+      await db.execute("ALTER TABLE products ADD COLUMN wholesale_price REAL DEFAULT 0");
+      await db.execute("ALTER TABLE products ADD COLUMN shelf_location TEXT");
     }
   }
 

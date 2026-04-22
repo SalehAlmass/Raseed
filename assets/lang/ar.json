@@ -326,5 +326,22 @@
   "connect_drive": "ربط قوقل درايف",
   "google_drive_disconnected": "يرجى ربط حساب قوقل درايف أولاً",
   "drive_permission_denied": "لم يتم منح صلاحية الوصول للملفات. يرجى الضغط على ربط الدرايف والموافقة على الصلاحية.",
-  "google_api_config_error": "خطأ في إعدادات قوقل (الخطأ 10). يرجى التأكد من تفعيل Google Drive API في الكونسول وإضافة بصمة SHA-1 لجهازك في Firebase."
+  "google_api_config_error": "خطأ في إعدادات قوقل (الخطأ 10). يرجى التأكد من تفعيل Google Drive API في الكونسول وإضافة بصمة SHA-1 لجهازك في Firebase.",
+  "wholesale_price": "سعر الجملة",
+  "reorder_level": "حد الطلب",
+  "reorder_level_desc": "سيتم تنبيهك عندما تصل الكمية لهذا الرقم",
+  "shelf_location": "موقع الرف",
+  "general": "عام",
+  "inventory": "المخزون",
+  "pricing": "التسعير",
+  "opening_stock": "الرصيد الافتتاحي",
+  "please_fill_all_fields": "الرجاء تعبئة جميع الحقول الإجبارية",
+  "more_details": "المزيد من التفاصيل",
+  "hide_details": "إخفاء التفاصيل",
+  "detailed_stock": "تفاصيل المخزون (بالوحدات)",
+  "pricing_and_organization": "التسعير والتنظيم",
+  "reorder_level_desc": "سيتم تنبيهك عندما تصل الكمية لهذا الرقم",
+  "invalid_number": "رقم غير صحيح",
+  "cannot_be_negative": "لا يمكن أن يكون سالباً",
+  "min_value_1": "يجب أن يكون 1 على الأقل"
 }

@@ -16,6 +16,9 @@ class Product {
   final int? mainUnitId;
   final int? subUnitId;
   final int conversionFactor;
+  final int reorderLevel;
+  final double wholesalePrice;
+  final String? shelfLocation;
 
   final List<Batch> batches;
 
@@ -33,6 +36,9 @@ class Product {
     this.mainUnitId,
     this.subUnitId,
     this.conversionFactor = 1,
+    this.reorderLevel = 0,
+    this.wholesalePrice = 0.0,
+    this.shelfLocation,
     this.batches = const [],
   });
 
@@ -58,6 +64,9 @@ class Product {
       'main_unit_id': mainUnitId,
       'sub_unit_id': subUnitId,
       'conversion_factor': conversionFactor,
+      'reorder_level': reorderLevel,
+      'wholesale_price': wholesalePrice,
+      'shelf_location': shelfLocation,
     };
   }
 
@@ -76,6 +85,9 @@ class Product {
       mainUnitId: map['main_unit_id'],
       subUnitId: map['sub_unit_id'],
       conversionFactor: map['conversion_factor'] ?? 1,
+      reorderLevel: map['reorder_level'] ?? 0,
+      wholesalePrice: (map['wholesale_price'] as num?)?.toDouble() ?? 0.0,
+      shelfLocation: map['shelf_location'],
     );
   }
 
@@ -93,6 +105,9 @@ class Product {
     int? mainUnitId,
     int? subUnitId,
     int? conversionFactor,
+    int? reorderLevel,
+    double? wholesalePrice,
+    String? shelfLocation,
     List<Batch>? batches,
   }) {
     return Product(
@@ -109,6 +124,9 @@ class Product {
       mainUnitId: mainUnitId ?? this.mainUnitId,
       subUnitId: subUnitId ?? this.subUnitId,
       conversionFactor: conversionFactor ?? this.conversionFactor,
+      reorderLevel: reorderLevel ?? this.reorderLevel,
+      wholesalePrice: wholesalePrice ?? this.wholesalePrice,
+      shelfLocation: shelfLocation ?? this.shelfLocation,
       batches: batches ?? this.batches,
     );
   }
