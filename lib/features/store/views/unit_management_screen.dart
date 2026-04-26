@@ -1,4 +1,3 @@
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -35,48 +34,96 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
   }
 
   void _showAddEditDialog([Unit? unit]) {
-    final controller = TextEditingController(text: unit?.name);
+    final nameController = TextEditingController(text: unit?.name);
+    Unit? selectedParent = _units
+        .where((u) => u.id == unit?.parentId)
+        .firstOrNull;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
-        title: Text(unit == null ? 'add_unit'.tr() : 'edit_unit'.tr()),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            hintText: 'unit_name'.tr(),
-            filled: true,
-            fillColor: Colors.grey[100],
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15.r),
-              borderSide: BorderSide.none,
-            ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.r),
           ),
-          autofocus: true,
+          title: Text(unit == null ? 'add_unit'.tr() : 'edit_unit'.tr()),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  hintText: 'unit_name'.tr(),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15.r),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                autofocus: true,
+              ),
+              SizedBox(height: 16.h),
+              DropdownButtonFormField<Unit>(
+                value: selectedParent,
+                decoration: InputDecoration(
+                  labelText: 'main_unit'.tr(),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15.r),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                items: [
+                  DropdownMenuItem<Unit>(
+                    value: null,
+                    child: Text('none_manual'.tr()),
+                  ),
+                  ..._units
+                      .where((u) => u.id != unit?.id) // Prevent self-reference
+                      .map(
+                        (u) => DropdownMenuItem(value: u, child: Text(u.name)),
+                      ),
+                ],
+                onChanged: (val) => setDialogState(() => selectedParent = val),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('cancel'.tr()),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameController.text.trim().isEmpty) return;
+                final newUnit = Unit(
+                  id: unit?.id,
+                  name: nameController.text.trim(),
+                  parentId: selectedParent?.id,
+                );
+                if (unit == null) {
+                  await _unitService.addUnit(newUnit);
+                } else {
+                  await _unitService.updateUnit(newUnit);
+                }
+                if (mounted) {
+                  Navigator.pop(context);
+                  _loadUnits();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+              ),
+              child: Text('save'.tr()),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('cancel'.tr())),
-          ElevatedButton(
-            onPressed: () async {
-              if (controller.text.trim().isEmpty) return;
-              if (unit == null) {
-                await _unitService.addUnit(Unit(name: controller.text.trim()));
-              } else {
-                await _unitService.updateUnit(Unit(id: unit.id, name: controller.text.trim()));
-              }
-              if (mounted) {
-                Navigator.pop(context);
-                _loadUnits();
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
-            ),
-            child: Text('save'.tr()),
-          ),
-        ],
       ),
     );
   }
@@ -94,9 +141,9 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
           IconButton(onPressed: _loadUnits, icon: const Icon(Icons.refresh)),
         ],
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : _units.isEmpty 
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _units.isEmpty
           ? _buildEmptyState()
           : GridView.builder(
               padding: EdgeInsets.all(20.w),
@@ -122,8 +169,10 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
   }
 
   Widget _buildUnitCard(Unit unit) {
-    final String initial = unit.name.isNotEmpty ? unit.name[0].toUpperCase() : '?';
-    
+    final String initial = unit.name.isNotEmpty
+        ? unit.name[0].toUpperCase()
+        : '?';
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -139,9 +188,11 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
       child: Stack(
         children: [
           Positioned(
-            top: 0, right: 0,
+            top: 0,
+            right: 0,
             child: Container(
-              width: 40.w, height: 40.w,
+              width: 40.w,
+              height: 40.w,
               decoration: BoxDecoration(
                 color: AppColors.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.only(
@@ -150,7 +201,13 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
                 ),
               ),
               child: Center(
-                child: Text(initial, style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                child: Text(
+                  initial,
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ),
@@ -162,7 +219,11 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
               children: [
                 Text(
                   unit.name,
-                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -199,7 +260,11 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
           SizedBox(height: 16.h),
           Text(
             'no_units_yet'.tr(),
-            style: TextStyle(fontSize: 18.sp, color: Colors.grey[600], fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 18.sp,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.bold,
+            ),
           ),
           SizedBox(height: 8.h),
           Text(
@@ -215,14 +280,22 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
         title: Text('confirm_delete'.tr()),
         content: Text('delete_unit_warning'.tr()),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('cancel'.tr())),
           TextButton(
-            onPressed: () => Navigator.pop(context, true), 
-            child: Text('delete'.tr(), style: const TextStyle(color: AppColors.error))
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('cancel'.tr()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              'delete'.tr(),
+              style: const TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
@@ -239,7 +312,11 @@ class _CircleActionButton extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
 
-  const _CircleActionButton({required this.icon, required this.color, required this.onTap});
+  const _CircleActionButton({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {

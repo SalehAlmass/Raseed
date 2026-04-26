@@ -66,10 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
         foregroundColor: AppColors.textPrimary,
         leading: CircleAvatar(
           radius: 40,
-          backgroundImage: AssetImage(             
-            'assets/images/logo.png',
-          ),
-          
+          backgroundImage: AssetImage('assets/images/logo.png'),
         ),
         actions: [
           IconButton(
@@ -108,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(height: 30.h),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [                 
+                children: [
                   Text(
                     'recent_activity'.tr(),
                     style: TextStyle(
@@ -119,7 +116,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   InkWell(
                     onTap: () {
-                      if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
+                      if (sl<SubscriptionService>().canUseFeature(
+                        AppFeature.addSale,
+                      )) {
                         Navigator.pushNamed(context, '/sale').then((result) {
                           if (result == true) _loadData();
                         });
@@ -128,7 +127,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       }
                     },
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 6.h,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primary,
                         borderRadius: BorderRadius.circular(12.r),

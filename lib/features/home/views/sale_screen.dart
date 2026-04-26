@@ -65,7 +65,9 @@ class _SaleScreenState extends State<SaleScreen> {
 
   void _addToCart(Product product) {
     setState(() {
-      final existingIndex = _cart.indexWhere((item) => item.productId == product.id);
+      final existingIndex = _cart.indexWhere(
+        (item) => item.productId == product.id,
+      );
       if (existingIndex >= 0) {
         final existingItem = _cart[existingIndex];
         _cart[existingIndex] = TransactionItem(
@@ -77,14 +79,16 @@ class _SaleScreenState extends State<SaleScreen> {
           currency: existingItem.currency,
         );
       } else {
-        _cart.add(TransactionItem(
-          productId: product.id!,
-          productName: product.name,
-          quantity: 1,
-          price: product.price,
-          costPrice: product.costPrice,
-          currency: product.currency,
-        ));
+        _cart.add(
+          TransactionItem(
+            productId: product.id!,
+            productName: product.name,
+            quantity: 1,
+            price: product.price,
+            costPrice: product.costPrice,
+            currency: product.currency,
+          ),
+        );
       }
       _paidAmountController.text = _totalAmount.toStringAsFixed(0);
     });
@@ -122,7 +126,10 @@ class _SaleScreenState extends State<SaleScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('product_not_found'.tr()), backgroundColor: AppColors.error),
+            SnackBar(
+              content: Text('product_not_found'.tr()),
+              backgroundColor: AppColors.error,
+            ),
           );
         }
       }
@@ -131,19 +138,25 @@ class _SaleScreenState extends State<SaleScreen> {
 
   Future<void> _completeSale() async {
     if (_cart.isEmpty) return;
-    
+
     final paid = _paidAmount;
     if (paid > _totalAmount) {
-       ScaffoldMessenger.of(context).showSnackBar(
-         SnackBar(content: Text('amount_exceeds_total'.tr()), backgroundColor: AppColors.error),
-       );
-       return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('amount_exceeds_total'.tr()),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
     }
 
     final bool isCustomerRequired = paid < _totalAmount;
     if (isCustomerRequired && _selectedCustomer == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('please_select_customer'.tr()), backgroundColor: AppColors.error),
+        SnackBar(
+          content: Text('please_select_customer'.tr()),
+          backgroundColor: AppColors.error,
+        ),
       );
       return;
     }
@@ -151,7 +164,7 @@ class _SaleScreenState extends State<SaleScreen> {
     setState(() => _isLoading = true);
     try {
       final transactionAmount = _totalAmount;
-      
+
       final transaction = AppTransaction(
         customerId: _selectedCustomer?.id,
         type: TransactionType.sale,
@@ -162,27 +175,41 @@ class _SaleScreenState extends State<SaleScreen> {
       );
 
       await _transactionService.addTransaction(transaction);
-      
-      if (mounted && _selectedCustomer != null && _selectedCustomer!.phone.isNotEmpty) {
+
+      if (mounted &&
+          _selectedCustomer != null &&
+          _selectedCustomer!.phone.isNotEmpty) {
         double newDebt = _selectedCustomer!.totalDebt;
         newDebt += (_totalAmount - paid);
 
         final bool? sendWa = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('إرسال تذكير عبر واتساب', style: TextStyle(fontWeight: FontWeight.bold)),
-            content: const Text('تمت العملية بنجاح. هل تريد إرسال تفاصيل العملية والرصيد المتبقي إلى العميل عبر واتساب؟'),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.r)),
+            title: const Text(
+              'إرسال تذكير عبر واتساب',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: const Text(
+              'تمت العملية بنجاح. هل تريد إرسال تفاصيل العملية والرصيد المتبقي إلى العميل عبر واتساب؟',
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15.r),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: Text('cancel'.tr(), style: const TextStyle(color: Colors.grey)),
+                child: Text(
+                  'cancel'.tr(),
+                  style: const TextStyle(color: Colors.grey),
+                ),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.success,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
                 ),
                 onPressed: () => Navigator.pop(context, true),
                 child: const Text('إرسال الآن'),
@@ -192,28 +219,41 @@ class _SaleScreenState extends State<SaleScreen> {
         );
 
         if (sendWa == true) {
-          final String yerBal = CurrencyHelper.getFormatter('YER').format(newDebt);
-          
+          final String yerBal = CurrencyHelper.getFormatter(
+            'YER',
+          ).format(newDebt);
+
           String phone = _selectedCustomer!.phone;
           phone = phone.replaceAll(RegExp(r'[^\d+]'), '');
           if (phone.startsWith('0')) phone = phone.substring(1);
-          if (!phone.startsWith('+') && !phone.startsWith('00') && !phone.startsWith('967')) {
+          if (!phone.startsWith('+') &&
+              !phone.startsWith('00') &&
+              !phone.startsWith('967')) {
             phone = '967$phone';
           }
           phone = phone.replaceAll('+', '').replaceAll('00', '');
 
-          final String formattedPaid = CurrencyHelper.getFormatter('YER').format(paid);
-          final String formattedTotal = CurrencyHelper.getFormatter('YER').format(_totalAmount);
+          final String formattedPaid = CurrencyHelper.getFormatter(
+            'YER',
+          ).format(paid);
+          final String formattedTotal = CurrencyHelper.getFormatter(
+            'YER',
+          ).format(_totalAmount);
 
           String message = "مرحباً ${_selectedCustomer!.name}،\n";
           message += "لقد تم تسجيل فاتورة مشتريات بقيمة $formattedTotal";
           if (paid > 0) message += "، وسداد مبلغ $formattedPaid";
           message += ".\n";
-          message += "\nبذلك إجمالي الرصيد المتبقي عليكم في تطبيق رصيد هو: $yerBal\nنتمنى لكم يوماً سعيداً!";
+          message +=
+              "\nبذلك إجمالي الرصيد المتبقي عليكم في تطبيق رصيد هو: $yerBal\nنتمنى لكم يوماً سعيداً!";
 
-          final url = "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
+          final url =
+              "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
           try {
-            await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+            await launchUrl(
+              Uri.parse(url),
+              mode: LaunchMode.externalApplication,
+            );
           } catch (_) {}
         }
       }
@@ -221,7 +261,10 @@ class _SaleScreenState extends State<SaleScreen> {
       if (mounted) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('sale_completed_success'.tr()), backgroundColor: AppColors.success),
+          SnackBar(
+            content: Text('sale_completed_success'.tr()),
+            backgroundColor: AppColors.success,
+          ),
         );
       }
     } catch (e) {
@@ -229,11 +272,15 @@ class _SaleScreenState extends State<SaleScreen> {
         String msg = 'error_occurred'.tr();
         final errorStr = e.toString();
         if (errorStr.contains('over_limit')) msg = 'over_limit_error'.tr();
-        if (errorStr.contains('insufficient_stock')) msg = 'insufficient_stock_error'.tr();
-        if (errorStr.contains('amount_exceeds_total')) msg = 'amount_exceeds_total'.tr();
-        if (errorStr.contains('no_debt_to_repay')) msg = 'ليس على العميل الحد الأدنى من الديون לסدادها';
-        if (errorStr.contains('payment_exceeds_debt')) msg = 'المبلغ المدفوع يتجاوز إجمالي الدين الفعلي للعميل';
-        
+        if (errorStr.contains('insufficient_stock'))
+          msg = 'insufficient_stock_error'.tr();
+        if (errorStr.contains('amount_exceeds_total'))
+          msg = 'amount_exceeds_total'.tr();
+        if (errorStr.contains('no_debt_to_repay'))
+          msg = 'ليس على العميل الحد الأدنى من الديون לסدادها';
+        if (errorStr.contains('payment_exceeds_debt'))
+          msg = 'المبلغ المدفوع يتجاوز إجمالي الدين الفعلي للعميل';
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(msg), backgroundColor: AppColors.error),
         );
@@ -280,12 +327,19 @@ class _SaleScreenState extends State<SaleScreen> {
             leadingIcon: const Icon(Icons.search),
             label: Text('select_product'.tr()),
             inputDecorationTheme: InputDecorationTheme(
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
             ),
-            dropdownMenuEntries: _products.map((p) => DropdownMenuEntry<Product>(
-              value: p,
-              label: '${p.name} (${p.stockQuantity}) - ${CurrencyHelper.getSymbol(p.currency)}${p.price}',
-            )).toList(),
+            dropdownMenuEntries: _products
+                .map(
+                  (p) => DropdownMenuEntry<Product>(
+                    value: p,
+                    label:
+                        '${p.name} (${p.stockQuantity}) - ${CurrencyHelper.getSymbol(p.currency)}${p.price}',
+                  ),
+                )
+                .toList(),
             onSelected: (val) {
               if (val != null) {
                 _addToCart(val);
@@ -296,7 +350,7 @@ class _SaleScreenState extends State<SaleScreen> {
               }
             },
           );
-        }
+        },
       ),
     );
   }
@@ -307,7 +361,11 @@ class _SaleScreenState extends State<SaleScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.shopping_cart_outlined, size: 64.sp, color: Colors.grey.withOpacity(0.5)),
+            Icon(
+              Icons.shopping_cart_outlined,
+              size: 64.sp,
+              color: Colors.grey.withOpacity(0.5),
+            ),
             SizedBox(height: 16.h),
             Text('cart_empty'.tr(), style: const TextStyle(color: Colors.grey)),
           ],
@@ -329,7 +387,11 @@ class _SaleScreenState extends State<SaleScreen> {
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(12.r),
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, 2)),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 5,
+                  offset: const Offset(0, 2),
+                ),
               ],
             ),
             child: Row(
@@ -338,10 +400,19 @@ class _SaleScreenState extends State<SaleScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(item.productName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp)),
+                      Text(
+                        item.productName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16.sp,
+                        ),
+                      ),
                       Text(
                         '${CurrencyHelper.getSymbol(item.currency)}${item.price} / unit',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12.sp),
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12.sp,
+                        ),
                       ),
                     ],
                   ),
@@ -350,19 +421,34 @@ class _SaleScreenState extends State<SaleScreen> {
                   children: [
                     IconButton(
                       onPressed: () => _updateQuantity(index, -1),
-                      icon: const Icon(Icons.remove_circle_outline, color: AppColors.error),
+                      icon: const Icon(
+                        Icons.remove_circle_outline,
+                        color: AppColors.error,
+                      ),
                     ),
-                    Text('${item.quantity}', style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+                    Text(
+                      '${item.quantity}',
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     IconButton(
                       onPressed: () => _updateQuantity(index, 1),
-                      icon: const Icon(Icons.add_circle_outline, color: AppColors.success),
+                      icon: const Icon(
+                        Icons.add_circle_outline,
+                        color: AppColors.success,
+                      ),
                     ),
                   ],
                 ),
                 SizedBox(width: 8.w),
                 Text(
                   CurrencyHelper.getFormatter(item.currency).format(item.total),
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
                 ),
               ],
             ),
@@ -374,7 +460,7 @@ class _SaleScreenState extends State<SaleScreen> {
 
   Widget _buildCheckoutSection() {
     final isOverpaid = _paidAmount > _totalAmount;
-    
+
     bool isButtonDisabled = _isLoading || _cart.isEmpty || isOverpaid;
 
     return Container(
@@ -383,14 +469,17 @@ class _SaleScreenState extends State<SaleScreen> {
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -5)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
         ],
       ),
       child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-
             LayoutBuilder(
               builder: (context, constraints) {
                 return DropdownMenu<Customer>(
@@ -399,19 +488,28 @@ class _SaleScreenState extends State<SaleScreen> {
                   enableFilter: true,
                   requestFocusOnTap: true,
                   leadingIcon: const Icon(Icons.search),
-                  label: Text(_paidAmount < _totalAmount
-                      ? '${'select_customer'.tr()} *'
-                      : '${'select_customer'.tr()} (اختياري)'),
-                  inputDecorationTheme: InputDecorationTheme(
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                  label: Text(
+                    _paidAmount < _totalAmount
+                        ? '${'select_customer'.tr()} *'
+                        : '${'select_customer'.tr()} (اختياري)',
                   ),
-                  dropdownMenuEntries: _customers.map((c) => DropdownMenuEntry<Customer>(
-                    value: c,
-                    label: '${c.name} (${CurrencyHelper.getFormatter("YER").format(c.totalDebt)})',
-                  )).toList(),
+                  inputDecorationTheme: InputDecorationTheme(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                  ),
+                  dropdownMenuEntries: _customers
+                      .map(
+                        (c) => DropdownMenuEntry<Customer>(
+                          value: c,
+                          label:
+                              '${c.name} (${CurrencyHelper.getFormatter("YER").format(c.totalDebt)})',
+                        ),
+                      )
+                      .toList(),
                   onSelected: (val) => setState(() => _selectedCustomer = val),
                 );
-              }
+              },
             ),
             SizedBox(height: 16.h),
             Row(
@@ -421,10 +519,14 @@ class _SaleScreenState extends State<SaleScreen> {
                     controller: _paidAmountController,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                        labelText: 'paid_amount'.tr(),
-                        errorText: isOverpaid ? 'amount_exceeds_total'.tr() : null,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
-                        prefixText: 'YER ',
+                      labelText: 'paid_amount'.tr(),
+                      errorText: isOverpaid
+                          ? 'amount_exceeds_total'.tr()
+                          : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      prefixText: 'YER ',
                     ),
                     onChanged: (val) => setState(() {}),
                   ),
@@ -433,10 +535,20 @@ class _SaleScreenState extends State<SaleScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('total_amount'.tr(), style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary)),
+                    Text(
+                      'total_amount'.tr(),
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                     Text(
                       CurrencyHelper.getFormatter('YER').format(_totalAmount),
-                      style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: AppColors.primary),
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ],
                 ),
@@ -451,11 +563,19 @@ class _SaleScreenState extends State<SaleScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
                 ),
-                child: _isLoading 
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : Text('complete_sale'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                        'complete_sale'.tr(),
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
           ],

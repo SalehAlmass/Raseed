@@ -67,8 +67,9 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
     setState(() {
       _filteredCustomers = _customers.where((customer) {
         // 1. Search Query
-        final matchesSearch = customer.name.toLowerCase().contains(query) || 
-                             customer.phone.contains(query);
+        final matchesSearch =
+            customer.name.toLowerCase().contains(query) ||
+            customer.phone.contains(query);
         if (!matchesSearch) return false;
 
         // 2. Chip Filter
@@ -81,11 +82,16 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
             return customer.totalDebt == 0;
           case CustomerFilter.active:
             if (customer.lastTransactionDate == null) return false;
-            final diff = DateTime.now().difference(customer.lastTransactionDate!).inDays;
+            final diff = DateTime.now()
+                .difference(customer.lastTransactionDate!)
+                .inDays;
             return diff <= (_settings?.inactiveDays ?? 30);
           case CustomerFilter.inactive:
-            if (customer.lastTransactionDate == null) return true; // Dead is also inactive
-            final diff = DateTime.now().difference(customer.lastTransactionDate!).inDays;
+            if (customer.lastTransactionDate == null)
+              return true; // Dead is also inactive
+            final diff = DateTime.now()
+                .difference(customer.lastTransactionDate!)
+                .inDays;
             return diff > (_settings?.inactiveDays ?? 30);
           case CustomerFilter.vip:
             return customer.totalSpent >= (_settings?.vipThreshold ?? 100000);
@@ -137,9 +143,9 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
           ),
           _buildFilterChips(),
           Expanded(
-            child: _isLoading 
-              ? const Center(child: CircularProgressIndicator())
-              : _filteredCustomers.isEmpty
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredCustomers.isEmpty
                 ? Center(child: Text('no_customers'.tr()))
                 : ListView.builder(
                     padding: EdgeInsets.fromLTRB(20.w, 10.h, 20.w, 100.h),
@@ -150,8 +156,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                         customer: customer,
                         settings: _settings,
                         onTap: () => Navigator.pushNamed(
-                          context, 
-                          '/customer_detail', 
+                          context,
+                          '/customer_detail',
                           arguments: customer,
                         ).then((_) => _loadCustomers()),
                       );
@@ -225,8 +231,10 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                 controller: nameController,
                 decoration: InputDecoration(labelText: 'name'.tr()),
                 validator: (val) {
-                  if (val == null || val.trim().isEmpty) return 'مطلوب إدخال الاسم';
-                  if (!RegExp(r'^[\u0600-\u06FFa-zA-Z\s]+$').hasMatch(val)) return 'يجب أن يحتوي الاسم على حروف فقط';
+                  if (val == null || val.trim().isEmpty)
+                    return 'مطلوب إدخال الاسم';
+                  if (!RegExp(r'^[\u0600-\u06FFa-zA-Z\s]+$').hasMatch(val))
+                    return 'يجب أن يحتوي الاسم على حروف فقط';
                   return null;
                 },
               ),
@@ -235,7 +243,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                 decoration: InputDecoration(labelText: 'phone_number'.tr()),
                 keyboardType: TextInputType.phone,
                 validator: (val) {
-                  if (val == null || val.trim().isEmpty) return 'مطلوب إدخال رقم الهاتف';
+                  if (val == null || val.trim().isEmpty)
+                    return 'مطلوب إدخال رقم الهاتف';
                   if (val.trim().length < 9) return 'رقم الهاتف غير صحيح';
                   return null;
                 },
@@ -251,10 +260,12 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
           ElevatedButton(
             onPressed: () async {
               if (formKey.currentState!.validate()) {
-                await _customerService.createCustomer(Customer(
-                  name: nameController.text,
-                  phone: phoneController.text,
-                ));
+                await _customerService.createCustomer(
+                  Customer(
+                    name: nameController.text,
+                    phone: phoneController.text,
+                  ),
+                );
                 if (context.mounted) {
                   Navigator.pop(context);
                   _loadCustomers();
@@ -290,11 +301,20 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem('total'.tr(), _analytics['total_customers']?.toString() ?? '0'),
+          _buildStatItem(
+            'total'.tr(),
+            _analytics['total_customers']?.toString() ?? '0',
+          ),
           _buildStatDivider(),
-          _buildStatItem('debtors'.tr(), _analytics['debtors_count']?.toString() ?? '0'),
+          _buildStatItem(
+            'debtors'.tr(),
+            _analytics['debtors_count']?.toString() ?? '0',
+          ),
           _buildStatDivider(),
-          _buildStatItem('active'.tr(), _analytics['active_count']?.toString() ?? '0'),
+          _buildStatItem(
+            'active'.tr(),
+            _analytics['active_count']?.toString() ?? '0',
+          ),
         ],
       ),
     );
@@ -305,18 +325,29 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       children: [
         Text(
           value,
-          style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18.sp,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         Text(
           label,
-          style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12.sp),
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.8),
+            fontSize: 12.sp,
+          ),
         ),
       ],
     );
   }
 
   Widget _buildStatDivider() {
-    return Container(height: 30.h, width: 1, color: Colors.white.withOpacity(0.3));
+    return Container(
+      height: 30.h,
+      width: 1,
+      color: Colors.white.withOpacity(0.3),
+    );
   }
 
   Widget _buildFilterChips() {
@@ -347,7 +378,9 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                 fontSize: 12.sp,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
               side: BorderSide.none,
             ),
           );
@@ -362,18 +395,25 @@ class _CustomerTile extends StatelessWidget {
   final AppSettings? settings;
   final VoidCallback onTap;
 
-  const _CustomerTile({required this.customer, required this.onTap, this.settings});
+  const _CustomerTile({
+    required this.customer,
+    required this.onTap,
+    this.settings,
+  });
 
   @override
   Widget build(BuildContext context) {
     final bool isDebtor = customer.totalDebt > 0;
-    final bool isVIP = customer.totalSpent >= (settings?.vipThreshold ?? 100000);
-    
+    final bool isVIP =
+        customer.totalSpent >= (settings?.vipThreshold ?? 100000);
+
     // Activity Status
     Color statusColor = Colors.grey;
     String statusLabel = 'dead'.tr();
     if (customer.lastTransactionDate != null) {
-      final days = DateTime.now().difference(customer.lastTransactionDate!).inDays;
+      final days = DateTime.now()
+          .difference(customer.lastTransactionDate!)
+          .inDays;
       if (days <= (settings?.inactiveDays ?? 30)) {
         statusColor = AppColors.success;
         statusLabel = 'active'.tr();
@@ -405,7 +445,10 @@ class _CustomerTile extends StatelessWidget {
               backgroundColor: AppColors.primary.withOpacity(0.1),
               child: Text(
                 customer.name.substring(0, 1).toUpperCase(),
-                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             Positioned(
@@ -438,18 +481,31 @@ class _CustomerTile extends StatelessWidget {
                   color: Colors.amber.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(6.r),
                 ),
-                child: Text('VIP', style: TextStyle(color: Colors.amber[800], fontSize: 10.sp, fontWeight: FontWeight.bold)),
+                child: Text(
+                  'VIP',
+                  style: TextStyle(
+                    color: Colors.amber[800],
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
           ],
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(customer.phone, style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+            Text(
+              customer.phone,
+              style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+            ),
             if (customer.lastTransactionDate != null)
               Text(
                 '${'last_deal'.tr()}: ${timeago.format(customer.lastTransactionDate!, locale: context.locale.languageCode)}',
-                style: TextStyle(fontSize: 10.sp, color: AppColors.primary.withOpacity(0.7)),
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: AppColors.primary.withOpacity(0.7),
+                ),
               ),
           ],
         ),

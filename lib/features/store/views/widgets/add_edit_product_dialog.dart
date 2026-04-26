@@ -35,7 +35,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   final _wholesalePriceController = TextEditingController();
   final _reorderLevelController = TextEditingController(text: '0');
   final _shelfLocationController = TextEditingController();
-  
+
   // Storage Controllers
   final _totalStockController = TextEditingController(text: '0');
   final _mainStockController = TextEditingController(text: '0');
@@ -43,7 +43,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
 
   List<Category> _categories = [];
   List<Unit> _units = [];
-  
+
   Category? _selectedCategory;
   Unit? _mainUnit;
   Unit? _subUnit;
@@ -58,7 +58,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   void initState() {
     super.initState();
     _loadData();
-    
+
     // Listen to price changes for margin calculation
     _purchasePriceController.addListener(_calculateMargin);
     _salePriceController.addListener(_calculateMargin);
@@ -68,7 +68,9 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     _totalStockController.addListener(_syncFromTotal);
     _mainStockController.addListener(_syncFromDetailed);
     _subStockController.addListener(_syncFromDetailed);
-    _conversionController.addListener(_syncFromDetailed); // Re-sync if factor changes
+    _conversionController.addListener(
+      _syncFromDetailed,
+    ); // Re-sync if factor changes
   }
 
   @override
@@ -90,37 +92,37 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   void _syncFromTotal() {
     if (_isSyncing) return;
     _isSyncing = true;
-    
+
     final total = int.tryParse(_totalStockController.text) ?? 0;
     final factor = int.tryParse(_conversionController.text) ?? 1;
-    
+
     final main = total ~/ factor;
     final sub = total % factor;
-    
+
     if (_mainStockController.text != main.toString()) {
       _mainStockController.text = main.toString();
     }
     if (_subStockController.text != sub.toString()) {
       _subStockController.text = sub.toString();
     }
-    
+
     _isSyncing = false;
   }
 
   void _syncFromDetailed() {
     if (_isSyncing) return;
     _isSyncing = true;
-    
+
     final main = int.tryParse(_mainStockController.text) ?? 0;
     final sub = int.tryParse(_subStockController.text) ?? 0;
     final factor = int.tryParse(_conversionController.text) ?? 1;
-    
+
     final total = (main * factor) + sub;
-    
+
     if (_totalStockController.text != total.toString()) {
       _totalStockController.text = total.toString();
     }
-    
+
     _isSyncing = false;
   }
 
@@ -128,7 +130,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     final cost = double.tryParse(_purchasePriceController.text) ?? 0.0;
     final price = double.tryParse(_salePriceController.text) ?? 0.0;
     final factor = int.tryParse(_conversionController.text) ?? 1;
-    
+
     if (price > 0 && cost > 0) {
       final costPerSub = factor > 0 ? (cost / factor) : cost;
       if (mounted) {
@@ -148,7 +150,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   Future<void> _loadData() async {
     final cats = await _categoryService.getAllCategories();
     final units = await _unitService.getAllUnits();
-    
+
     if (mounted) {
       setState(() {
         _categories = cats;
@@ -165,8 +167,10 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
           _wholesalePriceController.text = p.wholesalePrice.toStringAsFixed(0);
           _reorderLevelController.text = p.reorderLevel.toString();
           _shelfLocationController.text = p.shelfLocation ?? '';
-          
-          _selectedCategory = _categories.where((c) => c.id == p.categoryId).firstOrNull ?? _categories.firstOrNull;
+
+          _selectedCategory =
+              _categories.where((c) => c.id == p.categoryId).firstOrNull ??
+              _categories.firstOrNull;
           _mainUnit = _units.where((u) => u.id == p.mainUnitId).firstOrNull;
           _subUnit = _units.where((u) => u.id == p.subUnitId).firstOrNull;
 
@@ -187,7 +191,8 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     final factor = int.tryParse(_conversionController.text) ?? 1;
     final purchasePrice = double.tryParse(_purchasePriceController.text) ?? 0.0;
     final salePrice = double.tryParse(_salePriceController.text) ?? 0.0;
-    final wholesalePrice = double.tryParse(_wholesalePriceController.text) ?? 0.0;
+    final wholesalePrice =
+        double.tryParse(_wholesalePriceController.text) ?? 0.0;
     final reorderLevel = int.tryParse(_reorderLevelController.text) ?? 0;
     final totalStock = int.tryParse(_totalStockController.text) ?? 0;
 
@@ -202,7 +207,9 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       packagePrice: purchasePrice,
       wholesalePrice: wholesalePrice,
       reorderLevel: reorderLevel,
-      shelfLocation: _shelfLocationController.text.isEmpty ? null : _shelfLocationController.text,
+      shelfLocation: _shelfLocationController.text.isEmpty
+          ? null
+          : _shelfLocationController.text,
       categoryId: _selectedCategory?.id,
       mainUnitId: _mainUnit?.id,
       subUnitId: _subUnit?.id,
@@ -213,20 +220,25 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       if (widget.product == null) {
         productId = await _productService.addProduct(product);
         if (totalStock > 0) {
-          await _productService.addBatch(Batch(
-            productId: productId,
-            quantity: totalStock,
-            costPrice: product.costPrice,
-            createdAt: DateTime.now(),
-            expiryDate: _expiryDate,
-          ));
+          await _productService.addBatch(
+            Batch(
+              productId: productId,
+              quantity: totalStock,
+              costPrice: product.costPrice,
+              createdAt: DateTime.now(),
+              expiryDate: _expiryDate,
+            ),
+          );
         }
       } else {
         await _productService.updateProduct(product);
       }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('error_occurred'.tr())));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('error_occurred'.tr())));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -275,7 +287,8 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
           _nameController,
           'product_name'.tr(),
           Icons.drive_file_rename_outline,
-          validator: (v) => v == null || v.isEmpty ? 'required_field'.tr() : null,
+          validator: (v) =>
+              v == null || v.isEmpty ? 'required_field'.tr() : null,
         ),
         SizedBox(height: 12.h),
         _buildBarcodeField(),
@@ -331,11 +344,19 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(_showAdvanced ? Icons.keyboard_arrow_up : Icons.tune, size: 20.sp, color: AppColors.primary),
+            Icon(
+              _showAdvanced ? Icons.keyboard_arrow_up : Icons.tune,
+              size: 20.sp,
+              color: AppColors.primary,
+            ),
             SizedBox(width: 10.w),
             Text(
               _showAdvanced ? 'hide_details'.tr() : 'more_details'.tr(),
-              style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 13.sp),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+                fontSize: 13.sp,
+              ),
             ),
           ],
         ),
@@ -374,17 +395,25 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
           Icons.report_problem_outlined,
           type: TextInputType.number,
           validator: (v) {
-            if (v != null && v.isNotEmpty && int.tryParse(v) == null) return 'invalid_number'.tr();
+            if (v != null && v.isNotEmpty && int.tryParse(v) == null)
+              return 'invalid_number'.tr();
             return null;
           },
         ),
-        
+
         SizedBox(height: 24.h),
-        _buildSectionTitle('pricing_and_organization'.tr(), Icons.analytics_outlined),
+        _buildSectionTitle(
+          'pricing_and_organization'.tr(),
+          Icons.analytics_outlined,
+        ),
         SizedBox(height: 12.h),
         _buildCategoryDropdown(),
         SizedBox(height: 12.h),
-        _buildModernField(_shelfLocationController, 'shelf_location'.tr(), Icons.location_on_outlined),
+        _buildModernField(
+          _shelfLocationController,
+          'shelf_location'.tr(),
+          Icons.location_on_outlined,
+        ),
         SizedBox(height: 12.h),
         Row(
           children: [
@@ -395,7 +424,8 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 Icons.shopping_basket_outlined,
                 type: TextInputType.number,
                 validator: (v) {
-                  if (v != null && v.isNotEmpty && double.tryParse(v) == null) return 'invalid_number'.tr();
+                  if (v != null && v.isNotEmpty && double.tryParse(v) == null)
+                    return 'invalid_number'.tr();
                   return null;
                 },
               ),
@@ -408,7 +438,8 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 Icons.groups_outlined,
                 type: TextInputType.number,
                 validator: (v) {
-                  if (v != null && v.isNotEmpty && double.tryParse(v) == null) return 'invalid_number'.tr();
+                  if (v != null && v.isNotEmpty && double.tryParse(v) == null)
+                    return 'invalid_number'.tr();
                   return null;
                 },
               ),
@@ -428,7 +459,14 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       children: [
         Icon(icon, size: 18.sp, color: Colors.grey[700]),
         SizedBox(width: 8.w),
-        Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700], fontSize: 13.sp)),
+        Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[700],
+            fontSize: 13.sp,
+          ),
+        ),
       ],
     );
   }
@@ -440,15 +478,24 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       decoration: BoxDecoration(
         color: (isProfit ? Colors.green : Colors.red).withOpacity(0.05),
         borderRadius: BorderRadius.circular(15.r),
-        border: Border.all(color: (isProfit ? Colors.green : Colors.red).withOpacity(0.2)),
+        border: Border.all(
+          color: (isProfit ? Colors.green : Colors.red).withOpacity(0.2),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('profit_margin'.tr(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp)),
+          Text(
+            'profit_margin'.tr(),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp),
+          ),
           Text(
             '${_marginPercentage.toStringAsFixed(1)}%',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp, color: isProfit ? Colors.green : Colors.red),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16.sp,
+              color: isProfit ? Colors.green : Colors.red,
+            ),
           ),
         ],
       ),
@@ -463,9 +510,16 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
         children: [
           Text(
             widget.product == null ? 'add_product'.tr() : 'edit_product'.tr(),
-            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
           ),
-          IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.close),
+          ),
         ],
       ),
     );
@@ -487,10 +541,22 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
         prefixIcon: Icon(icon, size: 20.sp, color: Colors.grey[600]),
         filled: true,
         fillColor: Colors.grey[50],
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: BorderSide.none),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: BorderSide(color: AppColors.primary.withOpacity(0.5))),
-        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: BorderSide(color: Colors.red.withOpacity(0.5))),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: BorderSide(color: AppColors.primary.withOpacity(0.5)),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: BorderSide(color: Colors.red.withOpacity(0.5)),
+        ),
         isDense: true,
       ),
     );
@@ -499,17 +565,28 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   Widget _buildBarcodeField() {
     return Row(
       children: [
-        Expanded(child: _buildModernField(_barcodeController, 'barcode'.tr(), Icons.qr_code_outlined)),
+        Expanded(
+          child: _buildModernField(
+            _barcodeController,
+            'barcode'.tr(),
+            Icons.qr_code_outlined,
+          ),
+        ),
         SizedBox(width: 8.w),
         IconButton.filled(
           onPressed: () async {
-            final code = await Navigator.push<String>(context, MaterialPageRoute(builder: (_) => const BarcodeScannerView()));
+            final code = await Navigator.push<String>(
+              context,
+              MaterialPageRoute(builder: (_) => const BarcodeScannerView()),
+            );
             if (code != null) setState(() => _barcodeController.text = code);
           },
           icon: const Icon(Icons.qr_code_scanner),
           style: IconButton.styleFrom(
             backgroundColor: AppColors.primary,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
           ),
         ),
       ],
@@ -524,35 +601,80 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
         prefixIcon: const Icon(Icons.category_outlined),
         filled: true,
         fillColor: Colors.grey[50],
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: BorderSide.none,
+        ),
         isDense: true,
       ),
-      items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c.name))).toList(),
+      items: _categories
+          .map((c) => DropdownMenuItem(value: c, child: Text(c.name)))
+          .toList(),
       onChanged: (val) => setState(() => _selectedCategory = val),
     );
   }
 
   Widget _buildUnitPairSelection() {
+    // Only units with no parent can be "Main Units"
+    final mainUnits = _units.where((u) => u.parentId == null).toList();
+
+    // Only units belonging to the selected main unit can be "Sub Units"
+    final filteredSubUnits = _mainUnit == null
+        ? <Unit>[]
+        : _units.where((u) => u.parentId == _mainUnit?.id).toList();
+
     return Row(
       children: [
-        Expanded(child: _buildSimpleDropdown(label: 'main_unit'.tr(), value: _mainUnit, onChanged: (v) => setState(() => _mainUnit = v))),
+        Expanded(
+          child: _buildSimpleDropdown(
+            label: 'main_unit'.tr(),
+            value: _mainUnit,
+            units: mainUnits,
+            onChanged: (v) {
+              setState(() {
+                _mainUnit = v;
+                // If the selected sub-unit doesn't belong to the new main unit, clear it
+                if (_subUnit != null && _subUnit?.parentId != _mainUnit?.id) {
+                  _subUnit = null;
+                }
+              });
+            },
+          ),
+        ),
         SizedBox(width: 8.w),
-        Expanded(child: _buildSimpleDropdown(label: 'sub_unit'.tr(), value: _subUnit, onChanged: (v) => setState(() => _subUnit = v))),
+        Expanded(
+          child: _buildSimpleDropdown(
+            label: 'sub_unit'.tr(),
+            value: _subUnit,
+            units: filteredSubUnits,
+            onChanged: (v) => setState(() => _subUnit = v),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildSimpleDropdown({required String label, Unit? value, required Function(Unit?) onChanged}) {
+  Widget _buildSimpleDropdown({
+    required String label,
+    Unit? value,
+    required List<Unit> units,
+    required Function(Unit?) onChanged,
+  }) {
     return DropdownButtonFormField<Unit>(
       value: value,
       decoration: InputDecoration(
         labelText: label,
         filled: true,
         fillColor: Colors.grey[50],
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: BorderSide.none,
+        ),
         isDense: true,
       ),
-      items: _units.map((u) => DropdownMenuItem(value: u, child: Text(u.name))).toList(),
+      items: units
+          .map((u) => DropdownMenuItem(value: u, child: Text(u.name)))
+          .toList(),
       onChanged: onChanged,
     );
   }
@@ -563,12 +685,19 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       children: [
         Text(
           'detailed_stock'.tr(),
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp, color: Colors.grey[700]),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 13.sp,
+            color: Colors.grey[700],
+          ),
         ),
         SizedBox(height: 8.h),
         Container(
           padding: EdgeInsets.all(12.w),
-          decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(12.r)),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(12.r),
+          ),
           child: Row(
             children: [
               Expanded(
@@ -613,7 +742,10 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       },
       child: Container(
         padding: EdgeInsets.all(12.w),
-        decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(12.r)),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12.r),
+        ),
         child: Row(
           children: [
             const Icon(Icons.calendar_month_outlined, color: Colors.grey),
@@ -621,9 +753,16 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('expiry_date'.tr(), style: TextStyle(fontSize: 11.sp, color: Colors.grey[600])),
                 Text(
-                  _expiryDate == null ? 'not_set'.tr() : DateFormat.yMd(context.locale.toString()).format(_expiryDate!),
+                  'expiry_date'.tr(),
+                  style: TextStyle(fontSize: 11.sp, color: Colors.grey[600]),
+                ),
+                Text(
+                  _expiryDate == null
+                      ? 'not_set'.tr()
+                      : DateFormat.yMd(
+                          context.locale.toString(),
+                        ).format(_expiryDate!),
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ],
@@ -653,12 +792,27 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(vertical: 14.h),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.r)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.r),
+                ),
                 elevation: 0,
               ),
               child: _isSaving
-                  ? SizedBox(height: 20.h, width: 20.h, child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : Text('save'.tr(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15.sp)),
+                  ? SizedBox(
+                      height: 20.h,
+                      width: 20.h,
+                      child: const CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(
+                      'save'.tr(),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15.sp,
+                      ),
+                    ),
             ),
           ),
         ],
@@ -666,5 +820,3 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     );
   }
 }
-
-

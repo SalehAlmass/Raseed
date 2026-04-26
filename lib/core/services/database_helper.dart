@@ -36,7 +36,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 15,
+      version: 16,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -263,7 +263,9 @@ class DatabaseHelper {
       await db.execute('''
         CREATE TABLE units (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL
+          name TEXT NOT NULL,
+          parent_id INTEGER,
+          FOREIGN KEY (parent_id) REFERENCES units (id) ON DELETE SET NULL
         )
       ''');
 
@@ -272,10 +274,10 @@ class DatabaseHelper {
       await db.insert('categories', {'name': 'مشروبات'});
       await db.insert('categories', {'name': 'مواد غذائية'});
       
-      await db.insert('units', {'name': 'حبة'});
-      await db.insert('units', {'name': 'كرتون'});
-      await db.insert('units', {'name': 'كيلو'});
-      await db.insert('units', {'name': 'جرام'});
+      await db.insert('units', {'name': 'كرتون'}); // id: 1
+      await db.insert('units', {'name': 'حبة', 'parent_id': 1}); // id: 2, parent: كرتون
+      await db.insert('units', {'name': 'كيلو'}); // id: 3
+      await db.insert('units', {'name': 'جرام', 'parent_id': 3}); // id: 4, parent: كيلو
 
       // 4. Update products table
       await db.execute("ALTER TABLE products ADD COLUMN category_id INTEGER");
@@ -287,6 +289,31 @@ class DatabaseHelper {
       await db.execute("ALTER TABLE products ADD COLUMN reorder_level INTEGER DEFAULT 0");
       await db.execute("ALTER TABLE products ADD COLUMN wholesale_price REAL DEFAULT 0");
       await db.execute("ALTER TABLE products ADD COLUMN shelf_location TEXT");
+    }
+    if (oldVersion < 16) {
+      await db.execute("ALTER TABLE units ADD COLUMN parent_id INTEGER");
+      
+      // Update existing default units if they exist
+      final units = await db.query('units');
+      int? cartonId;
+      int? pieceId;
+      int? kgId;
+      int? gramId;
+
+      for (var u in units) {
+        final name = u['name'].toString();
+        if (name == 'كرتون') cartonId = u['id'] as int;
+        if (name == 'حبة') pieceId = u['id'] as int;
+        if (name == 'كيلو') kgId = u['id'] as int;
+        if (name == 'جرام') gramId = u['id'] as int;
+      }
+
+      if (cartonId != null && pieceId != null) {
+        await db.update('units', {'parent_id': cartonId}, where: 'id = ?', whereArgs: [pieceId]);
+      }
+      if (kgId != null && gramId != null) {
+        await db.update('units', {'parent_id': kgId}, where: 'id = ?', whereArgs: [gramId]);
+      }
     }
   }
 

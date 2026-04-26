@@ -77,7 +77,7 @@ class AppBottomNavigationBar extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     final color = isActive ? AppColors.primary : Colors.grey.withOpacity(0.6);
-    
+
     return Expanded(
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -88,11 +88,7 @@ class AppBottomNavigationBar extends StatelessWidget {
             AnimatedScale(
               duration: const Duration(milliseconds: 200),
               scale: isActive ? 1.2 : 1.0,
-              child: Icon(
-                icon,
-                color: color,
-                size: 26.sp,
-              ),
+              child: Icon(icon, color: color, size: 26.sp),
             ),
             SizedBox(height: 4.h),
             Text(
@@ -140,11 +136,7 @@ class AppBottomNavigationBar extends StatelessWidget {
               ),
             ],
           ),
-          child: Icon(
-            icon,
-            color: Colors.white,
-            size: 32.sp,
-          ),
+          child: Icon(icon, color: Colors.white, size: 32.sp),
         ),
       ),
     );

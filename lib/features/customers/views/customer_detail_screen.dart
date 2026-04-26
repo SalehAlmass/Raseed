@@ -56,16 +56,17 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     String phone = _currentCustomer.phone;
     phone = phone.replaceAll(RegExp(r'[^\d+]'), '');
     if (phone.startsWith('0')) phone = phone.substring(1);
-    if (!phone.startsWith('+') && !phone.startsWith('00') && !phone.startsWith('967')) {
+    if (!phone.startsWith('+') &&
+        !phone.startsWith('00') &&
+        !phone.startsWith('967')) {
       phone = '967$phone';
     }
     phone = phone.replaceAll('+', '').replaceAll('00', '');
 
     final message =
         "مرحباً ${_currentCustomer.name}، نود تذكيركم بأن إجمالي الرصيد المتبقي عليكم في تطبيق رصيد هو $balanceMsg. نرجوا منكم تسديد ما عليكم كما نتمنى لكم يوماً سعيداً!";
-    final url =
-        "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
-        
+    final url = "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
+
     try {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } catch (e) {
@@ -338,9 +339,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                     ),
                     keyboardType: TextInputType.number,
                     validator: (val) {
-                      if (val == null || val.trim().isEmpty) return 'مطلوب إدخال المبلغ';
+                      if (val == null || val.trim().isEmpty)
+                        return 'مطلوب إدخال المبلغ';
                       final amount = double.tryParse(val.trim());
-                      if (amount == null || amount <= 0) return 'قيمة المبلغ غير صحيحة';
+                      if (amount == null || amount <= 0)
+                        return 'قيمة المبلغ غير صحيحة';
                       return null;
                     },
                   ),
@@ -354,14 +357,16 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                       ),
                     ),
                     validator: (val) {
-                      if (val == null || val.trim().isEmpty) return 'مطلوب إدخال ملاحظة';
+                      if (val == null || val.trim().isEmpty)
+                        return 'مطلوب إدخال ملاحظة';
                       return null;
                     },
                   ),
                   SizedBox(height: 15.h),
                   DateSelector(
                     initialDate: selectedDate,
-                    onDateSelected: (date) => setState(() => selectedDate = date),
+                    onDateSelected: (date) =>
+                        setState(() => selectedDate = date),
                   ),
                 ],
               ),
