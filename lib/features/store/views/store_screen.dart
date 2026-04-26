@@ -151,9 +151,9 @@ class _StoreScreenState extends State<StoreScreen> {
             ),
           ),
           Expanded(
-            child: _isLoading 
-              ? const Center(child: CircularProgressIndicator())
-              : _filteredProducts.isEmpty
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredProducts.isEmpty
                 ? Center(child: Text('no_products'.tr()))
                 : ListView.builder(
                     padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -172,7 +172,9 @@ class _StoreScreenState extends State<StoreScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          if (sl<SubscriptionService>().canUseFeature(AppFeature.editInventory)) {
+          if (sl<SubscriptionService>().canUseFeature(
+            AppFeature.editInventory,
+          )) {
             _showAddEditDialog();
           } else {
             SubscriptionDialog.show(context);
@@ -205,10 +207,12 @@ class _ProductTile extends StatelessWidget {
     final inStock = product.stockQuantity > 0;
     final isExpired = product.hasExpiredBatch;
     final isNearExpiry = product.hasNearExpiryBatch;
-    
-    final statusColor = isExpired 
-        ? AppColors.error 
-        : (isNearExpiry ? Colors.orange : (inStock ? AppColors.success : AppColors.error));
+
+    final statusColor = isExpired
+        ? AppColors.error
+        : (isNearExpiry
+              ? Colors.orange
+              : (inStock ? AppColors.success : AppColors.error));
 
     return Container(
       margin: EdgeInsets.only(bottom: 15.h),
@@ -231,10 +235,7 @@ class _ProductTile extends StatelessWidget {
             color: statusColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12.r),
           ),
-          child: Icon(
-            Icons.inventory_2_outlined,
-            color: statusColor,
-          ),
+          child: Icon(Icons.inventory_2_outlined, color: statusColor),
         ),
         title: Text(
           product.name,
@@ -244,16 +245,35 @@ class _ProductTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              sl<ProductService>().formatStock(product.stockQuantity, product.unitsPerPackage),
+              sl<ProductService>().formatStock(
+                product.stockQuantity,
+                product.unitsPerPackage,
+              ),
               style: TextStyle(
-                color: statusColor, 
-                fontWeight: (isExpired || isNearExpiry) ? FontWeight.bold : FontWeight.normal
+                color: statusColor,
+                fontWeight: (isExpired || isNearExpiry)
+                    ? FontWeight.bold
+                    : FontWeight.normal,
               ),
             ),
-            if (isExpired) 
-              Text('expired'.tr(), style: TextStyle(color: AppColors.error, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+            if (isExpired)
+              Text(
+                'expired'.tr(),
+                style: TextStyle(
+                  color: AppColors.error,
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             if (!isExpired && isNearExpiry)
-              Text('near_expiry'.tr(), style: TextStyle(color: Colors.orange, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+              Text(
+                'near_expiry'.tr(),
+                style: TextStyle(
+                  color: Colors.orange,
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
           ],
         ),
         trailing: Row(
@@ -282,7 +302,11 @@ class _ProductTile extends StatelessWidget {
                     value: 'sell',
                     child: Row(
                       children: [
-                        const Icon(Icons.point_of_sale, color: AppColors.success, size: 20),
+                        const Icon(
+                          Icons.point_of_sale,
+                          color: AppColors.success,
+                          size: 20,
+                        ),
                         SizedBox(width: 10.w),
                         Text('sell'.tr()),
                       ],
@@ -292,7 +316,11 @@ class _ProductTile extends StatelessWidget {
                   value: 'edit',
                   child: Row(
                     children: [
-                      const Icon(Icons.edit, color: AppColors.primary, size: 20),
+                      const Icon(
+                        Icons.edit,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
                       SizedBox(width: 10.w),
                       Text('edit'.tr()),
                     ],

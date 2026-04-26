@@ -232,9 +232,9 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                 decoration: InputDecoration(labelText: 'name'.tr()),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty)
-                    return 'مطلوب إدخال الاسم';
+                    return 'name_required'.tr();
                   if (!RegExp(r'^[\u0600-\u06FFa-zA-Z\s]+$').hasMatch(val))
-                    return 'يجب أن يحتوي الاسم على حروف فقط';
+                    return 'name_letters_only'.tr();
                   return null;
                 },
               ),
@@ -244,8 +244,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                 keyboardType: TextInputType.phone,
                 validator: (val) {
                   if (val == null || val.trim().isEmpty)
-                    return 'مطلوب إدخال رقم الهاتف';
-                  if (val.trim().length < 9) return 'رقم الهاتف غير صحيح';
+                    return 'phone_required'.tr();
+                  if (val.trim().length < 9) return 'phone_invalid'.tr();
                   return null;
                 },
               ),
@@ -482,7 +482,7 @@ class _CustomerTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6.r),
                 ),
                 child: Text(
-                  'VIP',
+                  'VIP'.tr(),
                   style: TextStyle(
                     color: Colors.amber[800],
                     fontSize: 10.sp,

@@ -63,8 +63,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     }
     phone = phone.replaceAll('+', '').replaceAll('00', '');
 
-    final message =
-        "مرحباً ${_currentCustomer.name}، نود تذكيركم بأن إجمالي الرصيد المتبقي عليكم في تطبيق رصيد هو $balanceMsg. نرجوا منكم تسديد ما عليكم كما نتمنى لكم يوماً سعيداً!";
+    final message = 'whatsapp_reminder_msg'.tr(namedArgs: {
+      'name': _currentCustomer.name,
+      'balance': balanceMsg,
+    });
     final url = "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
 
     try {
@@ -72,7 +74,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not launch WhatsApp')),
+          SnackBar(content: Text('could_not_launch_whatsapp'.tr())),
         );
       }
     }
@@ -340,10 +342,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                     keyboardType: TextInputType.number,
                     validator: (val) {
                       if (val == null || val.trim().isEmpty)
-                        return 'مطلوب إدخال المبلغ';
+                        return 'amount_required'.tr();
                       final amount = double.tryParse(val.trim());
                       if (amount == null || amount <= 0)
-                        return 'قيمة المبلغ غير صحيحة';
+                        return 'amount_invalid'.tr();
                       return null;
                     },
                   ),
@@ -358,7 +360,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                     ),
                     validator: (val) {
                       if (val == null || val.trim().isEmpty)
-                        return 'مطلوب إدخال ملاحظة';
+                        return 'note_required'.tr();
                       return null;
                     },
                   ),

@@ -185,12 +185,12 @@ class _SaleScreenState extends State<SaleScreen> {
         final bool? sendWa = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text(
-              'إرسال تذكير عبر واتساب',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            title: Text(
+              'whatsapp_reminder_title'.tr(),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            content: const Text(
-              'تمت العملية بنجاح. هل تريد إرسال تفاصيل العملية والرصيد المتبقي إلى العميل عبر واتساب؟',
+            content: Text(
+              'whatsapp_reminder_desc'.tr(),
             ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15.r),
@@ -212,7 +212,7 @@ class _SaleScreenState extends State<SaleScreen> {
                   ),
                 ),
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('إرسال الآن'),
+                child: Text('send_now'.tr()),
               ),
             ],
           ),
@@ -240,12 +240,10 @@ class _SaleScreenState extends State<SaleScreen> {
             'YER',
           ).format(_totalAmount);
 
-          String message = "مرحباً ${_selectedCustomer!.name}،\n";
-          message += "لقد تم تسجيل فاتورة مشتريات بقيمة $formattedTotal";
-          if (paid > 0) message += "، وسداد مبلغ $formattedPaid";
-          message += ".\n";
-          message +=
-              "\nبذلك إجمالي الرصيد المتبقي عليكم في تطبيق رصيد هو: $yerBal\nنتمنى لكم يوماً سعيداً!";
+          String message = 'whatsapp_msg_greeting'.tr(namedArgs: {'name': _selectedCustomer!.name});
+          message += 'whatsapp_msg_sale'.tr(namedArgs: {'total': formattedTotal});
+          if (paid > 0) message += 'whatsapp_msg_paid'.tr(namedArgs: {'paid': formattedPaid});
+          message += 'whatsapp_msg_balance'.tr(namedArgs: {'balance': yerBal});
 
           final url =
               "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
@@ -277,9 +275,9 @@ class _SaleScreenState extends State<SaleScreen> {
         if (errorStr.contains('amount_exceeds_total'))
           msg = 'amount_exceeds_total'.tr();
         if (errorStr.contains('no_debt_to_repay'))
-          msg = 'ليس على العميل الحد الأدنى من الديون לסدادها';
+          msg = 'no_debt_to_repay'.tr();
         if (errorStr.contains('payment_exceeds_debt'))
-          msg = 'المبلغ المدفوع يتجاوز إجمالي الدين الفعلي للعميل';
+          msg = 'payment_exceeds_debt'.tr();
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(msg), backgroundColor: AppColors.error),
@@ -491,7 +489,7 @@ class _SaleScreenState extends State<SaleScreen> {
                   label: Text(
                     _paidAmount < _totalAmount
                         ? '${'select_customer'.tr()} *'
-                        : '${'select_customer'.tr()} (اختياري)',
+                        : '${'select_customer'.tr()} ${'optional'.tr()}',
                   ),
                   inputDecorationTheme: InputDecorationTheme(
                     border: OutlineInputBorder(
@@ -526,7 +524,7 @@ class _SaleScreenState extends State<SaleScreen> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12.r),
                       ),
-                      prefixText: 'YER ',
+                      prefixText: '${CurrencyHelper.getSymbol('YER')} ',
                     ),
                     onChanged: (val) => setState(() {}),
                   ),

@@ -468,8 +468,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 if (noteController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('مطلوب إدخال ملاحظة'),
+                    SnackBar(
+                      content: Text('note_required'.tr()),
                       backgroundColor: AppColors.error,
                     ),
                   );
@@ -530,18 +530,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       final bool? sendWa = await showDialog<bool>(
                         context: context,
                         builder: (ctx) => AlertDialog(
-                          title: const Text('إرسال إشعار عبر واتساب؟'),
+                          title: Text('send_notification_wa'.tr()),
                           content: Text(
-                            'هل ترغب في إرسال تفاصيل الإجراء للعميل ${selectedCustomer!.name}؟',
+                            'send_notification_desc'.tr(namedArgs: {'name': selectedCustomer!.name}),
                           ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(ctx, false),
-                              child: const Text('لا'),
+                              child: Text('no'.tr()),
                             ),
                             ElevatedButton(
                               onPressed: () => Navigator.pop(ctx, true),
-                              child: const Text('نعم'),
+                              child: Text('yes'.tr()),
                             ),
                           ],
                         ),
@@ -550,11 +550,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       if (sendWa == true) {
                         String message = "";
                         if (selectedType == TransactionType.payment) {
-                          message =
-                              "مرحباً ${selectedCustomer!.name}،\nشكراً لك.. تم استلام دفعة نقدية (سداد) بمقدار $formattedAmount.\nبذلك يكون الرصيد المتبقي عليكم في تطبيق رصيد هو: $formattedDebt\nنتمنى لكم يوماً سعيداً!";
+                          message = 'whatsapp_msg_payment'.tr(namedArgs: {
+                            'amount': formattedAmount,
+                            'balance': formattedDebt,
+                          });
                         } else {
-                          message =
-                              "مرحباً ${selectedCustomer!.name}،\nلقد تم تسجيل دين في حسابكم بمقدار $formattedAmount.\nبذلك يكون إجمالي الرصيد المتبقي عليكم في تطبيق رصيد هو: $formattedDebt\nنتمنى لكم يوماً سعيداً!";
+                          message = 'whatsapp_msg_debt'.tr(namedArgs: {
+                            'amount': formattedAmount,
+                            'balance': formattedDebt,
+                          });
                         }
 
                         String phone = selectedCustomer!.phone.replaceAll(
@@ -579,8 +583,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         } catch (e) {
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Could not launch WhatsApp'),
+                              SnackBar(
+                                content: Text('could_not_launch_whatsapp'.tr()),
                               ),
                             );
                           }
