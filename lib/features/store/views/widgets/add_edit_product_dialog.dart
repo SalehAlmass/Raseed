@@ -599,6 +599,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   }
 
   Widget _buildExpirySelector() {
+    final direction = Directionality.of(context);
     return InkWell(
       onTap: () async {
         final date = await showDatePicker(
@@ -632,7 +633,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
               Icons.arrow_forward_ios,
               size: 14,
               color: Colors.grey,
-              textDirection: context.locale.languageCode == 'ar' ? TextDirection.rtl : TextDirection.ltr,
+              textDirection: direction,
             ),
           ],
         ),
