@@ -121,7 +121,7 @@ class _StoreScreenState extends State<StoreScreen> {
         foregroundColor: AppColors.textPrimary,
         actions: [
           IconButton(
-            icon: const Icon(Icons.category_outlined),
+            icon: const Icon(Icons.category),
             onPressed: () => Navigator.pushNamed(context, Routes.categories),
             tooltip: 'manage_categories'.tr(),
           ),
@@ -280,7 +280,7 @@ class _ProductTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '${CurrencyHelper.getFormatter(product.currency).format(product.price)} ${product.currency}',
+              '${CurrencyHelper.getFormatter(product.currency).format(product.price)} ',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 14.sp,
