@@ -373,5 +373,11 @@
   "كرتون": "Carton",
   "حبة": "Piece",
   "كيلو": "Kilogram",
-  "جرام": "Gram"
+  "جرام": "Gram",
+  "category_in_use": "Cannot delete this category because it is linked to products in stock. Please change the category of those products first.",
+  "unit_in_use": "Cannot delete this unit because it is linked to products or other units. Please change the units of those products first.",
+  "unit_type": "Unit Type",
+  "main_unit_label": "Main",
+  "sub_unit_label": "Sub",
+  "select_unit_type": "Please select unit type"
 }

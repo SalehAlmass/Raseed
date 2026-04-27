@@ -110,6 +110,15 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                             ),
                           );
                           if (confirm == true) {
+                            final inUse = await _categoryService.isCategoryInUse(cat.id!);
+                            if (inUse) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('category_in_use'.tr()), backgroundColor: AppColors.error),
+                                );
+                              }
+                              return;
+                            }
                             await _categoryService.deleteCategory(cat.id!);
                             _loadCategories();
                           }

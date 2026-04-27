@@ -35,6 +35,7 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
 
   void _showAddEditDialog([Unit? unit]) {
     final nameController = TextEditingController(text: unit?.name);
+    bool isSubUnit = unit?.parentId != null;
     Unit? selectedParent = _units
         .where((u) => u.id == unit?.parentId)
         .firstOrNull;
@@ -49,45 +50,75 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
           title: Text(unit == null ? 'add_unit'.tr() : 'edit_unit'.tr()),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text('unit_type'.tr(), style: TextStyle(fontSize: 12.sp, color: Colors.grey[600], fontWeight: FontWeight.bold)),
+              SizedBox(height: 8.h),
+              SegmentedButton<bool>(
+                segments: [
+                  ButtonSegment<bool>(
+                    value: false,
+                    label: Text('main_unit_label'.tr()),
+                    icon: const Icon(Icons.inventory_2_outlined),
+                  ),
+                  ButtonSegment<bool>(
+                    value: true,
+                    label: Text('sub_unit_label'.tr()),
+                    icon: const Icon(Icons.inventory_outlined),
+                  ),
+                ],
+                selected: {isSubUnit},
+                onSelectionChanged: (Set<bool> selection) {
+                  setDialogState(() {
+                    isSubUnit = selection.first;
+                    if (!isSubUnit) selectedParent = null;
+                  });
+                },
+                style: SegmentedButton.styleFrom(
+                  selectedBackgroundColor: AppColors.primary,
+                  selectedForegroundColor: Colors.white,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+              SizedBox(height: 20.h),
               TextField(
                 controller: nameController,
                 decoration: InputDecoration(
-                  hintText: 'unit_name'.tr(),
+                  labelText: 'unit_name'.tr(),
                   filled: true,
                   fillColor: Colors.grey[100],
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15.r),
                     borderSide: BorderSide.none,
                   ),
+                  prefixIcon: const Icon(Icons.drive_file_rename_outline),
                 ),
                 autofocus: true,
               ),
-              SizedBox(height: 16.h),
-              DropdownButtonFormField<Unit>(
-                value: selectedParent,
-                decoration: InputDecoration(
-                  labelText: 'main_unit'.tr(),
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15.r),
-                    borderSide: BorderSide.none,
+              if (isSubUnit) ...[
+                SizedBox(height: 16.h),
+                DropdownButtonFormField<Unit>(
+                  value: selectedParent,
+                  decoration: InputDecoration(
+                    labelText: 'main_unit'.tr(),
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15.r),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.account_tree_outlined),
                   ),
-                ),
-                items: [
-                  DropdownMenuItem<Unit>(
-                    value: null,
-                    child: Text('none_manual'.tr()),
-                  ),
-                  ..._units
-                      .where((u) => u.id != unit?.id) // Prevent self-reference
+                  items: _units
+                      .where((u) => u.parentId == null && u.id != unit?.id) // Only main units as parents
                       .map(
                         (u) => DropdownMenuItem(value: u, child: Text(u.name)),
-                      ),
-                ],
-                onChanged: (val) => setDialogState(() => selectedParent = val),
-              ),
+                      )
+                      .toList(),
+                  onChanged: (val) => setDialogState(() => selectedParent = val),
+                  validator: (val) => isSubUnit && val == null ? 'select_unit_type'.tr() : null,
+                ),
+              ],
             ],
           ),
           actions: [
@@ -98,16 +129,25 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
             ElevatedButton(
               onPressed: () async {
                 if (nameController.text.trim().isEmpty) return;
+                if (isSubUnit && selectedParent == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('select_unit_type'.tr())),
+                  );
+                  return;
+                }
+                
                 final newUnit = Unit(
                   id: unit?.id,
                   name: nameController.text.trim(),
-                  parentId: selectedParent?.id,
+                  parentId: isSubUnit ? selectedParent?.id : null,
                 );
+                
                 if (unit == null) {
                   await _unitService.addUnit(newUnit);
                 } else {
                   await _unitService.updateUnit(newUnit);
                 }
+                
                 if (mounted) {
                   Navigator.pop(context);
                   _loadUnits();
@@ -116,8 +156,9 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
+                minimumSize: Size(100.w, 45.h),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.r),
+                  borderRadius: BorderRadius.circular(12.r),
                 ),
               ),
               child: Text('save'.tr()),
@@ -227,6 +268,22 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                SizedBox(height: 4.h),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                  decoration: BoxDecoration(
+                    color: (unit.parentId == null ? Colors.orange : Colors.teal).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Text(
+                    (unit.parentId == null ? 'main_unit_label' : 'sub_unit_label').tr(),
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.bold,
+                      color: unit.parentId == null ? Colors.orange[800] : Colors.teal[800],
+                    ),
+                  ),
+                ),
                 SizedBox(height: 12.h),
                 Row(
                   children: [
@@ -301,6 +358,15 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
       ),
     );
     if (confirm == true) {
+      final inUse = await _unitService.isUnitInUse(unit.id!);
+      if (inUse) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('unit_in_use'.tr()), backgroundColor: AppColors.error),
+          );
+        }
+        return;
+      }
       await _unitService.deleteUnit(unit.id!);
       _loadUnits();
     }

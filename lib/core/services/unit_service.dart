@@ -25,4 +25,25 @@ class UnitService {
     final db = await _dbHelper.database;
     return await db.delete('units', where: 'id = ?', whereArgs: [id]);
   }
+
+  Future<bool> isUnitInUse(int id) async {
+    final db = await _dbHelper.database;
+    // Check if used as main unit or sub unit in products
+    final List<Map<String, dynamic>> res = await db.query(
+      'products',
+      where: 'main_unit_id = ? OR sub_unit_id = ?',
+      whereArgs: [id, id],
+      limit: 1,
+    );
+    if (res.isNotEmpty) return true;
+
+    // Also check if used as a parent of another unit
+    final List<Map<String, dynamic>> res2 = await db.query(
+      'units',
+      where: 'parent_id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    return res2.isNotEmpty;
+  }
 }

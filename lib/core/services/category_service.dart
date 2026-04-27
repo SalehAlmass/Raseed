@@ -26,4 +26,15 @@ class CategoryService {
     final db = await _dbHelper.database;
     return await db.delete('categories', where: 'id = ?', whereArgs: [id]);
   }
+
+  Future<bool> isCategoryInUse(int id) async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> res = await db.query(
+      'products',
+      where: 'category_id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    return res.isNotEmpty;
+  }
 }
