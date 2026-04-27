@@ -210,100 +210,111 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
   }
 
   Widget _buildUnitCard(Unit unit) {
-    final String initial = unit.name.isNotEmpty
-        ? unit.name[0].toUpperCase()
-        : '?';
+    final isMainUnit = unit.parentId == null;
+    final accentColor = isMainUnit ? AppColors.primary : Colors.teal;
+    final iconData = isMainUnit ? Icons.inventory_2_outlined : Icons.inventory_outlined;
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: accentColor.withOpacity(0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
+        border: Border.all(color: accentColor.withOpacity(0.05)),
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: 0,
-            right: 0,
-            child: Container(
-              width: 40.w,
-              height: 40.w,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.only(
-                  topRight: Radius.circular(20.r),
-                  bottomLeft: Radius.circular(20.r),
-                ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16.r),
+        child: Stack(
+          children: [
+            // Background Decorative Icon
+            Positioned(
+              right: -10,
+              bottom: -10,
+              child: Icon(
+                iconData,
+                size: 80.sp,
+                color: accentColor.withOpacity(0.03),
               ),
-              child: Center(
-                child: Text(
-                  initial,
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
+            ),
+            
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => _showAddEditDialog(unit),
+                child: Padding(
+                  padding: EdgeInsets.all(16.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Unit Icon & Type Badge
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            unit.name,
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -0.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                            decoration: BoxDecoration(
+                              color: accentColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20.r),
+                            ),
+                            child: Text(
+                              (isMainUnit ? 'main_unit_label' : 'sub_unit_label').tr(),
+                              style: TextStyle(
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.bold,
+                                color: accentColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      const Spacer(),
+                      
+                      // Unit Name
+                     
+                      SizedBox(height: 12.h),
+                      
+                      // Actions
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          _SmallActionButton(
+                            icon: Icons.edit_outlined,
+                            color: Colors.blue,
+                            onTap: () => _showAddEditDialog(unit),
+                          ),
+                          SizedBox(width: 8.w),
+                          _SmallActionButton(
+                            icon: Icons.delete_outline,
+                            color: AppColors.error,
+                            onTap: () => _confirmDelete(unit),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(16.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  unit.name,
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 4.h),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                  decoration: BoxDecoration(
-                    color: (unit.parentId == null ? Colors.orange : Colors.teal).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  child: Text(
-                    (unit.parentId == null ? 'main_unit_label' : 'sub_unit_label').tr(),
-                    style: TextStyle(
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.bold,
-                      color: unit.parentId == null ? Colors.orange[800] : Colors.teal[800],
-                    ),
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                Row(
-                  children: [
-                    _CircleActionButton(
-                      icon: Icons.edit,
-                      color: Colors.blue,
-                      onTap: () => _showAddEditDialog(unit),
-                    ),
-                    SizedBox(width: 8.w),
-                    _CircleActionButton(
-                      icon: Icons.delete_outline,
-                      color: AppColors.error,
-                      onTap: () => _confirmDelete(unit),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -362,7 +373,10 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
       if (inUse) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('unit_in_use'.tr()), backgroundColor: AppColors.error),
+            SnackBar(
+              content: Text('unit_in_use'.tr()),
+              backgroundColor: AppColors.error,
+            ),
           );
         }
         return;
@@ -370,6 +384,34 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
       await _unitService.deleteUnit(unit.id!);
       _loadUnits();
     }
+  }
+}
+
+class _SmallActionButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _SmallActionButton({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10.r),
+      child: Container(
+        padding: EdgeInsets.all(8.w),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10.r),
+        ),
+        child: Icon(icon, color: color, size: 16.sp),
+      ),
+    );
   }
 }
 

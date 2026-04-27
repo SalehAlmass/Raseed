@@ -4,7 +4,7 @@ class LocalizationManager {
   LocalizationManager._();
 
   static const String translationsPath = 'assets/lang';
-  static const Locale fallbackLocale = Locale('en');
+  static const Locale fallbackLocale = Locale('ar');
 
-  static const List<Locale> supportedLocales = [Locale('en'), Locale('ar')];
+  static const List<Locale> supportedLocales = [Locale('ar'), Locale('en')];
 }

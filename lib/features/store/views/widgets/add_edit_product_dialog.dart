@@ -633,8 +633,14 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
             onChanged: (v) {
               setState(() {
                 _mainUnit = v;
-                // If the selected sub-unit doesn't belong to the new main unit, clear it
-                if (_subUnit != null && _subUnit?.parentId != _mainUnit?.id) {
+                // Auto-select sub unit if only one exists for this main unit
+                final potentialSubs =
+                    _units.where((u) => u.parentId == _mainUnit?.id).toList();
+                if (potentialSubs.length == 1) {
+                  _subUnit = potentialSubs.first;
+                } else if (_subUnit != null &&
+                    _subUnit?.parentId != _mainUnit?.id) {
+                  // If the selected sub-unit doesn't belong to the new main unit, clear it
                   _subUnit = null;
                 }
               });
@@ -647,7 +653,10 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
             label: 'sub_unit'.tr(),
             value: _subUnit,
             units: filteredSubUnits,
-            onChanged: (v) => setState(() => _subUnit = v),
+            // Disable if no main unit selected or no sub units available
+            onChanged: _mainUnit == null || filteredSubUnits.isEmpty
+                ? null
+                : (v) => setState(() => _subUnit = v),
           ),
         ),
       ],
@@ -658,7 +667,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     required String label,
     Unit? value,
     required List<Unit> units,
-    required Function(Unit?) onChanged,
+    void Function(Unit?)? onChanged,
   }) {
     return DropdownButtonFormField<Unit>(
       value: value,
