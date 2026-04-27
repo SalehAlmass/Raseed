@@ -371,6 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
     BuildContext context, {
     TransactionType type = TransactionType.payment,
   }) {
+    final formKey = GlobalKey<FormState>();
     final amountController = TextEditingController();
     final noteController = TextEditingController();
     Customer? selectedCustomer;
@@ -386,73 +387,97 @@ class _HomeScreenState extends State<HomeScreen> {
                 : 'add_debt'.tr(),
           ),
           content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SegmentedButton<TransactionType>(
-                  segments: [
-                    ButtonSegment(
-                      value: TransactionType.payment,
-                      label: Text('payment'.tr()),
-                      icon: const Icon(Icons.payment),
-                    ),
-                    ButtonSegment(
-                      value: TransactionType.sale,
-                      label: Text('add_debt'.tr()),
-                      icon: const Icon(Icons.add_circle_outline),
-                    ),
-                  ],
-                  selected: {selectedType},
-                  onSelectionChanged: (val) {
-                    setState(() {
-                      selectedType = val.first;
-                      if (selectedType == TransactionType.payment &&
-                          selectedCustomer != null) {
-                        amountController.text = selectedCustomer!.totalDebt
-                            .toStringAsFixed(0);
-                      } else {
-                        amountController.clear();
-                      }
-                    });
-                  },
-                ),
-                SizedBox(height: 20.h),
-                _CustomerDropdown(
-                  onChanged: (c) {
-                    setState(() {
-                      selectedCustomer = c;
-                      if (selectedType == TransactionType.payment &&
-                          c != null) {
-                        amountController.text = c.totalDebt.toStringAsFixed(0);
-                      } else {
-                        amountController.clear();
-                      }
-                    });
-                  },
-                  isRequired: true,
-                ),
-                SizedBox(height: 15.h),
-                TextField(
-                  controller: amountController,
-                  decoration: InputDecoration(
-                    labelText: 'amount'.tr(),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SegmentedButton<TransactionType>(
+                    segments: [
+                      ButtonSegment(
+                        value: TransactionType.payment,
+                        label: Text('payment'.tr()),
+                        icon: const Icon(Icons.payment),
+                      ),
+                      ButtonSegment(
+                        value: TransactionType.sale,
+                        label: Text('add_debt'.tr()),
+                        icon: const Icon(Icons.add_circle_outline),
+                      ),
+                    ],
+                    selected: {selectedType},
+                    onSelectionChanged: (val) {
+                      setState(() {
+                        selectedType = val.first;
+                        if (selectedType == TransactionType.payment &&
+                            selectedCustomer != null) {
+                          amountController.text = selectedCustomer!.totalDebt
+                              .toStringAsFixed(0);
+                        } else {
+                          amountController.clear();
+                        }
+                      });
+                    },
                   ),
-                  keyboardType: TextInputType.number,
-                ),
-                SizedBox(height: 15.h),
-                TextField(
-                  controller: noteController,
-                  decoration: InputDecoration(
-                    labelText: 'note'.tr(),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
+                  SizedBox(height: 20.h),
+                  _CustomerDropdown(
+                    onChanged: (c) {
+                      setState(() {
+                        selectedCustomer = c;
+                        if (selectedType == TransactionType.payment &&
+                            c != null) {
+                          amountController.text = c.totalDebt.toStringAsFixed(0);
+                        } else {
+                          amountController.clear();
+                        }
+                      });
+                    },
+                    isRequired: true,
                   ),
-                ),
-              ],
+                  SizedBox(height: 15.h),
+                  TextFormField(
+                    controller: amountController,
+                    decoration: InputDecoration(
+                      labelText: 'amount'.tr(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'amount_required'.tr();
+                      }
+                      final amount = double.tryParse(value) ?? 0;
+                      if (amount <= 0) {
+                        return 'amount_must_be_positive'.tr();
+                      }
+                      if (selectedType == TransactionType.payment && selectedCustomer != null) {
+                        if (amount > selectedCustomer!.totalDebt) {
+                          return 'payment_exceeds_debt'.tr();
+                        }
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 15.h),
+                  TextFormField(
+                    controller: noteController,
+                    decoration: InputDecoration(
+                      labelText: 'note'.tr(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'note_required'.tr();
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
@@ -462,34 +487,15 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
-                final amount = double.tryParse(amountController.text) ?? 0;
-                if (amount <= 0 || selectedCustomer == null) return;
+                if (!(formKey.currentState?.validate() ?? false)) return;
 
-                if (noteController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('note_required'.tr()),
-                      backgroundColor: AppColors.error,
-                    ),
-                  );
-                  return;
-                }
+                final amount = double.tryParse(amountController.text) ?? 0;
 
                 if (selectedType == TransactionType.payment) {
                   if (selectedCustomer!.totalDebt <= 0) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('no_debt_to_repay'.tr()),
-                        backgroundColor: AppColors.error,
-                      ),
-                    );
-                    return;
-                  }
-
-                  if (amount > selectedCustomer!.totalDebt) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('payment_exceeds_debt'.tr()),
                         backgroundColor: AppColors.error,
                       ),
                     );
