@@ -7,6 +7,8 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/models/report_models.dart';
+import '../../../core/models/customer.dart';
+import '../../../core/models/app_transaction.dart';
 import '../../../core/utils/currency_helper.dart';
 import 'package:intl/intl.dart';
 
@@ -137,6 +139,113 @@ class ExportService {
     );
 
     await Printing.sharePdf(bytes: await pdf.save(), filename: 'bi_report_${DateTime.now().millisecondsSinceEpoch}.pdf');
+  }
+
+  Future<void> exportCustomerTransactionsToPdf(
+    Customer customer,
+    List<AppTransaction> transactions,
+  ) async {
+    final pdf = pw.Document();
+    final font = await PdfGoogleFonts.cairoRegular();
+    final boldFont = await PdfGoogleFonts.cairoBold();
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        textDirection: pw.TextDirection.rtl,
+        theme: pw.ThemeData.withFont(base: font, bold: boldFont),
+        build: (context) => [
+          _buildCustomerPdfHeader(customer),
+          pw.SizedBox(height: 20),
+          pw.TableHelper.fromTextArray(
+            headers: ['التاريخ', 'النوع', 'البيان', 'المبلغ'],
+            data: transactions.map((tx) {
+              final isRefund = tx.type == TransactionType.refund;
+              final isSale = tx.type == TransactionType.sale;
+              final typeStr = isSale
+                  ? 'دين (فاتورة)'
+                  : (isRefund ? 'إرجاع' : 'تسديد (قبض)');
+              return [
+                DateFormat('yyyy-MM-dd').format(tx.date),
+                typeStr,
+                tx.note ?? '',
+                '${tx.amount.toStringAsFixed(0)} ${CurrencyHelper.getSymbol(tx.currency)}',
+              ];
+            }).toList(),
+            headerStyle: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.white,
+            ),
+            headerDecoration:
+                const pw.BoxDecoration(color: PdfColors.blueGrey800),
+            cellAlignment: pw.Alignment.centerRight,
+            columnWidths: {
+              0: const pw.FixedColumnWidth(100),
+              1: const pw.FixedColumnWidth(100),
+              2: const pw.FlexColumnWidth(),
+              3: const pw.FixedColumnWidth(120),
+            },
+          ),
+          pw.SizedBox(height: 20),
+          pw.Divider(),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                'إجمالي الرصيد المستحق:',
+                style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+              ),
+              pw.Text(
+                '${customer.totalDebt.toStringAsFixed(0)} YER',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.red900,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    await Printing.sharePdf(
+      bytes: await pdf.save(),
+      filename:
+          'customer_${customer.id}_${DateTime.now().millisecondsSinceEpoch}.pdf',
+    );
+  }
+
+  pw.Widget _buildCustomerPdfHeader(Customer customer) {
+    return pw.Header(
+      level: 0,
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                'كشف حساب عميل',
+                style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
+              ),
+              pw.Text('اسم العميل: ${customer.name}'),
+              pw.Text('رقم الهاتف: ${customer.phone}'),
+            ],
+          ),
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              pw.Text(
+                'تطبيق رصيد RASEED',
+                style: pw.TextStyle(fontSize: 14, color: PdfColors.grey),
+              ),
+              pw.Text(DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   pw.Widget _buildPdfHeader(ReportFilter filter) {

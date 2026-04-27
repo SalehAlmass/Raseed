@@ -532,7 +532,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         builder: (ctx) => AlertDialog(
                           title: Text('send_notification_wa'.tr()),
                           content: Text(
-                            'send_notification_desc'.tr(namedArgs: {'name': selectedCustomer!.name}),
+                            'send_notification_desc'.tr(
+                              namedArgs: {'name': selectedCustomer!.name},
+                            ),
                           ),
                           actions: [
                             TextButton(
@@ -550,15 +552,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       if (sendWa == true) {
                         String message = "";
                         if (selectedType == TransactionType.payment) {
-                          message = 'whatsapp_msg_payment'.tr(namedArgs: {
-                            'amount': formattedAmount,
-                            'balance': formattedDebt,
-                          });
+                          message = 'whatsapp_msg_payment'.tr(
+                            namedArgs: {
+                              'amount': formattedAmount,
+                              'balance': formattedDebt,
+                            },
+                          );
                         } else {
-                          message = 'whatsapp_msg_debt'.tr(namedArgs: {
-                            'amount': formattedAmount,
-                            'balance': formattedDebt,
-                          });
+                          message = 'whatsapp_msg_debt'.tr(
+                            namedArgs: {
+                              'amount': formattedAmount,
+                              'balance': formattedDebt,
+                            },
+                          );
                         }
 
                         String phone = selectedCustomer!.phone.replaceAll(

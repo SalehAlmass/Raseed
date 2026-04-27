@@ -5,11 +5,11 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/di/injection_container.dart';
 import '../../../core/services/customer_service.dart';
 import '../../../core/services/transaction_service.dart';
+import '../../reports/services/export_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/models/customer.dart';
 import '../../../core/models/app_transaction.dart';
 import '../../../core/utils/currency_helper.dart';
-import '../../../core/widgets/date_selector.dart';
 import 'package:intl/intl.dart';
 
 class CustomerDetailScreen extends StatefulWidget {
@@ -23,6 +23,7 @@ class CustomerDetailScreen extends StatefulWidget {
 class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   final TransactionService _transactionService = sl<TransactionService>();
   final CustomerService _customerService = sl<CustomerService>();
+  final ExportService _exportService = sl<ExportService>();
   late Customer _currentCustomer;
   List<AppTransaction> _transactions = [];
   bool _isLoading = true;
@@ -62,11 +63,13 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
       phone = '967$phone';
     }
     phone = phone.replaceAll('+', '').replaceAll('00', '');
+    if (phone.startsWith('967') && phone.length == 12 && phone[3] == '0') {
+      phone = '967${phone.substring(4)}';
+    }
 
-    final message = 'whatsapp_reminder_msg'.tr(namedArgs: {
-      'name': _currentCustomer.name,
-      'balance': balanceMsg,
-    });
+    final message = 'whatsapp_reminder_msg'.tr(
+      namedArgs: {'name': _currentCustomer.name, 'balance': balanceMsg},
+    );
     final url = "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
 
     try {
@@ -76,6 +79,21 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('could_not_launch_whatsapp'.tr())),
         );
+      }
+    }
+  }
+
+  Future<void> _exportPdf() async {
+    try {
+      await _exportService.exportCustomerTransactionsToPdf(
+        _currentCustomer,
+        _transactions,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('error_occurred'.tr())));
       }
     }
   }
@@ -205,20 +223,15 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
 
   Widget _buildActionButtons() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _ActionButton(
-          label: 'add_debt'.tr(),
-          icon: Icons.add_circle_outline,
-          color: AppColors.error,
-          onTap: () => _showTransactionDialog(TransactionType.sale),
+          label: 'export_pdf'.tr(),
+          icon: Icons.picture_as_pdf_outlined,
+          color: Colors.redAccent,
+          onTap: _exportPdf,
         ),
-        _ActionButton(
-          label: 'get_payment'.tr(),
-          icon: Icons.check_circle_outline,
-          color: AppColors.success,
-          onTap: () => _showTransactionDialog(TransactionType.payment),
-        ),
+        SizedBox(width: 20.w),
         _ActionButton(
           label: 'whatsapp'.tr(),
           icon: Icons.chat_bubble_outline,
@@ -307,122 +320,6 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
       },
     );
   }
-
-  void _showTransactionDialog(TransactionType type) {
-    final amountController = TextEditingController();
-    final noteController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-    String selectedCurrency = 'YER';
-    DateTime selectedDate = DateTime.now();
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(
-            type == TransactionType.sale ? 'add_debt'.tr() : 'get_payment'.tr(),
-          ),
-          content: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(height: 20.h),
-                  TextFormField(
-                    controller: amountController,
-                    decoration: InputDecoration(
-                      labelText: 'amount'.tr(),
-                      prefixText:
-                          '${CurrencyHelper.getSymbol(selectedCurrency)} ',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty)
-                        return 'amount_required'.tr();
-                      final amount = double.tryParse(val.trim());
-                      if (amount == null || amount <= 0)
-                        return 'amount_invalid'.tr();
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 15.h),
-                  TextFormField(
-                    controller: noteController,
-                    decoration: InputDecoration(
-                      labelText: 'note'.tr(),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                    ),
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty)
-                        return 'note_required'.tr();
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 15.h),
-                  DateSelector(
-                    initialDate: selectedDate,
-                    onDateSelected: (date) =>
-                        setState(() => selectedDate = date),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('cancel'.tr()),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (!formKey.currentState!.validate()) return;
-                final amount = double.tryParse(amountController.text);
-                if (amount == null || amount <= 0) return;
-
-                try {
-                  await _transactionService.addTransaction(
-                    AppTransaction(
-                      customerId: _currentCustomer.id,
-                      type: type,
-                      amount: amount,
-                      currency: selectedCurrency,
-                      date: selectedDate,
-                      note: noteController.text,
-                    ),
-                  );
-
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    _loadData();
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          e.toString().contains('over_limit')
-                              ? 'over_limit_error'.tr()
-                              : 'error_occurred'.tr(),
-                        ),
-                        backgroundColor: AppColors.error,
-                      ),
-                    );
-                  }
-                }
-              },
-              child: Text('save'.tr()),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _ActionButton extends StatelessWidget {
@@ -443,7 +340,7 @@ class _ActionButton extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        width: 100.w,
+        width: 120.w,
         padding: EdgeInsets.symmetric(vertical: 15.h),
         decoration: BoxDecoration(
           color: AppColors.surface,
