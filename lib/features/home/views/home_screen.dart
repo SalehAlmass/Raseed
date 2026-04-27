@@ -114,36 +114,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  InkWell(
-                    onTap: () {
-                      if (sl<SubscriptionService>().canUseFeature(
-                        AppFeature.addSale,
-                      )) {
-                        Navigator.pushNamed(context, '/sale').then((result) {
-                          if (result == true) _loadData();
-                        });
-                      } else {
-                        SubscriptionDialog.show(context);
-                      }
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 6.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      child: Text(
-                        'new_sale'.tr(),
-                        style: TextStyle(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
+                  _ActionCard(
+                    label: 'get_payment'.tr(),
+                    icon: Icons.check_circle_outline,
+                    color: AppColors.success,
+                    onTap: () => _showPaymentDialog(context, type: TransactionType.payment),
                   ),
                 ],
               ),
@@ -172,7 +147,11 @@ class _HomeScreenState extends State<HomeScreen> {
         break;
       case 2:
         if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
-          Navigator.pushNamed(context, Routes.sale).then((result) {
+          Navigator.pushNamed(
+            context,
+            Routes.sale,
+            arguments: TransactionType.payment,
+          ).then((result) {
             if (result == true) _loadData();
           });
         } else {
@@ -190,6 +169,23 @@ class _HomeScreenState extends State<HomeScreen> {
         Navigator.pushReplacementNamed(context, Routes.store);
         break;
     }
+  }
+
+  Widget _buildQuickActions() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [       
+        Expanded(
+          child: _ActionCard(
+            label: 'get_payment'.tr(),
+            icon: Icons.check_circle_outline,
+            color: AppColors.success,
+            onTap: () =>
+                _showPaymentDialog(context, type: TransactionType.payment),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildSummaryCards() {
@@ -371,11 +367,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showPaymentDialog(BuildContext context) {
+  void _showPaymentDialog(
+    BuildContext context, {
+    TransactionType type = TransactionType.payment,
+  }) {
     final amountController = TextEditingController();
     final noteController = TextEditingController();
     Customer? selectedCustomer;
-    TransactionType selectedType = TransactionType.payment;
+    TransactionType selectedType = type;
 
     showDialog(
       context: context,
@@ -934,6 +933,52 @@ class _SummaryCard extends StatelessWidget {
             }).toList(),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ActionCard extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionCard({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15.r),
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 12.w),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: color.withOpacity(0.2), width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 18.sp),
+            SizedBox(width: 6.w),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

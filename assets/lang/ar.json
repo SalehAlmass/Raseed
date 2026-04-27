@@ -381,5 +381,9 @@
   "unit_type": "النوع",
   "main_unit_label": "كبرى",
   "sub_unit_label": "صغرى",
-  "select_unit_type": "الرجاء اختيار نوع الوحدة"
+  "select_unit_type": "الرجاء اختيار نوع الوحدة",
+  "print_receipt": "طباعة الفاتورة",
+  "print_via_bluetooth_network": "الطباعة عبر بلوتوث أو شبكة",
+  "send_receipt_details": "إرسال تفاصيل الفاتورة عبر واتساب",
+  "done": "تم"
 }

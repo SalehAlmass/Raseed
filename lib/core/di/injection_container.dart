@@ -16,6 +16,7 @@ import '../services/subscription_service.dart';
 import '../services/backup_service.dart';
 import '../services/category_service.dart';
 import '../services/unit_service.dart';
+import '../services/receipt_service.dart';
 import '../services/google_drive_service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../features/reports/services/report_service.dart';
@@ -86,6 +87,7 @@ Future<void> init() async {
   
   sl.registerLazySingleton<CategoryService>(() => CategoryService());
   sl.registerLazySingleton<UnitService>(() => UnitService());
+  sl.registerLazySingleton<ReceiptService>(() => ReceiptService());
 
   //! Reports
   sl.registerLazySingleton(() => ReportService());

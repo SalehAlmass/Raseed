@@ -379,5 +379,9 @@
   "unit_type": "Unit Type",
   "main_unit_label": "Main",
   "sub_unit_label": "Sub",
-  "select_unit_type": "Please select unit type"
+  "select_unit_type": "Please select unit type",
+  "print_receipt": "Print Receipt",
+  "print_via_bluetooth_network": "Print via Bluetooth or Network",
+  "send_receipt_details": "Send receipt via WhatsApp",
+  "done": "Done"
 }
