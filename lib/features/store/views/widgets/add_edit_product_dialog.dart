@@ -175,6 +175,17 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
           _subUnit = _units.where((u) => u.id == p.subUnitId).firstOrNull;
 
           _totalStockController.text = p.stockQuantity.toString();
+          
+          if (p.batches.isNotEmpty) {
+            final activeBatches = p.batches.where((b) => b.quantity > 0 && b.expiryDate != null).toList();
+            if (activeBatches.isNotEmpty) {
+              activeBatches.sort((a, b) => a.expiryDate!.compareTo(b.expiryDate!));
+              _expiryDate = activeBatches.first.expiryDate;
+            } else if (p.batches.firstOrNull?.expiryDate != null) {
+              _expiryDate = p.batches.first.expiryDate;
+            }
+          }
+
           _syncFromTotal();
           _calculateMargin();
         }
@@ -232,6 +243,25 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
         }
       } else {
         await _productService.updateProduct(product);
+        
+        final pBatches = widget.product!.batches;
+        if (pBatches.isNotEmpty) {
+          final firstBatch = pBatches.first;
+          if (firstBatch.expiryDate != _expiryDate) {
+            final updatedBatch = firstBatch.copyWith(expiryDate: _expiryDate);
+            await _productService.updateBatch(updatedBatch);
+          }
+        } else if (_expiryDate != null && totalStock > 0) {
+          await _productService.addBatch(
+            Batch(
+              productId: product.id!,
+              quantity: totalStock,
+              costPrice: product.costPrice,
+              createdAt: DateTime.now(),
+              expiryDate: _expiryDate,
+            ),
+          );
+        }
       }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -295,21 +325,23 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
         SizedBox(height: 12.h),
         Row(
           children: [
-            Expanded(
-              child: _buildModernField(
-                _totalStockController,
-                'stock_quantity'.tr(),
-                Icons.inventory_2_outlined,
-                type: TextInputType.number,
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'required_field'.tr();
-                  if (int.tryParse(v) == null) return 'invalid_number'.tr();
-                  if (int.parse(v) < 0) return 'cannot_be_negative'.tr();
-                  return null;
-                },
+            if (!_showAdvanced) ...[
+              Expanded(
+                child: _buildModernField(
+                  _totalStockController,
+                  'stock_quantity'.tr(),
+                  Icons.inventory_2_outlined,
+                  type: TextInputType.number,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'required_field'.tr();
+                    if (int.tryParse(v) == null) return 'invalid_number'.tr();
+                    if (int.parse(v) < 0) return 'cannot_be_negative'.tr();
+                    return null;
+                  },
+                ),
               ),
-            ),
-            SizedBox(width: 8.w),
+              SizedBox(width: 8.w),
+            ],
             Expanded(
               child: _buildModernField(
                 _salePriceController,
@@ -528,7 +560,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   Widget _buildModernField(
     TextEditingController controller,
     String label,
-    IconData icon, {
+    IconData? icon, {
     TextInputType type = TextInputType.text,
     String? Function(String?)? validator,
   }) {
@@ -538,9 +570,10 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       validator: validator,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, size: 20.sp, color: Colors.grey[600]),
+        prefixIcon: icon != null ? Icon(icon, size: 20.sp, color: Colors.grey[600]) : null,
         filled: true,
         fillColor: Colors.grey[50],
+        contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
           borderSide: BorderSide.none,
@@ -558,6 +591,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
           borderSide: BorderSide(color: Colors.red.withOpacity(0.5)),
         ),
         isDense: true,
+        floatingLabelBehavior: FloatingLabelBehavior.always,
       ),
     );
   }
@@ -713,7 +747,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 child: _buildModernField(
                   _mainStockController,
                   _mainUnit?.name ?? 'main_unit'.tr(),
-                  Icons.inventory_2_outlined,
+                  null,
                   type: TextInputType.number,
                 ),
               ),
@@ -725,7 +759,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 child: _buildModernField(
                   _subStockController,
                   _subUnit?.name ?? 'sub_unit'.tr(),
-                  Icons.inventory_outlined,
+                  null,
                   type: TextInputType.number,
                 ),
               ),

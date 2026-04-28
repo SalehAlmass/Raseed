@@ -32,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final TransactionService _transactionService = sl<TransactionService>();
   Map<String, double> _summary = {'daily_sales': 0.0, 'total_debt': 0.0};
   List<AppTransaction> _recentTransactions = [];
+  List<Product> _nearExpiryProducts = [];
   bool _isLoading = true;
   int _bottomNavIndex = 0;
 
@@ -45,9 +46,12 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
     final summary = await _transactionService.getDashboardSummary();
     final recent = await _transactionService.getAllTransactions(limit: 5);
+    final nearExpiry = await sl<ProductService>().getNearExpiryProducts();
+    
     setState(() {
       _summary = summary;
       _recentTransactions = recent;
+      _nearExpiryProducts = nearExpiry;
       _isLoading = false;
     });
   }
@@ -98,10 +102,11 @@ class _HomeScreenState extends State<HomeScreen> {
         onRefresh: _loadData,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.all(20.w),
+          padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h, bottom: 100.h),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _buildAlertsSection(),
               _buildSummaryCards(),
               SizedBox(height: 30.h),
               Row(
@@ -136,6 +141,126 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: AppBottomNavigationBar(
         activeIndex: _bottomNavIndex,
         onTap: _onNavTap,
+      ),
+    );
+  }
+
+  Widget _buildAlertsSection() {
+    if (_nearExpiryProducts.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 20.h),
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: AppColors.error.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: AppColors.error.withOpacity(0.1)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 24.sp),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'near_expiry_alert'.tr(),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.error,
+                    fontSize: 14.sp,
+                  ),
+                ),
+                Text(
+                  'near_expiry_desc'.tr(args: [_nearExpiryProducts.length.toString()]),
+                  style: TextStyle(
+                    color: AppColors.error.withOpacity(0.8),
+                    fontSize: 12.sp,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              _showProductsSheet('near_expiry_products'.tr(), _nearExpiryProducts);
+            },
+            child: Text('view'.tr(), style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showProductsSheet(String title, List<Product> products) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+        ),
+        padding: EdgeInsets.all(20.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const Divider(),
+            Expanded(
+              child: products.isEmpty
+                  ? Center(
+                      child: Text(
+                        'no_products'.tr(),
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: products.length,
+                      separatorBuilder: (context, index) => const Divider(),
+                      itemBuilder: (context, index) {
+                        final p = products[index];
+                        final expiry = p.batches
+                            .where((b) => b.isNearExpiry)
+                            .firstOrNull
+                            ?.expiryDate;
+                        return ListTile(
+                          title: Text(p.name,
+                              style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text(
+                            expiry != null
+                                ? '${'expiry_date'.tr()}: ${DateFormat.yMd(context.locale.toString()).format(expiry)}'
+                                : '',
+                            style: TextStyle(color: AppColors.error),
+                          ),
+                          trailing: Text(
+                            '${p.stockQuantity} ${'units'.tr()}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -203,6 +328,9 @@ class _HomeScreenState extends State<HomeScreen> {
               amounts: {'YER': _summary['daily_sales_yer'] ?? 0.0},
               icon: Icons.trending_up_rounded,
               color: AppColors.success,
+              onTap: () {
+                _showDailySalesSheet();
+              },
             ),
           ),
         ),
@@ -215,6 +343,9 @@ class _HomeScreenState extends State<HomeScreen> {
               amounts: {'YER': _summary['total_debt_yer'] ?? 0.0},
               icon: Icons.account_balance_wallet_rounded,
               color: AppColors.error,
+              onTap: () {
+                _showDebtTransactionsSheet();
+              },
             ),
           ),
         ),
@@ -282,6 +413,85 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _showDailySalesSheet() async {
+    final allTx = await sl<TransactionService>().getAllTransactions(limit: 500);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    
+    final dailyTx = allTx.where((tx) {
+      final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
+      return txDate.isAtSameMomentAs(today) && tx.type == TransactionType.sale;
+    }).toList();
+
+    if (mounted) _showTransactionsSheet('daily_sales'.tr(), dailyTx);
+  }
+
+  Future<void> _showDebtTransactionsSheet() async {
+    final allTx = await sl<TransactionService>().getAllTransactions(limit: 500);
+    
+    final debtTx = allTx.where((tx) {
+      if (tx.type == TransactionType.sale && tx.amount > tx.paidAmount) return true;
+      if (tx.type == TransactionType.payment) return true;
+      return false;
+    }).toList();
+
+    if (mounted) _showTransactionsSheet('total_debt'.tr(), debtTx);
+  }
+
+  void _showTransactionsSheet(String title, List<AppTransaction> transactions) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+        ),
+        padding: EdgeInsets.all(20.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const Divider(),
+            Expanded(
+              child: transactions.isEmpty
+                  ? Center(
+                      child: Text(
+                        'no_transactions'.tr(),
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: transactions.length,
+                      separatorBuilder: (context, index) => const Divider(),
+                      itemBuilder: (context, index) {
+                        return _TransactionTile(tx: transactions[index]);
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildRecentActivityHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -328,64 +538,10 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount: _recentTransactions.length,
               separatorBuilder: (context, index) => const Divider(),
               itemBuilder: (context, index) {
-                final tx = _recentTransactions[index];
-                
-                final isRefund = tx.type == TransactionType.refund;
-                final isPayment = tx.type == TransactionType.payment;
-                final isSale = tx.type == TransactionType.sale && tx.items.isNotEmpty;
-                final isAddDebt = tx.type == TransactionType.sale && tx.items.isEmpty;
-
-                String titleText;
-                if (isRefund) titleText = 'refund'.tr();
-                else if (isPayment) titleText = 'payment'.tr();
-                else if (isAddDebt) titleText = 'add_debt'.tr();
-                else titleText = 'cash_sale'.tr(); // isSale
-
-                Color iconColor;
-                IconData iconData;
-                
-                if (isRefund) {
-                  iconColor = AppColors.error;
-                  iconData = Icons.keyboard_return;
-                } else if (isPayment) {
-                  iconColor = AppColors.success;
-                  iconData = Icons.arrow_downward; // Money coming in
-                } else if (isAddDebt) {
-                  iconColor = AppColors.error;
-                  iconData = Icons.arrow_upward; // Debt increasing
-                } else {
-                  iconColor = AppColors.success;
-                  iconData = Icons.shopping_cart_outlined; // Cash Sale
-                }
-
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: CircleAvatar(
-                    backgroundColor: iconColor.withOpacity(0.1),
-                    child: Icon(
-                      iconData,
-                      color: iconColor,
-                      size: 20,
-                    ),
-                  ),
-                  title: Text(
-                    titleText,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    DateFormat('MMM dd, hh:mm a').format(tx.date),
-                    style: TextStyle(fontSize: 12.sp, color: Colors.grey),
-                  ),
-                  trailing: Text(
-                    CurrencyHelper.getFormatter(tx.currency).format(tx.amount),
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isRefund || isAddDebt ? AppColors.error : AppColors.success,
-                    ),
-                  ),
-                );
+                return _TransactionTile(tx: _recentTransactions[index]);
               },
             ),
+
     );
   }
 
@@ -885,6 +1041,7 @@ class _SummaryCard extends StatelessWidget {
   final IconData icon;
   final Color color;
   final bool isGradient;
+  final VoidCallback? onTap;
 
   const _SummaryCard({
     required this.title,
@@ -892,16 +1049,20 @@ class _SummaryCard extends StatelessWidget {
     required this.icon,
     required this.color,
     this.isGradient = false,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16.r),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: Colors.grey.withOpacity(0.1), width: 1),
         boxShadow: [
           BoxShadow(
@@ -961,6 +1122,7 @@ class _SummaryCard extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }
@@ -1005,6 +1167,69 @@ class _ActionCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TransactionTile extends StatelessWidget {
+  final AppTransaction tx;
+  const _TransactionTile({required this.tx});
+
+  @override
+  Widget build(BuildContext context) {
+    final isRefund = tx.type == TransactionType.refund;
+    final isPayment = tx.type == TransactionType.payment;
+    final isSale = tx.type == TransactionType.sale && tx.items.isNotEmpty;
+    final isAddDebt = tx.type == TransactionType.sale && tx.items.isEmpty;
+
+    String titleText;
+    if (isRefund) titleText = 'refund'.tr();
+    else if (isPayment) titleText = 'payment'.tr();
+    else if (isAddDebt) titleText = 'add_debt'.tr();
+    else titleText = 'cash_sale'.tr();
+
+    Color iconColor;
+    IconData iconData;
+    
+    if (isRefund) {
+      iconColor = AppColors.error;
+      iconData = Icons.keyboard_return;
+    } else if (isPayment) {
+      iconColor = AppColors.success;
+      iconData = Icons.arrow_downward;
+    } else if (isAddDebt) {
+      iconColor = AppColors.error;
+      iconData = Icons.arrow_upward;
+    } else {
+      iconColor = AppColors.success;
+      iconData = Icons.shopping_cart_outlined;
+    }
+
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: CircleAvatar(
+        backgroundColor: iconColor.withOpacity(0.1),
+        child: Icon(
+          iconData,
+          color: iconColor,
+          size: 20,
+        ),
+      ),
+      title: Text(
+        titleText,
+        style: const TextStyle(fontWeight: FontWeight.bold),
+      ),
+      subtitle: Text(
+        DateFormat('MMM dd, hh:mm a').format(tx.date),
+        style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+      ),
+      trailing: Text(
+        CurrencyHelper.getFormatter(tx.currency).format(tx.amount),
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: isRefund || isAddDebt ? AppColors.error : AppColors.success,
         ),
       ),
     );

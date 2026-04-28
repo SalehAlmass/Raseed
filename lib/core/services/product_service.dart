@@ -36,6 +36,7 @@ class ProductService {
     final List<Map<String, dynamic>> maps = await db.query(
       'product_batches',
       where: 'product_id = ? AND quantity > 0',
+      whereArgs: [productId],
       orderBy: 'created_at ASC',
     );
     return List.generate(maps.length, (i) => Batch.fromMap(maps[i]));
@@ -107,7 +108,6 @@ class ProductService {
     );
   }
 
-  /// Adds a new batch to a product
   Future<int> addBatch(Batch batch) async {
     final db = await _dbHelper.database;
     return await db.transaction((txn) async {
@@ -121,6 +121,16 @@ class ProductService {
     });
   }
 
+  Future<int> updateBatch(Batch batch) async {
+    final db = await _dbHelper.database;
+    return await db.update(
+      'product_batches',
+      batch.toMap(),
+      where: 'id = ?',
+      whereArgs: [batch.id],
+    );
+  }
+
   String formatStock(int totalStock, int unitsPerPackage) {
     if (unitsPerPackage <= 1) return "$totalStock ${'units'.tr()}";
     
@@ -130,6 +140,32 @@ class ProductService {
     if (cartons == 0) return "$units ${'units'.tr()}";
     if (units == 0) return "$cartons ${'packages'.tr()}";
     
-    return "$cartons ${'packages'.tr()} + $units ${'units'.tr()}";
+  return "$cartons ${'packages'.tr()} + $units ${'units'.tr()}";
+  }
+
+  Future<List<Product>> getNearExpiryProducts() async {
+    final db = await _dbHelper.database;
+    final now = DateTime.now();
+    final thirtyDaysLater = now.add(const Duration(days: 30));
+    
+    // Find product IDs that have batches expiring soon
+    final List<Map<String, dynamic>> batchMaps = await db.query(
+      'product_batches',
+      where: 'expiry_date IS NOT NULL AND expiry_date <= ? AND quantity > 0',
+      whereArgs: [thirtyDaysLater.toIso8601String()],
+      distinct: true,
+      columns: ['product_id'],
+    );
+    
+    if (batchMaps.isEmpty) return [];
+    
+    final List<int> productIds = batchMaps.map((m) => m['product_id'] as int).toList();
+    
+    final List<Product> products = [];
+    for (var id in productIds) {
+      final p = await getProduct(id);
+      if (p != null) products.add(p);
+    }
+    return products;
   }
 }

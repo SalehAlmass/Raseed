@@ -318,8 +318,16 @@ class DatabaseHelper {
       }
     }
     if (oldVersion < 17) {
-      await db.execute("ALTER TABLE settings ADD COLUMN enable_whatsapp INTEGER DEFAULT 1");
-      await db.execute("ALTER TABLE settings ADD COLUMN enable_pdf_receipt INTEGER DEFAULT 1");
+      try {
+        await db.execute("ALTER TABLE settings ADD COLUMN enable_whatsapp INTEGER DEFAULT 1");
+      } catch (e) {
+        if (!e.toString().contains('duplicate column name')) rethrow;
+      }
+      try {
+        await db.execute("ALTER TABLE settings ADD COLUMN enable_pdf_receipt INTEGER DEFAULT 1");
+      } catch (e) {
+        if (!e.toString().contains('duplicate column name')) rethrow;
+      }
     }
   }
 

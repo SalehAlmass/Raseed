@@ -156,7 +156,7 @@ class _StoreScreenState extends State<StoreScreen> {
                 : _filteredProducts.isEmpty
                 ? Center(child: Text('no_products'.tr()))
                 : ListView.builder(
-                    padding: EdgeInsets.symmetric(horizontal: 20.w),
+                    padding: EdgeInsets.only(left: 20.w, right: 20.w, bottom: 100.h),
                     itemCount: _filteredProducts.length,
                     itemBuilder: (context, index) {
                       final product = _filteredProducts[index];
@@ -227,105 +227,138 @@ class _ProductTile extends StatelessWidget {
           ),
         ],
       ),
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 8.h),
-        leading: Container(
-          padding: EdgeInsets.all(12.w),
-          decoration: BoxDecoration(
-            color: statusColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          child: Icon(Icons.inventory_2_outlined, color: statusColor),
-        ),
-        title: Text(
-          product.name,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
-        ),
-        subtitle: Column(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 12.h),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              sl<ProductService>().formatStock(
-                product.stockQuantity,
-                product.unitsPerPackage,
+            Container(
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12.r),
               ),
-              style: TextStyle(
-                color: statusColor,
-                fontWeight: (isExpired || isNearExpiry)
-                    ? FontWeight.bold
-                    : FontWeight.normal,
+              child: Icon(Icons.inventory_2_outlined, color: statusColor),
+            ),
+            SizedBox(width: 15.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    sl<ProductService>().formatStock(
+                      product.stockQuantity,
+                      product.unitsPerPackage,
+                    ),
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: (isExpired || isNearExpiry)
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
+                  ),
+                  if (isExpired)
+                    Text(
+                      'expired'.tr(),
+                      style: TextStyle(
+                        color: AppColors.error,
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  if (!isExpired && isNearExpiry)
+                    Text(
+                      'near_expiry'.tr(),
+                      style: TextStyle(
+                        color: Colors.orange,
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                ],
               ),
             ),
-            if (isExpired)
-              Text(
-                'expired'.tr(),
-                style: TextStyle(
-                  color: AppColors.error,
-                  fontSize: 10.sp,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            if (!isExpired && isNearExpiry)
-              Text(
-                'near_expiry'.tr(),
-                style: TextStyle(
-                  color: Colors.orange,
-                  fontSize: 10.sp,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '${CurrencyHelper.getFormatter(product.currency).format(product.price)} ',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14.sp,
-                color: AppColors.primary,
-              ),
-            ),
-            SizedBox(width: 10.w),
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                if (value == 'edit') {
-                  onEdit();
-                } else if (value == 'sell') {
-                  onSell();
-                }
-              },
-              itemBuilder: (context) => [
-                if (inStock)
-                  PopupMenuItem(
-                    value: 'sell',
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.point_of_sale,
-                          color: AppColors.success,
-                          size: 20,
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${CurrencyHelper.getFormatter(product.currency).format(product.price)} ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14.sp,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    PopupMenuButton<String>(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      icon: const Icon(Icons.more_vert, size: 20),
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          onEdit();
+                        } else if (value == 'sell') {
+                          onSell();
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        if (inStock)
+                          PopupMenuItem(
+                            value: 'sell',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.shopping_cart_outlined, size: 20),
+                                SizedBox(width: 8.w),
+                                Text('sell'.tr()),
+                              ],
+                            ),
+                          ),
+                        PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.edit_outlined, size: 20),
+                              SizedBox(width: 8.w),
+                              Text('edit'.tr()),
+                            ],
+                          ),
                         ),
-                        SizedBox(width: 10.w),
-                        Text('sell'.tr()),
+                      ],
+                    ),
+                  ],
+                ),
+                // Show expiry date if available
+                if (product.batches.any((b) => b.expiryDate != null))
+                  Padding(
+                    padding: EdgeInsets.only(right: 8.w, top: 2.h),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.event_note, size: 10.sp, color: Colors.grey[600]),
+                        SizedBox(width: 4.w),
+                        Text(
+                          DateFormat.yMd(context.locale.toString()).format(
+                            product.batches
+                                .where((b) => b.expiryDate != null)
+                                .map((b) => b.expiryDate!)
+                                .reduce((a, b) => a.isBefore(b) ? a : b),
+                          ),
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            color: Colors.grey[600],
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                PopupMenuItem(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.edit,
-                        color: AppColors.primary,
-                        size: 20,
-                      ),
-                      SizedBox(width: 10.w),
-                      Text('edit'.tr()),
-                    ],
-                  ),
-                ),
               ],
             ),
           ],
