@@ -471,25 +471,25 @@ class _CustomerTile extends StatelessWidget {
             Expanded(
               child: Text(
                 customer.name,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp),
               ),
             ),
-            if (isVIP)
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(6.r),
-                ),
-                child: Text(
-                  'VIP'.tr(),
-                  style: TextStyle(
-                    color: Colors.amber[800],
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+            // if (isVIP)
+            //   Container(
+            //     padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+            //     decoration: BoxDecoration(
+            //       color: Colors.amber.withOpacity(0.15),
+            //       borderRadius: BorderRadius.circular(6.r),
+            //     ),
+            //     child: Text(
+            //       'VIP'.tr(),
+            //       style: TextStyle(
+            //         color: Colors.amber[800],
+            //         fontSize: 10.sp,
+            //         fontWeight: FontWeight.bold,
+            //       ),
+            //     ),
+            //   ),
           ],
         ),
         subtitle: Column(
@@ -514,7 +514,7 @@ class _CustomerTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              '${CurrencyHelper.getFormatter('YER').format(customer.totalDebt)} YER',
+              '${CurrencyHelper.getFormatter('YER').format(customer.totalDebt)}',
               style: TextStyle(
                 color: isDebtor ? AppColors.error : AppColors.success,
                 fontWeight: FontWeight.bold,

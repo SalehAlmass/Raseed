@@ -13,6 +13,8 @@ import '../../../core/models/transaction_item.dart';
 import '../../../core/services/customer_service.dart';
 import '../../../core/services/product_service.dart';
 import '../../../core/services/transaction_service.dart';
+import '../../../core/services/receipt_service.dart';
+import '../../../core/services/settings_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/utils/currency_helper.dart';
 import '../../../core/widgets/barcode_scanner_view.dart';
@@ -175,8 +177,11 @@ class _SaleScreenState extends State<SaleScreen> {
       );
 
       await _transactionService.addTransaction(transaction);
+      
+      final settings = await sl<SettingsService>().getSettings();
 
-      if (mounted &&
+      if (settings.enableWhatsapp &&
+          mounted &&
           _selectedCustomer != null &&
           _selectedCustomer!.phone.isNotEmpty) {
         double newDebt = _selectedCustomer!.totalDebt;
@@ -257,13 +262,25 @@ class _SaleScreenState extends State<SaleScreen> {
       }
 
       if (mounted) {
-        Navigator.pop(context, true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('sale_completed_success'.tr()),
-            backgroundColor: AppColors.success,
-          ),
-        );
+        bool printReceipt = false;
+        
+        if (settings.enablePdfReceipt) {
+          printReceipt = true;
+        }
+
+        if (printReceipt == true) {
+          await sl<ReceiptService>().printReceipt(transaction, customer: _selectedCustomer);
+        }
+
+        if (mounted) {
+          Navigator.pop(context, true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('sale_completed_success'.tr()),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

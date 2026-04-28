@@ -168,6 +168,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                     activeColor: AppColors.primary,
                   ),
+                  SwitchListTile(
+                    title: Text('enable_whatsapp_notification'.tr()),
+                    subtitle: Text('enable_whatsapp_notification_desc'.tr()),
+                    value: _settings.enableWhatsapp,
+                    onChanged: (val) {
+                      setState(() {
+                        _settings = _settings.copyWith(enableWhatsapp: val);
+                      });
+                    },
+                    activeColor: AppColors.primary,
+                  ),
+                  SwitchListTile(
+                    title: Text('enable_pdf_receipt_prompt'.tr()),
+                    subtitle: Text('enable_pdf_receipt_prompt_desc'.tr()),
+                    value: _settings.enablePdfReceipt,
+                    onChanged: (val) {
+                      setState(() {
+                        _settings = _settings.copyWith(enablePdfReceipt: val);
+                      });
+                    },
+                    activeColor: AppColors.primary,
+                  ),
                   SizedBox(height: 40.h),
                   SizedBox(
                     width: double.infinity,

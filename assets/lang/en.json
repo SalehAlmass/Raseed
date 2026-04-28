@@ -383,5 +383,9 @@
   "print_receipt": "Print Receipt",
   "print_via_bluetooth_network": "Print via Bluetooth or Network",
   "send_receipt_details": "Send receipt via WhatsApp",
-  "done": "Done"
+  "done": "Done",
+  "enable_whatsapp_notification": "WhatsApp Notifications",
+  "enable_whatsapp_notification_desc": "Enable sending receipts and reminders to customers via WhatsApp automatically",
+  "enable_pdf_receipt_prompt": "Export Receipt (PDF)",
+  "enable_pdf_receipt_prompt_desc": "Enable showing the PDF receipt export and print prompt after every sale"
 }

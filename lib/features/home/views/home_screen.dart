@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:rseed/core/services/settings_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/di/injection_container.dart';
 import '../../../core/services/transaction_service.dart';
@@ -117,8 +118,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   _ActionCard(
                     label: 'get_payment'.tr(),
                     icon: Icons.check_circle_outline,
-                    color: AppColors.success,
-                    onTap: () => _showPaymentDialog(context, type: TransactionType.payment),
+                    color: AppColors.error,
+                    onTap: () => _showPaymentDialog(
+                      context,
+                      type: TransactionType.payment,
+                    ),
                   ),
                 ],
               ),
@@ -174,7 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildQuickActions() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [       
+      children: [
         Expanded(
           child: _ActionCard(
             label: 'get_payment'.tr(),
@@ -325,29 +329,47 @@ class _HomeScreenState extends State<HomeScreen> {
               separatorBuilder: (context, index) => const Divider(),
               itemBuilder: (context, index) {
                 final tx = _recentTransactions[index];
+                
                 final isRefund = tx.type == TransactionType.refund;
-                final isSale = tx.type == TransactionType.sale;
+                final isPayment = tx.type == TransactionType.payment;
+                final isSale = tx.type == TransactionType.sale && tx.items.isNotEmpty;
+                final isAddDebt = tx.type == TransactionType.sale && tx.items.isEmpty;
+
+                String titleText;
+                if (isRefund) titleText = 'refund'.tr();
+                else if (isPayment) titleText = 'payment'.tr();
+                else if (isAddDebt) titleText = 'add_debt'.tr();
+                else titleText = 'cash_sale'.tr(); // isSale
+
+                Color iconColor;
+                IconData iconData;
+                
+                if (isRefund) {
+                  iconColor = AppColors.error;
+                  iconData = Icons.keyboard_return;
+                } else if (isPayment) {
+                  iconColor = AppColors.success;
+                  iconData = Icons.arrow_downward; // Money coming in
+                } else if (isAddDebt) {
+                  iconColor = AppColors.error;
+                  iconData = Icons.arrow_upward; // Debt increasing
+                } else {
+                  iconColor = AppColors.success;
+                  iconData = Icons.shopping_cart_outlined; // Cash Sale
+                }
 
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(
-                    backgroundColor: isRefund
-                        ? AppColors.error.withOpacity(0.1)
-                        : (isSale
-                              ? AppColors.success.withOpacity(0.1)
-                              : AppColors.secondary.withOpacity(0.1)),
+                    backgroundColor: iconColor.withOpacity(0.1),
                     child: Icon(
-                      isRefund ? Icons.keyboard_return : Icons.arrow_downward,
-                      color: isRefund
-                          ? AppColors.error
-                          : (isSale ? AppColors.success : AppColors.secondary),
+                      iconData,
+                      color: iconColor,
                       size: 20,
                     ),
                   ),
                   title: Text(
-                    isSale
-                        ? 'cash_sale'.tr()
-                        : (isRefund ? 'refund'.tr() : 'payment'.tr()),
+                    titleText,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text(
@@ -358,7 +380,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     CurrencyHelper.getFormatter(tx.currency).format(tx.amount),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: isRefund ? AppColors.error : AppColors.success,
+                      color: isRefund || isAddDebt ? AppColors.error : AppColors.success,
                     ),
                   ),
                 );
@@ -426,7 +448,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         selectedCustomer = c;
                         if (selectedType == TransactionType.payment &&
                             c != null) {
-                          amountController.text = c.totalDebt.toStringAsFixed(0);
+                          amountController.text = c.totalDebt.toStringAsFixed(
+                            0,
+                          );
                         } else {
                           amountController.clear();
                         }
@@ -452,7 +476,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       if (amount <= 0) {
                         return 'amount_must_be_positive'.tr();
                       }
-                      if (selectedType == TransactionType.payment && selectedCustomer != null) {
+                      if (selectedType == TransactionType.payment &&
+                          selectedCustomer != null) {
                         if (amount > selectedCustomer!.totalDebt) {
                           return 'payment_exceeds_debt'.tr();
                         }
@@ -464,17 +489,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   TextFormField(
                     controller: noteController,
                     decoration: InputDecoration(
-                      labelText: 'note'.tr(),
+                      labelText: 'note'.tr() + ' ' + 'optional'.tr(),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12.r),
                       ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'note_required'.tr();
-                      }
-                      return null;
-                    },
                   ),
                 ],
               ),
@@ -516,8 +535,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (context.mounted) {
                     Navigator.pop(context);
                     _loadData();
+                    
+                    final settings = await sl<SettingsService>().getSettings();
 
-                    if (selectedCustomer!.phone.isNotEmpty) {
+                    if (settings.enableWhatsapp && selectedCustomer!.phone.isNotEmpty) {
                       double currentDebt = selectedCustomer!.totalDebt;
                       if (selectedType == TransactionType.payment) {
                         currentDebt -= amount;

@@ -385,5 +385,9 @@
   "print_receipt": "طباعة الفاتورة",
   "print_via_bluetooth_network": "الطباعة عبر بلوتوث أو شبكة",
   "send_receipt_details": "إرسال تفاصيل الفاتورة عبر واتساب",
-  "done": "تم"
+  "done": "تم",
+  "enable_whatsapp_notification": "إرسال إشعارات الواتساب",
+  "enable_whatsapp_notification_desc": "تفعيل إرسال الإيصالات والرسائل التذكيرية للعملاء عبر واتساب تلقائياً",
+  "enable_pdf_receipt_prompt": "تصدير الفاتورة (PDF)",
+  "enable_pdf_receipt_prompt_desc": "تفعيل نافذة عرض تصدير وطباعة الفاتورة (PDF) بعد كل عملية بيع"
 }

@@ -36,7 +36,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 16,
+      version: 17,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -93,7 +93,9 @@ class DatabaseHelper {
         onboarding_completed INTEGER DEFAULT 0,
         vip_threshold REAL DEFAULT 100000.0,
         inactive_days INTEGER DEFAULT 30,
-        dead_days INTEGER DEFAULT 90
+        dead_days INTEGER DEFAULT 90,
+        enable_whatsapp INTEGER DEFAULT 1,
+        enable_pdf_receipt INTEGER DEFAULT 1
       )
     ''');
 
@@ -314,6 +316,10 @@ class DatabaseHelper {
       if (kgId != null && gramId != null) {
         await db.update('units', {'parent_id': kgId}, where: 'id = ?', whereArgs: [gramId]);
       }
+    }
+    if (oldVersion < 17) {
+      await db.execute("ALTER TABLE settings ADD COLUMN enable_whatsapp INTEGER DEFAULT 1");
+      await db.execute("ALTER TABLE settings ADD COLUMN enable_pdf_receipt INTEGER DEFAULT 1");
     }
   }
 

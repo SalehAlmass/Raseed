@@ -10,6 +10,8 @@ class AppSettings {
   final double vipThreshold;
   final int inactiveDays;
   final int deadDays;
+  final bool enableWhatsapp;
+  final bool enablePdfReceipt;
 
   AppSettings({
     this.maxDebt = 1000.0,
@@ -21,6 +23,8 @@ class AppSettings {
     this.vipThreshold = 100000.0,
     this.inactiveDays = 30,
     this.deadDays = 90,
+    this.enableWhatsapp = true,
+    this.enablePdfReceipt = true,
   });
 
   Map<String, dynamic> toMap() {
@@ -34,6 +38,8 @@ class AppSettings {
       'vip_threshold': vipThreshold,
       'inactive_days': inactiveDays,
       'dead_days': deadDays,
+      'enable_whatsapp': enableWhatsapp ? 1 : 0,
+      'enable_pdf_receipt': enablePdfReceipt ? 1 : 0,
     };
   }
 
@@ -50,6 +56,8 @@ class AppSettings {
       vipThreshold: (map['vip_threshold'] as num?)?.toDouble() ?? 100000.0,
       inactiveDays: map['inactive_days'] ?? 30,
       deadDays: map['dead_days'] ?? 90,
+      enableWhatsapp: (map['enable_whatsapp'] ?? 1) == 1,
+      enablePdfReceipt: (map['enable_pdf_receipt'] ?? 1) == 1,
     );
   }
 
@@ -63,6 +71,8 @@ class AppSettings {
     double? vipThreshold,
     int? inactiveDays,
     int? deadDays,
+    bool? enableWhatsapp,
+    bool? enablePdfReceipt,
   }) {
     return AppSettings(
       maxDebt: maxDebt ?? this.maxDebt,
@@ -74,6 +84,8 @@ class AppSettings {
       vipThreshold: vipThreshold ?? this.vipThreshold,
       inactiveDays: inactiveDays ?? this.inactiveDays,
       deadDays: deadDays ?? this.deadDays,
+      enableWhatsapp: enableWhatsapp ?? this.enableWhatsapp,
+      enablePdfReceipt: enablePdfReceipt ?? this.enablePdfReceipt,
     );
   }
 }
