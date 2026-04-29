@@ -434,5 +434,23 @@
   "clock_tampered": "تم اكتشاف تلاعب في وقت الجهاز، تم إنهاء الفترة التجريبية لحماية النظام.",
   "remaining_amount": "المبلغ المتبقي (دين)",
   "paid_full": "تم سداد المبلغ بالكامل",
-  "paid": "المدفوع"
+  "paid": "المدفوع",
+  "suppliers": "الموردون",
+  "add_new_supplier": "إضافة مورد جديد",
+  "supplier_name": "اسم المورد",
+  "company_name": "اسم الشركة (اختياري)",
+  "supplier_debt": "المبلغ المستحق له",
+  "no_suppliers": "لا يوجد موردون بعد",
+  "search_supplier": "البحث عن مورد...",
+  "account_statement": "كشف الحساب",
+  "purchase": "فاتورة شراء",
+  "pay_supplier": "سداد للمورد",
+  "void_transaction": "إلغاء العملية",
+  "void_confirmation_desc": "هل أنت متأكد من إلغاء هذه العملية؟ سيتم عكس أثرها على المخزون والدين.",
+  "purchase_invoice": "فاتورة توريد",
+  "select_product": "اختر منتج",
+  "add_to_invoice": "إضافة للفاتورة",
+  "total_purchase": "إجمالي المشتريات",
+  "low_stock_alerts": "تنبيهات انخفاض المخزون"
 }
+

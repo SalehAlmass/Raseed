@@ -37,7 +37,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 19,
+      version: 21,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -130,7 +130,9 @@ class DatabaseHelper {
         category_id INTEGER,
         main_unit_id INTEGER,
         sub_unit_id INTEGER,
-        conversion_factor INTEGER DEFAULT 1
+        conversion_factor INTEGER DEFAULT 1,
+        supplier_id INTEGER,
+        FOREIGN KEY (supplier_id) REFERENCES suppliers (id) ON DELETE SET NULL
       )
     ''');
 
@@ -167,11 +169,53 @@ class DatabaseHelper {
       )
     ''');
 
+    await db.execute('''
+      CREATE TABLE suppliers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        company TEXT,
+        total_debt REAL DEFAULT 0,
+        last_transaction_date TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE supplier_transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        supplier_id INTEGER NOT NULL,
+        type TEXT NOT NULL, -- purchase, payment
+        amount REAL NOT NULL,
+        paid_amount REAL DEFAULT 0,
+        currency TEXT DEFAULT 'YER',
+        date TEXT NOT NULL,
+        note TEXT,
+        is_void INTEGER DEFAULT 0,
+        FOREIGN KEY (supplier_id) REFERENCES suppliers (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE supplier_transaction_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        transaction_id INTEGER NOT NULL,
+        product_id INTEGER NOT NULL,
+        product_name TEXT NOT NULL,
+        quantity INTEGER NOT NULL,
+        cost_price REAL NOT NULL,
+        currency TEXT DEFAULT 'YER',
+        FOREIGN KEY (transaction_id) REFERENCES supplier_transactions (id) ON DELETE CASCADE,
+        FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL
+      )
+    ''');
+
     // Create performance indexes
     await db.execute('CREATE INDEX IF NOT EXISTS idx_transactions_customer_id ON transactions(customer_id)');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date)');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_transaction_items_transaction_id ON transaction_items(transaction_id)');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_suppliers_name ON suppliers(name)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_supplier_transactions_supplier_id ON supplier_transactions(supplier_id)');
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -384,6 +428,64 @@ class DatabaseHelper {
           debugPrint('Error adding total_spent column: $e');
         }
       }
+    }
+
+    // v20: Create suppliers table
+    if (oldVersion < 20) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS suppliers (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          phone TEXT NOT NULL,
+          company TEXT,
+          total_debt REAL DEFAULT 0,
+          last_transaction_date TEXT
+        )
+      ''');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_suppliers_name ON suppliers(name)');
+    }
+
+    // v21: Supplier improvements
+    if (oldVersion < 21) {
+      // 1. Add supplier_id to products
+      try {
+        await db.execute("ALTER TABLE products ADD COLUMN supplier_id INTEGER");
+      } catch (e) {
+        if (!e.toString().contains('duplicate column name')) rethrow;
+      }
+
+      // 2. Create supplier_transactions
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS supplier_transactions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          supplier_id INTEGER NOT NULL,
+          type TEXT NOT NULL,
+          amount REAL NOT NULL,
+          paid_amount REAL DEFAULT 0,
+          currency TEXT DEFAULT 'YER',
+          date TEXT NOT NULL,
+          note TEXT,
+          is_void INTEGER DEFAULT 0,
+          FOREIGN KEY (supplier_id) REFERENCES suppliers (id) ON DELETE CASCADE
+        )
+      ''');
+
+      // 3. Create supplier_transaction_items
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS supplier_transaction_items (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          transaction_id INTEGER NOT NULL,
+          product_id INTEGER NOT NULL,
+          product_name TEXT NOT NULL,
+          quantity INTEGER NOT NULL,
+          cost_price REAL NOT NULL,
+          currency TEXT DEFAULT 'YER',
+          FOREIGN KEY (transaction_id) REFERENCES supplier_transactions (id) ON DELETE CASCADE,
+          FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL
+        )
+      ''');
+      
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_supplier_transactions_supplier_id ON supplier_transactions(supplier_id)');
     }
   }
 

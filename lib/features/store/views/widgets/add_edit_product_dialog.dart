@@ -9,6 +9,8 @@ import '../../../../core/models/unit.dart';
 import '../../../../core/services/product_service.dart';
 import '../../../../core/services/category_service.dart';
 import '../../../../core/services/unit_service.dart';
+import '../../../../core/services/supplier_service.dart';
+import '../../../../core/models/supplier.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/barcode_scanner_view.dart';
 
@@ -47,6 +49,8 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   Category? _selectedCategory;
   Unit? _mainUnit;
   Unit? _subUnit;
+  List<Supplier> _suppliers = [];
+  Supplier? _selectedSupplier;
   DateTime? _expiryDate;
   bool _isLoading = true;
   bool _isSaving = false;
@@ -150,11 +154,13 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   Future<void> _loadData() async {
     final cats = await _categoryService.getAllCategories();
     final units = await _unitService.getAllUnits();
+    final suppliers = await sl<SupplierService>().getAllSuppliers();
 
     if (mounted) {
       setState(() {
         _categories = cats;
         _units = units;
+        _suppliers = suppliers;
         _isLoading = false;
 
         if (widget.product != null) {
@@ -173,6 +179,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
               _categories.firstOrNull;
           _mainUnit = _units.where((u) => u.id == p.mainUnitId).firstOrNull;
           _subUnit = _units.where((u) => u.id == p.subUnitId).firstOrNull;
+          _selectedSupplier = _suppliers.where((s) => s.id == p.supplierId).firstOrNull;
 
           _totalStockController.text = p.stockQuantity.toString();
           
@@ -224,6 +231,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       categoryId: _selectedCategory?.id,
       mainUnitId: _mainUnit?.id,
       subUnitId: _subUnit?.id,
+      supplierId: _selectedSupplier?.id,
     );
 
     try {
@@ -481,8 +489,31 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
         SizedBox(height: 16.h),
         _buildMarginDisplay(),
         SizedBox(height: 16.h),
+        _buildSupplierDropdown(),
+        SizedBox(height: 16.h),
         _buildExpirySelector(),
       ],
+    );
+  }
+
+  Widget _buildSupplierDropdown() {
+    return DropdownButtonFormField<Supplier>(
+      value: _selectedSupplier,
+      decoration: InputDecoration(
+        labelText: 'suppliers'.tr(),
+        prefixIcon: const Icon(Icons.business_rounded),
+        filled: true,
+        fillColor: Colors.grey[50],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: BorderSide.none,
+        ),
+        isDense: true,
+      ),
+      items: _suppliers
+          .map((s) => DropdownMenuItem(value: s, child: Text(s.name)))
+          .toList(),
+      onChanged: (val) => setState(() => _selectedSupplier = val),
     );
   }
 

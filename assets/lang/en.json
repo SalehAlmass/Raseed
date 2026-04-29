@@ -433,5 +433,24 @@
   "clock_tampered": "Clock tampering detected, trial period has been ended to protect the system.",
   "remaining_amount": "Remaining Amount (Debt)",
   "paid_full": "Paid in Full",
-  "paid": "Paid"
+  "paid": "Paid",
+  "suppliers": "Suppliers",
+  "add_new_supplier": "Add New Supplier",
+  "supplier_name": "Supplier Name",
+  "company_name": "Company Name (Optional)",
+  "supplier_debt": "Total Debt to Supplier",
+  "no_suppliers": "No suppliers yet",
+  "search_supplier": "Search supplier...",
+  "account_statement": "Account Statement",
+  "purchase": "Purchase",
+  "pay_supplier": "Pay Supplier",
+  "void_transaction": "Void Transaction",
+  "void_confirmation_desc": "Are you sure you want to void this transaction? Stock and debt will be reversed.",
+  "purchase_invoice": "Purchase Invoice",
+  "select_product": "Select Product",
+  "add_to_invoice": "Add to Invoice",
+  "total_purchase": "Total Purchase",
+  "low_stock_alerts": "Low Stock Alerts"
 }
+
+

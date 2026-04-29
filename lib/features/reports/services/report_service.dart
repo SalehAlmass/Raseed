@@ -201,6 +201,16 @@ class ReportService {
       soldCount: (r['count'] as num).toInt(),
     )).toList();
   }
+
+  Future<List<Map<String, dynamic>>> getLowStockBySupplier(int supplierId) async {
+    final db = await _dbHelper.database;
+    return await db.rawQuery('''
+      SELECT id, name, stock_quantity, reorder_level
+      FROM products
+      WHERE supplier_id = ? AND stock_quantity <= reorder_level
+      ORDER BY stock_quantity ASC
+    ''', [supplierId]);
+  }
 }
 
 extension ReportInsightsExtension on DashboardReport {

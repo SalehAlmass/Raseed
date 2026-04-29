@@ -77,6 +77,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.business_rounded),
+            onPressed: () =>
+                Navigator.pushNamed(context, Routes.suppliers).then((_) => _loadData()),
+            tooltip: 'suppliers'.tr(),
+          ),
+          IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => Navigator.pushNamed(
               context,

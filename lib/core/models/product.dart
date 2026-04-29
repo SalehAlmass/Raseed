@@ -19,6 +19,7 @@ class Product {
   final int reorderLevel;
   final double wholesalePrice;
   final String? shelfLocation;
+  final int? supplierId;
 
   final List<Batch> batches;
 
@@ -39,6 +40,7 @@ class Product {
     this.reorderLevel = 0,
     this.wholesalePrice = 0.0,
     this.shelfLocation,
+    this.supplierId,
     this.batches = const [],
   });
 
@@ -67,6 +69,7 @@ class Product {
       'reorder_level': reorderLevel,
       'wholesale_price': wholesalePrice,
       'shelf_location': shelfLocation,
+      'supplier_id': supplierId,
     };
   }
 
@@ -88,6 +91,7 @@ class Product {
       reorderLevel: map['reorder_level'] ?? 0,
       wholesalePrice: (map['wholesale_price'] as num?)?.toDouble() ?? 0.0,
       shelfLocation: map['shelf_location'],
+      supplierId: map['supplier_id'],
     );
   }
 
@@ -108,6 +112,7 @@ class Product {
     int? reorderLevel,
     double? wholesalePrice,
     String? shelfLocation,
+    int? supplierId,
     List<Batch>? batches,
   }) {
     return Product(
@@ -127,6 +132,7 @@ class Product {
       reorderLevel: reorderLevel ?? this.reorderLevel,
       wholesalePrice: wholesalePrice ?? this.wholesalePrice,
       shelfLocation: shelfLocation ?? this.shelfLocation,
+      supplierId: supplierId ?? this.supplierId,
       batches: batches ?? this.batches,
     );
   }

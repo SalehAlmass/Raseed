@@ -20,4 +20,5 @@ class Routes {
   static const String backup = '/backup';
   static const String categories = '/categories';
   static const String units = '/units';
+  static const String suppliers = '/suppliers';
 }
