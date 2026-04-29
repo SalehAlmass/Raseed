@@ -21,6 +21,7 @@ import '../services/local_backup_service.dart';
 import '../services/firebase_backup_service.dart';
 import '../services/supplier_service.dart';
 import '../services/supplier_transaction_service.dart';
+import '../services/accounting_service.dart';
 import '../../features/reports/services/report_service.dart';
 import '../../features/reports/services/export_service.dart';
 import '../../features/reports/bloc/reports_bloc.dart';
@@ -72,6 +73,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CustomerService());
   sl.registerLazySingleton(() => SupplierService());
   sl.registerLazySingleton(() => SupplierTransactionService());
+  sl.registerLazySingleton(() => AccountingService());
   sl.registerLazySingleton(() => SettingsService());
   sl.registerLazySingleton<SubscriptionService>(() => SubscriptionService(sl<SharedPreferences>()));
   sl.registerLazySingleton<TransactionService>(() => TransactionService(sl<CustomerService>(), sl<SettingsService>()));

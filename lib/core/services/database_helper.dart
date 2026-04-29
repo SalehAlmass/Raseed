@@ -37,7 +37,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 21,
+      version: 22,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -206,8 +206,47 @@ class DatabaseHelper {
         currency TEXT DEFAULT 'YER',
         FOREIGN KEY (transaction_id) REFERENCES supplier_transactions (id) ON DELETE CASCADE,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL
+    )
+    ''');
+
+    // Accounting Tables (v22+)
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL, -- asset, liability, equity, revenue, expense
+        parent_id INTEGER,
+        balance REAL DEFAULT 0,
+        FOREIGN KEY (parent_id) REFERENCES accounts (id) ON DELETE SET NULL
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS journal_entries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT NOT NULL,
+        description TEXT,
+        reference_type TEXT, -- sale, purchase, payment, manual
+        reference_id INTEGER,
+        created_at TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS journal_entry_lines (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        entry_id INTEGER NOT NULL,
+        account_id INTEGER NOT NULL,
+        debit REAL DEFAULT 0,
+        credit REAL DEFAULT 0,
+        FOREIGN KEY (entry_id) REFERENCES journal_entries (id) ON DELETE CASCADE,
+        FOREIGN KEY (account_id) REFERENCES accounts (id)
+      )
+    ''');
+
+    // Insert Default Chart of Accounts
+    await _insertDefaultAccounts(db);
 
     // Create performance indexes
     await db.execute('CREATE INDEX IF NOT EXISTS idx_transactions_customer_id ON transactions(customer_id)');
@@ -487,6 +526,73 @@ class DatabaseHelper {
       
       await db.execute('CREATE INDEX IF NOT EXISTS idx_supplier_transactions_supplier_id ON supplier_transactions(supplier_id)');
     }
+
+    // v22: Accounting tables
+    if (oldVersion < 22) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS accounts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          code TEXT UNIQUE NOT NULL,
+          name TEXT NOT NULL,
+          type TEXT NOT NULL,
+          parent_id INTEGER,
+          balance REAL DEFAULT 0,
+          FOREIGN KEY (parent_id) REFERENCES accounts (id) ON DELETE SET NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS journal_entries (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          date TEXT NOT NULL,
+          description TEXT,
+          reference_type TEXT,
+          reference_id INTEGER,
+          created_at TEXT NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS journal_entry_lines (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          entry_id INTEGER NOT NULL,
+          account_id INTEGER NOT NULL,
+          debit REAL DEFAULT 0,
+          credit REAL DEFAULT 0,
+          FOREIGN KEY (entry_id) REFERENCES journal_entries (id) ON DELETE CASCADE,
+          FOREIGN KEY (account_id) REFERENCES accounts (id)
+        )
+      ''');
+
+      await _insertDefaultAccounts(db);
+    }
+  }
+
+  Future<void> _insertDefaultAccounts(Database db) async {
+    final now = DateTime.now().toIso8601String();
+    
+    // Assets
+    await db.insert('accounts', {'code': '1000', 'name': 'الأصول', 'type': 'asset'});
+    await db.insert('accounts', {'code': '1100', 'name': 'الصندوق', 'type': 'asset', 'parent_id': 1});
+    await db.insert('accounts', {'code': '1200', 'name': 'المخزون', 'type': 'asset', 'parent_id': 1});
+    await db.insert('accounts', {'code': '1300', 'name': 'ذمم العملاء', 'type': 'asset', 'parent_id': 1});
+    
+    // Liabilities
+    await db.insert('accounts', {'code': '2000', 'name': 'الخصوم', 'type': 'liability'});
+    await db.insert('accounts', {'code': '2100', 'name': 'ذمم الموردين', 'type': 'liability', 'parent_id': 5});
+    
+    // Equity
+    await db.insert('accounts', {'code': '3000', 'name': 'حقوق الملكية', 'type': 'equity'});
+    await db.insert('accounts', {'code': '3100', 'name': 'رأس المال', 'type': 'equity', 'parent_id': 7});
+    
+    // Revenue
+    await db.insert('accounts', {'code': '4000', 'name': 'الإيرادات', 'type': 'revenue'});
+    await db.insert('accounts', {'code': '4100', 'name': 'إيرادات المبيعات', 'type': 'revenue', 'parent_id': 9});
+    
+    // Expenses
+    await db.insert('accounts', {'code': '5000', 'name': 'المصروفات', 'type': 'expense'});
+    await db.insert('accounts', {'code': '5100', 'name': 'تكلفة البضاعة المباعة', 'type': 'expense', 'parent_id': 11});
+    await db.insert('accounts', {'code': '5200', 'name': 'مصاريف عامة', 'type': 'expense', 'parent_id': 11});
   }
 
   Future<void> close() async {
@@ -494,21 +600,50 @@ class DatabaseHelper {
     db.close();
   }
 
-  Future<void> deleteAllData() async {
-    final db = await instance.database;
-    
-    // Delete all data from tables (in order to respect foreign key constraints)
+  Future<void> _deleteAllTables(Database db) async {
+    // Delete in order to respect foreign key constraints
+    await db.delete('journal_entry_lines');
+    await db.delete('journal_entries');
+    await db.delete('accounts');
+    await db.delete('supplier_transaction_items');
+    await db.delete('supplier_transactions');
+    await db.delete('suppliers');
+    await db.delete('transaction_items');
     await db.delete('transactions');
     await db.delete('customers');
     await db.delete('products');
+    await db.delete('categories');
+    await db.delete('units');
+    await db.delete('product_batches');
+  }
+
+  Future<void> deleteAllData() async {
+    final db = await instance.database;
     
-    // Reset settings to default values
-    await db.update('settings', {
-      'max_debt': 1000.0,
-      'reminder_days': 30,
-      'strict_mode': 0,
-      'currency': 'YER',
-      'onboarding_completed': 0,
+    await db.transaction((txn) async {
+      // 1. Delete all transaction and master data
+      await txn.delete('journal_entry_lines');
+      await txn.delete('journal_entries');
+      await txn.delete('supplier_transaction_items');
+      await txn.delete('supplier_transactions');
+      await txn.delete('transaction_items');
+      await txn.delete('transactions');
+      await txn.delete('customers');
+      await txn.delete('suppliers');
+      await txn.delete('products');
+      await txn.delete('product_batches');
+      
+      // 2. Reset account balances instead of deleting accounts (to keep the structure)
+      await txn.update('accounts', {'balance': 0.0});
+      
+      // 3. Reset settings to default values
+      await txn.update('settings', {
+        'max_debt': 1000.0,
+        'reminder_days': 30,
+        'strict_mode': 0,
+        'currency': 'YER',
+        'onboarding_completed': 0,
+      });
     });
   }
 }

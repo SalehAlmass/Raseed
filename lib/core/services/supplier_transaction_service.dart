@@ -1,9 +1,14 @@
+import 'package:easy_localization/easy_localization.dart';
 import '../models/supplier_transaction.dart';
 import '../models/supplier_transaction_item.dart';
 import 'database_helper.dart';
 import 'supplier_service.dart';
 import 'product_service.dart';
+import 'package:sqflite/sqflite.dart';
 import '../di/injection_container.dart';
+import '../models/journal_entry.dart';
+import '../models/account.dart';
+import 'accounting_service.dart';
 
 class SupplierTransactionService {
   final _dbHelper = DatabaseHelper.instance;
@@ -43,8 +48,92 @@ class SupplierTransactionService {
         );
       }
 
+      // 4. Generate Journal Entry
+      await _generateJournalEntry(txId, tx, txn);
+
       return txId;
     });
+  }
+
+  Future<void> _generateJournalEntry(int txId, SupplierTransaction tx, Transaction txn) async {
+    try {
+      final now = DateTime.now();
+
+      if (tx.type == SupplierTransactionType.purchase) {
+        // Debit: Inventory (1200) -> 3
+        // Credit: Cash (1100) -> 2
+        // Credit: Accounts Payable (2100) -> 6
+
+        final entryId = await txn.insert('journal_entries', {
+          'date': tx.date.toIso8601String(),
+          'description': 'purchase_entry_desc'.tr(args: [txId.toString()]),
+          'reference_type': 'purchase',
+          'reference_id': txId,
+          'created_at': now.toIso8601String(),
+        });
+
+        List<JournalEntryLine> lines = [];
+        // Inventory (Debit)
+        lines.add(JournalEntryLine(entryId: entryId, accountId: 3, debit: tx.amount));
+        
+        // Cash (Credit)
+        if (tx.paidAmount > 0) {
+          lines.add(JournalEntryLine(entryId: entryId, accountId: 2, credit: tx.paidAmount));
+        }
+
+        // Accounts Payable (Credit)
+        final debt = tx.amount - tx.paidAmount;
+        if (debt > 0) {
+          lines.add(JournalEntryLine(entryId: entryId, accountId: 6, credit: debt));
+        }
+
+        for (var line in lines) {
+          await txn.insert('journal_entry_lines', line.toMap());
+          await _updateAccountBalance(txn, line.accountId, line.debit, line.credit);
+        }
+      } else if (tx.type == SupplierTransactionType.payment) {
+        // Debit: Accounts Payable (2100) -> 6
+        // Credit: Cash (1100) -> 2
+
+        final entryId = await txn.insert('journal_entries', {
+          'date': tx.date.toIso8601String(),
+          'description': 'supplier_payment_entry_desc'.tr(args: [txId.toString()]),
+          'reference_type': 'supplier_payment',
+          'reference_id': txId,
+          'created_at': now.toIso8601String(),
+        });
+
+        final lines = [
+          JournalEntryLine(entryId: entryId, accountId: 6, debit: tx.amount),
+          JournalEntryLine(entryId: entryId, accountId: 2, credit: tx.amount),
+        ];
+
+        for (var line in lines) {
+          await txn.insert('journal_entry_lines', line.toMap());
+          await _updateAccountBalance(txn, line.accountId, line.debit, line.credit);
+        }
+      }
+    } catch (e) {
+      print('Supplier Accounting error: $e');
+    }
+  }
+
+  Future<void> _updateAccountBalance(Transaction txn, int accountId, double debit, double credit) async {
+    final maps = await txn.query('accounts', where: 'id = ?', whereArgs: [accountId]);
+    if (maps.isEmpty) return;
+    final account = Account.fromMap(maps.first);
+    
+    double balanceChange = 0;
+    if (account.type == AccountType.asset || account.type == AccountType.expense) {
+      balanceChange = debit - credit;
+    } else {
+      balanceChange = credit - debit;
+    }
+
+    await txn.execute(
+      'UPDATE accounts SET balance = balance + ? WHERE id = ?',
+      [balanceChange, accountId],
+    );
   }
 
   Future<List<SupplierTransaction>> getTransactionsBySupplier(int supplierId) async {

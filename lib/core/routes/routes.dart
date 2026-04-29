@@ -21,4 +21,6 @@ class Routes {
   static const String categories = '/categories';
   static const String units = '/units';
   static const String suppliers = '/suppliers';
+  static const String journal = '/journal';
+  static const String chartOfAccounts = '/chart_of_accounts';
 }

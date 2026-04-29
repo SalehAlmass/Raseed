@@ -22,6 +22,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../features/about/views/about_screen.dart';
 import '../../features/subscription/views/subscription_screen.dart';
 import '../../features/suppliers/views/supplier_list_screen.dart';
+import '../../features/accounting/views/daily_journal_screen.dart';
+import '../../features/accounting/views/chart_of_accounts_screen.dart';
 
 /// Application Router
 class AppRouter {
@@ -69,6 +71,10 @@ class AppRouter {
         return _buildRoute(const SubscriptionScreen(), settings);
       case Routes.suppliers:
         return _buildRoute(const SupplierListScreen(), settings);
+      case Routes.journal:
+        return _buildRoute(const DailyJournalScreen(), settings);
+      case Routes.chartOfAccounts:
+        return _buildRoute(const ChartOfAccountsScreen(), settings);
       default:
         return _buildRoute(
           Scaffold(

@@ -123,6 +123,8 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _buildAlertsSection(),
               _buildSummaryCards(),
+              SizedBox(height: 20.h),
+              _buildAccountingSection(),
               SizedBox(height: 30.h),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -374,6 +376,44 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAccountingSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'accounting'.tr(),
+          style: TextStyle(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        SizedBox(height: 15.h),
+        Row(
+          children: [
+            Expanded(
+              child: _QuickActionCard(
+                label: 'daily_journal'.tr(),
+                icon: Icons.assignment_rounded,
+                color: Colors.blue,
+                onTap: () => Navigator.pushNamed(context, Routes.journal),
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: _QuickActionCard(
+                label: 'chart_of_accounts'.tr(),
+                icon: Icons.account_tree_rounded,
+                color: Colors.orange,
+                onTap: () => Navigator.pushNamed(context, Routes.chartOfAccounts),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -1301,6 +1341,63 @@ class _TransactionTile extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _QuickActionCard extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickActionCard({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(15.w),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(15.r),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.all(10.w),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 24.sp),
+            ),
+            SizedBox(height: 10.h),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
