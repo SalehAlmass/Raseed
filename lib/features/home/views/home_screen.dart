@@ -49,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final summary = await _transactionService.getDashboardSummary();
     final recent = await _transactionService.getAllTransactions(limit: 5);
     final nearExpiry = await sl<ProductService>().getNearExpiryProducts();
-    
+
     setState(() {
       _summary = summary;
       _recentTransactions = recent;
@@ -78,8 +78,10 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.business_rounded),
-            onPressed: () =>
-                Navigator.pushNamed(context, Routes.suppliers).then((_) => _loadData()),
+            onPressed: () => Navigator.pushNamed(
+              context,
+              Routes.suppliers,
+            ).then((_) => _loadData()),
             tooltip: 'suppliers'.tr(),
           ),
           IconButton(
@@ -94,10 +96,10 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () =>
                 Navigator.pushNamed(context, '/store').then((_) => _loadData()),
           ),
-          // IconButton(
-          //   icon: const Icon(Icons.delete_forever),
-          //   onPressed: () => _showResetDataConfirmation(context),
-          // ),
+          IconButton(
+            icon: const Icon(Icons.delete_forever),
+            onPressed: () => _showResetDataConfirmation(context),
+          ),
           // IconButton(
           //   icon: const Icon(Icons.add),
           //   onPressed: () =>
@@ -110,7 +112,12 @@ class _HomeScreenState extends State<HomeScreen> {
         onRefresh: _loadData,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h, bottom: 100.h),
+          padding: EdgeInsets.only(
+            left: 20.w,
+            right: 20.w,
+            top: 20.h,
+            bottom: 100.h,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -166,7 +173,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Row(
         children: [
-          Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 24.sp),
+          Icon(
+            Icons.warning_amber_rounded,
+            color: AppColors.error,
+            size: 24.sp,
+          ),
           SizedBox(width: 12.w),
           Expanded(
             child: Column(
@@ -181,7 +192,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 Text(
-                  'near_expiry_desc'.tr(args: [_nearExpiryProducts.length.toString()]),
+                  'near_expiry_desc'.tr(
+                    args: [_nearExpiryProducts.length.toString()],
+                  ),
                   style: TextStyle(
                     color: AppColors.error.withOpacity(0.8),
                     fontSize: 12.sp,
@@ -192,7 +205,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           TextButton(
             onPressed: () {
-              _showProductsSheet('near_expiry_products'.tr(), _nearExpiryProducts);
+              _showProductsSheet(
+                'near_expiry_products'.tr(),
+                _nearExpiryProducts,
+              );
             },
             child: Text('view'.tr(), style: TextStyle(color: AppColors.error)),
           ),
@@ -251,8 +267,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             .firstOrNull
                             ?.expiryDate;
                         return ListTile(
-                          title: Text(p.name,
-                              style: const TextStyle(fontWeight: FontWeight.bold)),
+                          title: Text(
+                            p.name,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           subtitle: Text(
                             expiry != null
                                 ? '${'expiry_date'.tr()}: ${DateFormat.yMd(context.locale.toString()).format(expiry)}'
@@ -425,7 +443,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final allTx = await sl<TransactionService>().getAllTransactions(limit: 500);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    
+
     final dailyTx = allTx.where((tx) {
       final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
       return txDate.isAtSameMomentAs(today) && tx.type == TransactionType.sale;
@@ -436,9 +454,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _showDebtTransactionsSheet() async {
     final allTx = await sl<TransactionService>().getAllTransactions(limit: 500);
-    
+
     final debtTx = allTx.where((tx) {
-      if (tx.type == TransactionType.sale && tx.amount > tx.paidAmount) return true;
+      if (tx.type == TransactionType.sale && tx.amount > tx.paidAmount)
+        return true;
       if (tx.type == TransactionType.payment) return true;
       return false;
     }).toList();
@@ -549,7 +568,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 return _TransactionTile(tx: _recentTransactions[index]);
               },
             ),
-
     );
   }
 
@@ -699,10 +717,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (context.mounted) {
                     Navigator.pop(context);
                     _loadData();
-                    
+
                     final settings = await sl<SettingsService>().getSettings();
 
-                    if (settings.enableWhatsapp && selectedCustomer!.phone.isNotEmpty) {
+                    if (settings.enableWhatsapp &&
+                        selectedCustomer!.phone.isNotEmpty) {
                       double currentDebt = selectedCustomer!.totalDebt;
                       if (selectedType == TransactionType.payment) {
                         currentDebt -= amount;
@@ -1071,66 +1090,66 @@ class _SummaryCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: Colors.grey.withOpacity(0.1), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10.r),
-                ),
-                child: Icon(icon, color: color, size: 20.sp),
-              ),
-              SizedBox(width: 10.w),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
+          border: Border.all(color: Colors.grey.withOpacity(0.1), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10.r),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  child: Icon(icon, color: color, size: 20.sp),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12.h),
-          Wrap(
-            spacing: 8.w,
-            runSpacing: 4.h,
-            children: amounts.entries.map((entry) {
-              final value = entry.value;
-              if (value == 0 && amounts.values.any((v) => v > 0)) {
-                return const SizedBox.shrink();
-              }
-              return Text(
-                CurrencyHelper.getFormatter(entry.key).format(value),
-                style: TextStyle(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                  letterSpacing: -0.3,
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              );
-            }).toList(),
-          ),
-        ],
+              ],
+            ),
+            SizedBox(height: 12.h),
+            Wrap(
+              spacing: 8.w,
+              runSpacing: 4.h,
+              children: amounts.entries.map((entry) {
+                final value = entry.value;
+                if (value == 0 && amounts.values.any((v) => v > 0)) {
+                  return const SizedBox.shrink();
+                }
+                return Text(
+                  CurrencyHelper.getFormatter(entry.key).format(value),
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                    letterSpacing: -0.3,
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
       ),
-    ),
     );
   }
 }
@@ -1193,14 +1212,18 @@ class _TransactionTile extends StatelessWidget {
     final isAddDebt = tx.type == TransactionType.sale && tx.items.isEmpty;
 
     String titleText;
-    if (isRefund) titleText = 'refund'.tr();
-    else if (isPayment) titleText = 'payment'.tr();
-    else if (isAddDebt) titleText = 'add_debt'.tr();
-    else titleText = 'cash_sale'.tr();
+    if (isRefund)
+      titleText = 'refund'.tr();
+    else if (isPayment)
+      titleText = 'payment'.tr();
+    else if (isAddDebt)
+      titleText = 'add_debt'.tr();
+    else
+      titleText = 'cash_sale'.tr();
 
     Color iconColor;
     IconData iconData;
-    
+
     if (isRefund) {
       iconColor = AppColors.error;
       iconData = Icons.keyboard_return;
@@ -1222,11 +1245,7 @@ class _TransactionTile extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
         backgroundColor: iconColor.withOpacity(0.1),
-        child: Icon(
-          iconData,
-          color: iconColor,
-          size: 20,
-        ),
+        child: Icon(iconData, color: iconColor, size: 20),
       ),
       title: Text(
         titleText,
@@ -1239,11 +1258,15 @@ class _TransactionTile extends StatelessWidget {
             DateFormat('MMM dd, hh:mm a').format(tx.date),
             style: TextStyle(fontSize: 12.sp, color: Colors.grey),
           ),
-          if (hasDebt)
-            Text(
-              '${'remaining_amount'.tr()}: ${CurrencyHelper.getFormatter(tx.currency).format(remaining)}',
-              style: TextStyle(fontSize: 11.sp, color: Colors.orange[800], fontWeight: FontWeight.bold),
-            ),
+          // if (hasDebt)
+          //   Text(
+          //     '${'remaining_amount'.tr()}: ${CurrencyHelper.getFormatter(tx.currency).format(remaining)}',
+          //     style: TextStyle(
+          //       fontSize: 11.sp,
+          //       color: Colors.orange[800],
+          //       fontWeight: FontWeight.bold,
+          //     ),
+          //   ),
         ],
       ),
       trailing: Column(
@@ -1254,13 +1277,28 @@ class _TransactionTile extends StatelessWidget {
             CurrencyHelper.getFormatter(tx.currency).format(tx.amount),
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: isRefund || isAddDebt ? AppColors.error : AppColors.success,
+              color: isRefund || isAddDebt
+                  ? AppColors.error
+                  : AppColors.success,
             ),
           ),
+          // if (hasDebt)
+          //   Text(
+          //     'paid'.tr() +
+          //         ': ' +
+          //         CurrencyHelper.getFormatter(
+          //           tx.currency,
+          //         ).format(tx.paidAmount),
+          //     style: TextStyle(fontSize: 10.sp, color: Colors.grey),
+          //   ),
           if (hasDebt)
             Text(
-              'paid'.tr() + ': ' + CurrencyHelper.getFormatter(tx.currency).format(tx.paidAmount),
-              style: TextStyle(fontSize: 10.sp, color: Colors.grey),
+              '${'remmining'.tr()}: ${CurrencyHelper.getFormatter(tx.currency).format(remaining)}',
+              style: TextStyle(
+                fontSize: 11.sp,
+                color: Colors.orange[800],
+                fontWeight: FontWeight.bold,
+              ),
             ),
         ],
       ),

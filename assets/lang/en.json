@@ -426,9 +426,6 @@
   "onboarding_desc_2": "Monitor product quantities and expiry dates and receive instant alerts when any product is running low.",
   "onboarding_title_3": "Clear & Complete Reports",
   "onboarding_desc_3": "Export reports, track profits, and analyze customer behavior to make better business decisions.",
-  "onboarding_feature_1": "✅ Easy customer & debt management",
-  "onboarding_feature_2": "📈 Comprehensive financial & analytical reports",
-  "onboarding_feature_3": "🔒 Secure cloud and local backups",
   "storage_permission_denied": "Storage permission denied, cannot save the backup to the specified folder.",
   "clock_tampered": "Clock tampering detected, trial period has been ended to protect the system.",
   "remaining_amount": "Remaining Amount (Debt)",
@@ -444,14 +441,11 @@
   "account_statement": "Account Statement",
   "purchase": "Purchase",
   "pay_supplier": "Pay Supplier",
-  "void_transaction": "Void Transaction",
   "void_confirmation_desc": "Are you sure you want to void this transaction? Stock and debt will be reversed.",
   "purchase_invoice": "Purchase Invoice",
-  "select_product": "Select Product",
+  "remmining": "Remmining",
   "add_to_invoice": "Add to Invoice",
   "total_purchase": "Total Purchase",
   "low_stock_alerts": "Low Stock Alerts",
   "invalid_quantity": "Please enter a valid quantity"
 }
-
-

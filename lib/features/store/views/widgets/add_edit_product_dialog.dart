@@ -179,14 +179,20 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
               _categories.firstOrNull;
           _mainUnit = _units.where((u) => u.id == p.mainUnitId).firstOrNull;
           _subUnit = _units.where((u) => u.id == p.subUnitId).firstOrNull;
-          _selectedSupplier = _suppliers.where((s) => s.id == p.supplierId).firstOrNull;
+          _selectedSupplier = _suppliers
+              .where((s) => s.id == p.supplierId)
+              .firstOrNull;
 
           _totalStockController.text = p.stockQuantity.toString();
-          
+
           if (p.batches.isNotEmpty) {
-            final activeBatches = p.batches.where((b) => b.quantity > 0 && b.expiryDate != null).toList();
+            final activeBatches = p.batches
+                .where((b) => b.quantity > 0 && b.expiryDate != null)
+                .toList();
             if (activeBatches.isNotEmpty) {
-              activeBatches.sort((a, b) => a.expiryDate!.compareTo(b.expiryDate!));
+              activeBatches.sort(
+                (a, b) => a.expiryDate!.compareTo(b.expiryDate!),
+              );
               _expiryDate = activeBatches.first.expiryDate;
             } else if (p.batches.firstOrNull?.expiryDate != null) {
               _expiryDate = p.batches.first.expiryDate;
@@ -251,7 +257,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
         }
       } else {
         await _productService.updateProduct(product);
-        
+
         final pBatches = widget.product!.batches;
         if (pBatches.isNotEmpty) {
           final firstBatch = pBatches.first;
@@ -324,7 +330,8 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
         _buildModernField(
           _nameController,
           'product_name'.tr(),
-          Icons.drive_file_rename_outline,
+          Icons.inventory_2_outlined,
+          hint: 'product_name_hint'.tr(),
           validator: (v) =>
               v == null || v.isEmpty ? 'required_field'.tr() : null,
         ),
@@ -593,37 +600,48 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     String label,
     IconData? icon, {
     TextInputType type = TextInputType.text,
+    String? hint,
     String? Function(String?)? validator,
   }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: type,
-      validator: validator,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: icon != null ? Icon(icon, size: 20.sp, color: Colors.grey[600]) : null,
-        filled: true,
-        fillColor: Colors.grey[50],
-        contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide.none,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(bottom: 8.h, right: 4.w),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
+            ),
+          ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide.none,
+        TextFormField(
+          controller: controller,
+          keyboardType: type,
+          validator: validator,
+          decoration: InputDecoration(
+            hintText: hint,
+            prefixIcon: icon != null ? Icon(icon, size: 20.sp, color: AppColors.primary) : null,
+            filled: true,
+            fillColor: Colors.grey[50],
+            contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 16.h),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+            ),
+          ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: AppColors.primary.withOpacity(0.5)),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: Colors.red.withOpacity(0.5)),
-        ),
-        isDense: true,
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-      ),
+      ],
     );
   }
 
@@ -699,8 +717,9 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
               setState(() {
                 _mainUnit = v;
                 // Auto-select sub unit if only one exists for this main unit
-                final potentialSubs =
-                    _units.where((u) => u.parentId == _mainUnit?.id).toList();
+                final potentialSubs = _units
+                    .where((u) => u.parentId == _mainUnit?.id)
+                    .toList();
                 if (potentialSubs.length == 1) {
                   _subUnit = potentialSubs.first;
                 } else if (_subUnit != null &&
