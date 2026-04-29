@@ -450,7 +450,8 @@
   "select_product": "Select Product",
   "add_to_invoice": "Add to Invoice",
   "total_purchase": "Total Purchase",
-  "low_stock_alerts": "Low Stock Alerts"
+  "low_stock_alerts": "Low Stock Alerts",
+  "invalid_quantity": "Please enter a valid quantity"
 }
 
 

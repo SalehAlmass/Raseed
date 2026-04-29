@@ -92,7 +92,11 @@ class _SaleScreenState extends State<SaleScreen> {
           ),
         );
       }
-      _paidAmountController.text = _totalAmount.toStringAsFixed(0);
+      if (_totalAmount > 0) {
+        _paidAmountController.text = _totalAmount.toStringAsFixed(0);
+      } else {
+        _paidAmountController.clear();
+      }
     });
   }
 
@@ -112,7 +116,11 @@ class _SaleScreenState extends State<SaleScreen> {
           currency: item.currency,
         );
       }
-      _paidAmountController.text = _totalAmount.toStringAsFixed(0);
+      if (_totalAmount > 0) {
+        _paidAmountController.text = _totalAmount.toStringAsFixed(0);
+      } else {
+        _paidAmountController.clear();
+      }
     });
   }
 

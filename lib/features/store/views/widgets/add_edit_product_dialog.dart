@@ -31,17 +31,17 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
 
   final _nameController = TextEditingController();
   final _barcodeController = TextEditingController();
-  final _conversionController = TextEditingController(text: '1');
+  final _conversionController = TextEditingController();
   final _purchasePriceController = TextEditingController();
   final _salePriceController = TextEditingController();
   final _wholesalePriceController = TextEditingController();
-  final _reorderLevelController = TextEditingController(text: '0');
+  final _reorderLevelController = TextEditingController();
   final _shelfLocationController = TextEditingController();
 
   // Storage Controllers
-  final _totalStockController = TextEditingController(text: '0');
-  final _mainStockController = TextEditingController(text: '0');
-  final _subStockController = TextEditingController(text: '0');
+  final _totalStockController = TextEditingController();
+  final _mainStockController = TextEditingController();
+  final _subStockController = TextEditingController();
 
   List<Category> _categories = [];
   List<Unit> _units = [];

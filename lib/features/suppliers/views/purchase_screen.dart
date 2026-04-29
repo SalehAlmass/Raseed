@@ -13,7 +13,8 @@ import '../../../core/utils/currency_helper.dart';
 
 class PurchaseScreen extends StatefulWidget {
   final Supplier initialSupplier;
-  const PurchaseScreen({super.key, required this.initialSupplier});
+  final Product? initialProduct;
+  const PurchaseScreen({super.key, required this.initialSupplier, this.initialProduct});
 
   @override
   State<PurchaseScreen> createState() => _PurchaseScreenState();
@@ -25,7 +26,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
 
   final List<SupplierTransactionItem> _items = [];
   double _totalAmount = 0;
-  final TextEditingController _paidAmountController = TextEditingController(text: '0');
+  final TextEditingController _paidAmountController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
   
   List<Product> _products = [];
@@ -35,6 +36,9 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   void initState() {
     super.initState();
     _loadProducts();
+    if (widget.initialProduct != null) {
+      _addItem(widget.initialProduct!, 1, widget.initialProduct!.packagePrice);
+    }
   }
 
   Future<void> _loadProducts() async {
@@ -200,7 +204,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
 
   void _showAddProductDialog() {
     Product? selectedProduct;
-    final qtyController = TextEditingController(text: '1');
+    final qtyController = TextEditingController();
     final costController = TextEditingController();
 
     showDialog(
@@ -237,13 +241,20 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
             TextButton(onPressed: () => Navigator.pop(context), child: Text('cancel'.tr())),
             ElevatedButton(
               onPressed: () {
-                if (selectedProduct != null) {
+                final qty = int.tryParse(qtyController.text) ?? 0;
+                final cost = double.tryParse(costController.text) ?? 0.0;
+                
+                if (selectedProduct != null && qty > 0) {
                   _addItem(
                     selectedProduct!,
-                    int.parse(qtyController.text),
-                    double.parse(costController.text),
+                    qty,
+                    cost,
                   );
                   Navigator.pop(context);
+                } else if (qty <= 0) {
+                   ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('invalid_quantity'.tr())),
+                  );
                 }
               },
               child: Text('add'.tr()),

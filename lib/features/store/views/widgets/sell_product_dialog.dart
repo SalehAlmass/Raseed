@@ -25,7 +25,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
   final _productService = sl<ProductService>();
   final _customerService = sl<CustomerService>();
   final _unitService = sl<UnitService>();
-  final _quantityController = TextEditingController(text: '1');
+  final _quantityController = TextEditingController();
   
   TransactionType _selectedType = TransactionType.sale;
   List<Customer> _customers = [];
