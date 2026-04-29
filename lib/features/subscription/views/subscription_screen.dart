@@ -84,11 +84,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         ),
         SizedBox(height: 24.h),
         Text(
-          isExpired ? 'trial_expired'.tr() : 'trial'.tr(),
-          style: TextStyle(fontSize: 28.sp, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+          _subService.isClockTampered 
+            ? 'clock_tampered'.tr() 
+            : (isExpired ? 'trial_expired'.tr() : 'trial'.tr()),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: _subService.isClockTampered ? 20.sp : 28.sp, 
+            fontWeight: FontWeight.bold, 
+            color: _subService.isClockTampered ? AppColors.error : AppColors.textPrimary
+          ),
         ),
         SizedBox(height: 8.h),
-        if (!isExpired && !_subService.isSubscribed)
+        if (!isExpired && !_subService.isSubscribed && !_subService.isClockTampered)
           Text(
             'trial_remaining'.tr(namedArgs: {'days': remaining.toString()}),
             style: TextStyle(fontSize: 16.sp, color: AppColors.primary, fontWeight: FontWeight.w600),

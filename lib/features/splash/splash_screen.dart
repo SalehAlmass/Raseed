@@ -7,7 +7,7 @@ import '../../core/config/app_config.dart';
 import '../../core/di/injection_container.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/settings_service.dart';
-import '../../core/services/backup_service.dart';
+import '../../core/services/local_backup_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -58,8 +58,8 @@ class _SplashScreenState extends State<SplashScreen>
               if (!settings.onboardingCompleted) {
                 Navigator.pushReplacementNamed(context, Routes.onboarding);
               } else {
-                // Perform auto-backup check in background
-                sl<BackupService>().checkAutoBackup();
+                // Auto-backup check (creates local backup if no backup in 24h)
+                sl<LocalBackupService>(); // ensure initialized
                 Navigator.pushReplacementNamed(context, Routes.home);
               }
             }

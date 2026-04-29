@@ -201,12 +201,10 @@ class TransactionService {
       offset: offset,
     );
     
-    final List<AppTransaction> transactions = [];
-    for (final map in maps) {
+    return await Future.wait(maps.map((map) async {
       final items = await _getTransactionItems(db, map['id']);
-      transactions.add(AppTransaction.fromMap(map, items: items));
-    }
-    return transactions;
+      return AppTransaction.fromMap(map, items: items);
+    }));
   }
 
   Future<List<AppTransaction>> getAllTransactions({int limit = 10, int offset = 0}) async {
@@ -219,12 +217,10 @@ class TransactionService {
       offset: offset,
     );
     
-    final List<AppTransaction> transactions = [];
-    for (final map in maps) {
+    return await Future.wait(maps.map((map) async {
       final items = await _getTransactionItems(db, map['id']);
-      transactions.add(AppTransaction.fromMap(map, items: items));
-    }
-    return transactions;
+      return AppTransaction.fromMap(map, items: items);
+    }));
   }
 
   Future<List<TransactionItem>> _getTransactionItems(dynamic db, int transactionId) async {

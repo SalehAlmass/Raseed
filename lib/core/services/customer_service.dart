@@ -12,20 +12,23 @@ class CustomerService {
 
   Future<Map<String, dynamic>> getCustomerAnalytics() async {
     final db = await _dbHelper.database;
-    
-    final totalCustomers = (await db.rawQuery("SELECT COUNT(*) as count FROM customers")).first['count'] as int;
-    final debtorsCount = (await db.rawQuery("SELECT COUNT(*) as count FROM customers WHERE total_debt > 0")).first['count'] as int;
-    final totalDebtSum = (await db.rawQuery("SELECT SUM(total_debt) as sum FROM customers")).first['sum'] as double? ?? 0.0;
-    
-    // Active customers (last transaction within 7 days)
     final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7)).toIso8601String();
-    final activeCount = (await db.rawQuery("SELECT COUNT(*) as count FROM customers WHERE last_transaction_date >= ?", [sevenDaysAgo])).first['count'] as int;
+    
+    final List<Map<String, dynamic>> results = await db.rawQuery('''
+      SELECT 
+        COUNT(*) as total_customers,
+        SUM(CASE WHEN total_debt > 0 THEN 1 ELSE 0 END) as debtors_count,
+        SUM(total_debt) as total_debt_sum,
+        SUM(CASE WHEN last_transaction_date >= ? THEN 1 ELSE 0 END) as active_count
+      FROM customers
+    ''', [sevenDaysAgo]);
 
+    final row = results.first;
     return {
-      'total_customers': totalCustomers,
-      'debtors_count': debtorsCount,
-      'total_debt_sum': totalDebtSum,
-      'active_count': activeCount,
+      'total_customers': row['total_customers'] ?? 0,
+      'debtors_count': row['debtors_count'] ?? 0,
+      'total_debt_sum': (row['total_debt_sum'] as num?)?.toDouble() ?? 0.0,
+      'active_count': row['active_count'] ?? 0,
     };
   }
 
@@ -38,7 +41,7 @@ class CustomerService {
     
     Future<double> getDaily(String curr) async {
       final res = await db.rawQuery(
-        "SELECT SUM(amount) as total FROM transactions WHERE date >= ? AND type IN ('cash', 'debt') AND currency = ?",
+        "SELECT SUM(amount) as total FROM transactions WHERE date >= ? AND type = 'sale' AND is_void = 0 AND currency = ?",
         [todayStart, curr]
       );
       return (res.first['total'] as num?)?.toDouble() ?? 0.0;

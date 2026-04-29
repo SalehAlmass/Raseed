@@ -244,6 +244,28 @@ ALL inside ONE SQLite transaction
 
 ---
 
+# 🚀 NEW FEATURES IMPLEMENTED (V1.0 - V1.17)
+
+## 1. Advanced Product Inventory
+* **Multi-Unit System**: Support for Main Unit (e.g., Box) and Sub Unit (e.g., Piece) with a conversion factor.
+* **Product Categorization**: Products belong to specific categories.
+* **Pricing Tiers**: Added `wholesale_price` and `cost_price` to products.
+* **Inventory Management**: Added `reorder_level` for low-stock warnings and `shelf_location` for physical organization.
+
+## 2. Batch & Expiry Management
+* **Product Batches**: Stock is now tracked via the `product_batches` table, allowing each batch to have its own quantity, cost price, and `expiry_date`.
+* **Proactive Expiry Alerts**: System automatically identifies products expiring within 30 days and displays visual alerts on the Dashboard and Product List.
+
+## 3. Customer Analytics
+* **Total Spent Tracking**: Customers now have a `total_spent` metric updated via transactions.
+* **Customer Segmentation**: Configurable thresholds (`vip_threshold`, `inactive_days`, `dead_days`) to categorize customers based on their purchasing behavior.
+
+## 4. Communication & Receipts
+* **WhatsApp Integration**: Option to automatically send WhatsApp notifications to customers upon payment or debt addition (`enable_whatsapp`).
+* **PDF Receipts**: Support for generating and sharing PDF receipts (`enable_pdf_receipt`).
+
+---
+
 # 🎯 UX REQUIREMENTS
 
 * Fast workflow (optimized for busy shops)

@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../core/routes/routes.dart';
 import '../../core/theme/colors.dart';
 import '../../core/widgets/custom_button.dart';
@@ -70,35 +71,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+                padding: EdgeInsets.symmetric(
+                  horizontal: 20.w,
+                  vertical: 10.h,
                 ),
                 child: Row(
                   children: [
                     Image.asset(
-                      'assets/images/app_logo.png',
-                      width: 42,
-                      height: 42,
+                      'assets/images/logo.png',
+                      width: 38.w,
+                      height: 38.w,
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 10.w),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'hello_from_extension'.tr(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
-                              fontSize: 16,
+                              fontSize: 15.sp,
                             ),
                           ),
                           Text(
                             'hero_subtitle'.tr(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.75),
-                              fontSize: 13,
+                              fontSize: 12.sp,
                             ),
                           ),
                         ],
@@ -110,7 +113,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         'skip'.tr(),
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.85),
-                          fontSize: 14,
+                          fontSize: 13.sp,
                         ),
                       ),
                     ),
@@ -178,60 +181,63 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildPage(OnboardingData data) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 180,
-            height: 180,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [data.accent.withOpacity(0.9), Colors.white],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(38),
-              boxShadow: [
-                BoxShadow(
-                  color: data.accent.withOpacity(0.22),
-                  blurRadius: 28,
-                  offset: const Offset(0, 18),
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 160,
+              height: 160,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [data.accent.withOpacity(0.9), Colors.white],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              ],
-            ),
-            child: Center(
-              child: Icon(
-                Icons.auto_awesome_rounded,
-                color: AppColors.backgroundDark,
-                size: 76,
+                borderRadius: BorderRadius.circular(38),
+                boxShadow: [
+                  BoxShadow(
+                    color: data.accent.withOpacity(0.22),
+                    blurRadius: 28,
+                    offset: const Offset(0, 18),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.auto_awesome_rounded,
+                  color: AppColors.backgroundDark,
+                  size: 64,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 36),
-          Text(
-            data.titleKey.tr(),
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
+            const SizedBox(height: 32),
+            Text(
+              data.titleKey.tr(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            data.descriptionKey.tr(),
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 15,
-              height: 1.6,
-              color: Colors.white.withOpacity(0.82),
+            const SizedBox(height: 12),
+            Text(
+              data.descriptionKey.tr(),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.5,
+                color: Colors.white.withOpacity(0.82),
+              ),
             ),
-          ),
-          const SizedBox(height: 28),
-          _buildHighlights(data.accent),
-        ],
+            const SizedBox(height: 24),
+            _buildHighlights(data.accent),
+          ],
+        ),
       ),
     );
   }

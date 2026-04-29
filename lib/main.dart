@@ -9,12 +9,18 @@ import 'core/localization/localization_manager.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'core/services/subscription_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    ).timeout(const Duration(seconds: 5));
+  } catch (e) {
+    // Firebase init failed or timed out — app continues in local-only mode.
+    debugPrint('[Firebase] initializeApp failed: $e');
+  }
   await EasyLocalization.ensureInitialized();
 
   // Set preferred orientations
@@ -33,6 +39,9 @@ void main() async {
 
   // Initialize dependency injection
   await di.init();
+
+  // Initialize subscription trial & anti-tamper logic
+  await di.sl<SubscriptionService>().initTrial();
 
   runApp(
     EasyLocalization(

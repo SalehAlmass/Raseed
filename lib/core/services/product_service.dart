@@ -22,13 +22,11 @@ class ProductService {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query('products', orderBy: 'name ASC');
     
-    final List<Product> products = [];
-    for (var map in maps) {
+    return await Future.wait(maps.map((map) async {
       final product = Product.fromMap(map);
       final batches = await _getBatches(product.id!);
-      products.add(product.copyWith(batches: batches));
-    }
-    return products;
+      return product.copyWith(batches: batches);
+    }));
   }
 
   Future<List<Batch>> _getBatches(int productId) async {
@@ -161,11 +159,9 @@ class ProductService {
     
     final List<int> productIds = batchMaps.map((m) => m['product_id'] as int).toList();
     
-    final List<Product> products = [];
-    for (var id in productIds) {
-      final p = await getProduct(id);
-      if (p != null) products.add(p);
-    }
+    final List<Product> products = (await Future.wait(productIds.map((id) => getProduct(id))))
+        .whereType<Product>()
+        .toList();
     return products;
   }
 }

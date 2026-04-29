@@ -569,6 +569,66 @@ class _SaleScreenState extends State<SaleScreen> {
                 ),
               ],
             ),
+            if (_paidAmount < _totalAmount && _totalAmount > 0)
+              Padding(
+                padding: EdgeInsets.only(top: 12.h),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'remaining_amount'.tr(),
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: Colors.orange[800],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        CurrencyHelper.getFormatter('YER').format(_totalAmount - _paidAmount),
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: Colors.orange[800],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else if (_paidAmount == _totalAmount && _totalAmount > 0)
+               Padding(
+                padding: EdgeInsets.only(top: 12.h),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(color: Colors.green.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
+                      SizedBox(width: 8.w),
+                      Text(
+                        'paid_full'.tr(),
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: Colors.green[800],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             SizedBox(height: 20.h),
             SizedBox(
               width: double.infinity,

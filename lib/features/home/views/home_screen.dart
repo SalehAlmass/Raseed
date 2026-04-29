@@ -39,7 +39,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadData();
+    });
   }
 
   Future<void> _loadData() async {
@@ -1207,6 +1209,9 @@ class _TransactionTile extends StatelessWidget {
       iconData = Icons.shopping_cart_outlined;
     }
 
+    final remaining = tx.amount - tx.paidAmount;
+    final hasDebt = tx.type == TransactionType.sale && remaining > 0;
+
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
@@ -1221,16 +1226,37 @@ class _TransactionTile extends StatelessWidget {
         titleText,
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
-      subtitle: Text(
-        DateFormat('MMM dd, hh:mm a').format(tx.date),
-        style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            DateFormat('MMM dd, hh:mm a').format(tx.date),
+            style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+          ),
+          if (hasDebt)
+            Text(
+              '${'remaining_amount'.tr()}: ${CurrencyHelper.getFormatter(tx.currency).format(remaining)}',
+              style: TextStyle(fontSize: 11.sp, color: Colors.orange[800], fontWeight: FontWeight.bold),
+            ),
+        ],
       ),
-      trailing: Text(
-        CurrencyHelper.getFormatter(tx.currency).format(tx.amount),
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: isRefund || isAddDebt ? AppColors.error : AppColors.success,
-        ),
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            CurrencyHelper.getFormatter(tx.currency).format(tx.amount),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isRefund || isAddDebt ? AppColors.error : AppColors.success,
+            ),
+          ),
+          if (hasDebt)
+            Text(
+              'paid'.tr() + ': ' + CurrencyHelper.getFormatter(tx.currency).format(tx.paidAmount),
+              style: TextStyle(fontSize: 10.sp, color: Colors.grey),
+            ),
+        ],
       ),
     );
   }

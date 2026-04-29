@@ -3,8 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../network/network_info.dart';
-import '../api/api_interceptors.dart';    
+import '../api/api_interceptors.dart';
 import '../config/app_config.dart';
 import '../services/database_helper.dart';
 import '../services/customer_service.dart';
@@ -13,12 +14,11 @@ import '../services/settings_service.dart';
 import '../services/auth_service.dart';
 import '../services/product_service.dart';
 import '../services/subscription_service.dart';
-import '../services/backup_service.dart';
 import '../services/category_service.dart';
 import '../services/unit_service.dart';
 import '../services/receipt_service.dart';
-import '../services/google_drive_service.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import '../services/local_backup_service.dart';
+import '../services/firebase_backup_service.dart';
 import '../../features/reports/services/report_service.dart';
 import '../../features/reports/services/export_service.dart';
 import '../../features/reports/bloc/reports_bloc.dart';
@@ -48,7 +48,6 @@ Future<void> init() async {
 
     dio.interceptors.add(ApiInterceptor());
 
-    // Add pretty logger in debug mode
     if (AppConfig.enableLogging) {
       dio.interceptors.add(
         PrettyDioLogger(
@@ -62,29 +61,29 @@ Future<void> init() async {
     return dio;
   });
 
+  //! SharedPreferences (must be initialized before services that depend on it)
+  final sharedPrefs = await SharedPreferences.getInstance();
+  sl.registerLazySingleton<SharedPreferences>(() => sharedPrefs);
+
   //! Services
   sl.registerLazySingleton(() => DatabaseHelper.instance);
   sl.registerLazySingleton(() => CustomerService());
-  sl.registerLazySingleton<TransactionService>(() => TransactionService(sl<CustomerService>(), sl<SettingsService>()));
   sl.registerLazySingleton(() => SettingsService());
-
-  sl.registerLazySingleton<GoogleSignIn>(() => GoogleSignIn(
-    scopes: [
-      'https://www.googleapis.com/auth/drive.file',
-      'email',
-    ],
-  ));
-
-  sl.registerLazySingleton<AuthService>(() => AuthService(sl<SubscriptionService>(), sl<GoogleSignIn>()));
+  sl.registerLazySingleton<SubscriptionService>(() => SubscriptionService(sl<SharedPreferences>()));
+  sl.registerLazySingleton<TransactionService>(() => TransactionService(sl<CustomerService>(), sl<SettingsService>()));
   sl.registerLazySingleton<ProductService>(() => ProductService(sl<TransactionService>()));
 
-  final sharedPrefs = await SharedPreferences.getInstance();
-  sl.registerLazySingleton<SharedPreferences>(() => sharedPrefs);
-  sl.registerLazySingleton<SubscriptionService>(() => SubscriptionService(sl<SharedPreferences>()));
-  
-  sl.registerLazySingleton<GoogleDriveService>(() => GoogleDriveService(sl<GoogleSignIn>()));
-  sl.registerLazySingleton<BackupService>(() => BackupService(sl<SharedPreferences>(), sl<GoogleDriveService>()));
-  
+  // Auth (Google Sign-In kept for Firebase Auth via Google only; Drive scope removed)
+  sl.registerLazySingleton<GoogleSignIn>(() => GoogleSignIn(scopes: ['email']));
+  sl.registerLazySingleton<AuthService>(() => AuthService(sl<SubscriptionService>(), sl<GoogleSignIn>()));
+
+  //! Backup Services
+  sl.registerLazySingleton<LocalBackupService>(() => LocalBackupService(sl<SharedPreferences>()));
+  sl.registerLazySingleton<FirebaseBackupService>(
+    () => FirebaseBackupService(sl<SharedPreferences>(), sl<LocalBackupService>()),
+  );
+
+  //! Store Services
   sl.registerLazySingleton<CategoryService>(() => CategoryService());
   sl.registerLazySingleton<UnitService>(() => UnitService());
   sl.registerLazySingleton<ReceiptService>(() => ReceiptService());

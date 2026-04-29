@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:flutter/foundation.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -36,7 +37,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 17,
+      version: 19,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -49,6 +50,7 @@ class DatabaseHelper {
         name TEXT NOT NULL,
         phone TEXT NOT NULL,
         total_debt REAL DEFAULT 0,
+        total_spent REAL DEFAULT 0,
         last_transaction_date TEXT
       )
     ''');
@@ -141,6 +143,27 @@ class DatabaseHelper {
         created_at TEXT NOT NULL,
         expiry_date TEXT,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
+      )
+    ''');
+
+    // Categories table (v14+)
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        icon TEXT,
+        color INTEGER
+      )
+    ''');
+
+    // Units table (v14+)
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS units (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'main',
+        parent_id INTEGER,
+        conversion_factor INTEGER DEFAULT 1
       )
     ''');
 
@@ -327,6 +350,39 @@ class DatabaseHelper {
         await db.execute("ALTER TABLE settings ADD COLUMN enable_pdf_receipt INTEGER DEFAULT 1");
       } catch (e) {
         if (!e.toString().contains('duplicate column name')) rethrow;
+      }
+    }
+
+    // v18: Safety migration — ensure categories & units tables exist on ALL devices
+    // Fixes devices that had a database version ≥14 but somehow missing these tables.
+    if (oldVersion < 18) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS categories (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          icon TEXT,
+          color INTEGER
+        )
+      ''');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS units (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          type TEXT NOT NULL DEFAULT 'main',
+          parent_id INTEGER,
+          conversion_factor INTEGER DEFAULT 1
+        )
+      ''');
+    }
+
+    // v19: Ensure total_spent column exists in customers table
+    if (oldVersion < 19) {
+      try {
+        await db.execute("ALTER TABLE customers ADD COLUMN total_spent REAL DEFAULT 0");
+      } catch (e) {
+        if (!e.toString().contains('duplicate column name')) {
+          debugPrint('Error adding total_spent column: $e');
+        }
       }
     }
   }

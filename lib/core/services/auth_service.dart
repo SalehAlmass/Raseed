@@ -81,34 +81,6 @@ class AuthService {
     return prefs.getBool(_authKey) ?? false;
   }
 
-  // Google Drive Authorization Checks
-  Future<bool> isGoogleDriveAuthorized() async {
-    if (_auth.currentUser == null) return false;
-    
-    var googleAccount = _googleSignIn.currentUser;
-    googleAccount ??= await _googleSignIn.signInSilently();
-    
-    if (googleAccount == null) return false;
-    
-    const driveScope = 'https://www.googleapis.com/auth/drive.file';
-    return await _googleSignIn.canAccessScopes([driveScope]);
-  }
-
-  // Force re-connect Google Drive
-  Future<bool> connectGoogleDrive() async {
-    try {
-      final account = await _googleSignIn.signIn();  
-      return account != null;
-    } catch (e) {
-      if (e is PlatformException && e.code == 'sign_in_failed') {
-        if (e.message?.contains('10') ?? false) {
-           throw Exception('google_api_config_error');
-        }
-      }
-      rethrow;
-    }
-  }
-
 
   // Legacy Master Password Check (Keep for fallback or if needed)
   Future<bool> verifyMasterPassword(String password) async {
