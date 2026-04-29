@@ -4,6 +4,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/di/injection_container.dart';
 import '../../../core/models/supplier.dart';
 import '../../../core/models/supplier_transaction.dart';
+import '../../../core/models/product.dart';
+import '../../../core/services/product_service.dart';
 import '../../../core/services/supplier_service.dart';
 import '../../../core/services/supplier_transaction_service.dart';
 import '../../reports/services/report_service.dart';
@@ -25,6 +27,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
   
   late Supplier _supplier;
   List<SupplierTransaction> _transactions = [];
+  List<Product> _products = [];
   List<Map<String, dynamic>> _lowStockItems = [];
   bool _isLoading = true;
 
@@ -40,11 +43,13 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
     final updatedSupplier = await _supplierService.getSupplierById(_supplier.id!);
     final transactions = await _transactionService.getTransactionsBySupplier(_supplier.id!);
     final lowStock = await sl<ReportService>().getLowStockBySupplier(_supplier.id!);
+    final products = await sl<ProductService>().getProductsBySupplier(_supplier.id!);
     
     setState(() {
       if (updatedSupplier != null) _supplier = updatedSupplier;
       _transactions = transactions;
       _lowStockItems = lowStock;
+      _products = products;
       _isLoading = false;
     });
   }
@@ -61,29 +66,54 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: EdgeInsets.all(20.w),
+          : DefaultTabController(
+              length: 2,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildDebtCard(),
-                  SizedBox(height: 20.h),
-                  _buildActionButtons(),
-                  if (_lowStockItems.isNotEmpty) ...[
-                    SizedBox(height: 30.h),
-                    _buildLowStockSection(),
-                  ],
-                  SizedBox(height: 30.h),
-                  Text(
-                    'account_statement'.tr(),
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.all(20.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildDebtCard(),
+                          SizedBox(height: 20.h),
+                          _buildActionButtons(),
+                          if (_lowStockItems.isNotEmpty) ...[
+                            SizedBox(height: 30.h),
+                            _buildLowStockSection(),
+                          ],
+                          SizedBox(height: 30.h),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(15.r),
+                            ),
+                            child: TabBar(
+                              labelColor: AppColors.primary,
+                              unselectedLabelColor: Colors.grey,
+                              indicatorColor: AppColors.primary,
+                              indicatorSize: TabBarIndicatorSize.label,
+                              tabs: [
+                                Tab(text: 'account_statement'.tr()),
+                                Tab(text: 'products'.tr()),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 20.h),
+                          SizedBox(
+                            height: 500.h, // Fixed height for tab content
+                            child: TabBarView(
+                              children: [
+                                _buildTransactionList(),
+                                _buildProductList(),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  SizedBox(height: 15.h),
-                  _buildTransactionList(),
                 ],
               ),
             ),
@@ -345,6 +375,41 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
           ),
         ],
       ),
+    );
+  }
+  Widget _buildProductList() {
+    if (_products.isEmpty) {
+      return Center(
+        child: Text('no_products'.tr(), style: TextStyle(color: Colors.grey)),
+      );
+    }
+
+    return ListView.separated(
+      itemCount: _products.length,
+      separatorBuilder: (context, index) => const Divider(),
+      itemBuilder: (context, index) {
+        final product = _products[index];
+        return ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: Container(
+            padding: EdgeInsets.all(8.w),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary),
+          ),
+          title: Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Text(
+            sl<ProductService>().formatStock(product.stockQuantity, product.conversionFactor),
+            style: TextStyle(fontSize: 12.sp),
+          ),
+          trailing: Text(
+            CurrencyHelper.getFormatter(product.currency).format(product.price),
+            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+          ),
+        );
+      },
     );
   }
 }

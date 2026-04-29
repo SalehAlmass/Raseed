@@ -164,4 +164,20 @@ class ProductService {
         .toList();
     return products;
   }
+
+  Future<List<Product>> getProductsBySupplier(int supplierId) async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'products',
+      where: 'supplier_id = ?',
+      whereArgs: [supplierId],
+      orderBy: 'name ASC',
+    );
+    
+    return await Future.wait(maps.map((map) async {
+      final product = Product.fromMap(map);
+      final batches = await _getBatches(product.id!);
+      return product.copyWith(batches: batches);
+    }));
+  }
 }
