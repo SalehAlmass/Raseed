@@ -166,10 +166,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: 'get_payment'.tr(),
                     icon: Icons.check_circle_outline,
                     color: AppColors.error,
-                    onTap: () => _showPaymentDialog(
-                      context,
-                      type: TransactionType.payment,
-                    ),
+                    onTap: () {
+                      if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
+                        _showPaymentDialog(context, type: TransactionType.payment);
+                      } else {
+                        SubscriptionDialog.show(context);
+                      }
+                    },
                   ),
                 ],
               ),
@@ -189,6 +192,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildAlertsSection() {
     List<Widget> alerts = [];
+    final subService = sl<SubscriptionService>();
+
+    // 0. Subscription Alert (Developer Contact)
+    if (!subService.isPremiumActive) {
+      alerts.add(_buildAlertItem(
+        title: 'trial_expired_home'.tr(),
+        desc: 'contact_dev_msg'.tr(),
+        icon: Icons.lock_clock_rounded,
+        color: AppColors.error,
+        onTap: _contactDev, 
+      ));
+    }
 
     // 1. Near Expiry Alert
     if (_nearExpiryProducts.isNotEmpty) {
@@ -791,6 +806,22 @@ class _HomeScreenState extends State<HomeScreen> {
             content: Text('error_occurred'.tr()),
             backgroundColor: AppColors.error,
           ),
+        );
+      }
+    }
+  }
+
+  Future<void> _contactDev() async {
+    const phone = '967777359678';
+    final message = 'trial_expired_whatsapp_msg'.tr();
+    final url = "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
+    
+    try {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('could_not_launch_whatsapp'.tr())),
         );
       }
     }

@@ -188,8 +188,20 @@ class _StoreScreenState extends State<StoreScreen> {
                       final product = _filteredProducts[index];
                       return _ProductTile(
                         product: product,
-                        onEdit: () => _showAddEditDialog(product),
-                        onSell: () => _showSellDialog(product),
+                        onEdit: () {
+                          if (sl<SubscriptionService>().canUseFeature(AppFeature.editInventory)) {
+                            _showAddEditDialog(product);
+                          } else {
+                            SubscriptionDialog.show(context);
+                          }
+                        },
+                        onSell: () {
+                          if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
+                            _showSellDialog(product);
+                          } else {
+                            SubscriptionDialog.show(context);
+                          }
+                        },
                         onPurchase: product.supplierId == null ? null : () => _onPurchase(product),
                       );
                     },

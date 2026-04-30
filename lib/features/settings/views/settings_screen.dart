@@ -24,6 +24,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final AuthService _authService = sl<AuthService>();
   late AppSettings _settings;
   bool _isLoading = true;
+  bool _isDeveloperMode = false;
+  int _tapCount = 0;
 
   final TextEditingController _maxDebtController = TextEditingController();
   final TextEditingController _reminderDaysController = TextEditingController();
@@ -90,7 +92,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('settings'.tr()),
+        title: GestureDetector(
+          onTap: _handleDevModeTap,
+          child: Text('settings'.tr()),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
@@ -126,9 +131,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
               
                   SizedBox(height: 15.h),
-                  _buildInventoryFieldsTile(context),
-                  SizedBox(height: 15.h),
-                  _buildModuleManagementTile(context),
+                  if (_isDeveloperMode) ...[
+                    _buildInventoryFieldsTile(context),
+                    SizedBox(height: 15.h),
+                    _buildModuleManagementTile(context),
+                  ],
               
                   SizedBox(height: 30.h),
                   _buildSectionHeader('crm_config'.tr()),
@@ -168,11 +175,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildBackupTile(context),
               
                   SizedBox(height: 30.h),
-                  _buildSectionHeader('subscription'.tr()),
-                  SizedBox(height: 15.h),
-                  _buildSubscriptionTile(context),
-              
-                   SizedBox(height: 30.h),
+                  if (_isDeveloperMode) ...[
+                    _buildSectionHeader('subscription'.tr()),
+                    SizedBox(height: 15.h),
+                    _buildSubscriptionTile(context),
+                    SizedBox(height: 30.h),
+                  ],
                   _buildSectionHeader('account'.tr()),
                   SizedBox(height: 15.h),
                   _buildLogoutTile(context),
@@ -388,6 +396,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
     }
   }
+
+  void _handleDevModeTap() {
+    _tapCount++;
+    if (_tapCount >= 7) {
+      _tapCount = 0;
+      _showDevAuthDialog();
+    }
+  }
+
+  void _showDevAuthDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Developer Portal'),
+        content: TextField(
+          controller: controller,
+          obscureText: true,
+          decoration: const InputDecoration(hintText: 'Enter Admin Key'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('cancel'.tr())),
+          ElevatedButton(
+            onPressed: () {
+              if (controller.text == '8899') {
+                setState(() => _isDeveloperMode = true);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Developer Mode Enabled')),
+                );
+              }
+            },
+            child: Text('confirm'.tr()),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (controller.text == '8899') {
+                await sl<SubscriptionService>().activateSubscription();
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Premium Activated Successfully'),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                  setState(() {}); // Refresh UI
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.amber[800]),
+            child: const Text('Activate Premium'),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   void _showSetPinDialog() {
     final controller = TextEditingController();

@@ -56,11 +56,23 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_outlined),
-            onPressed: () => _handleExport(context, 'pdf'),
+            onPressed: () {
+              if (sl<SubscriptionService>().canUseFeature(AppFeature.viewReports)) {
+                _handleExport(context, 'pdf');
+              } else {
+                SubscriptionDialog.show(context);
+              }
+            },
           ),
           IconButton(
             icon: const Icon(Icons.explicit_outlined), // Placeholder for Excel
-            onPressed: () => _handleExport(context, 'excel'),
+            onPressed: () {
+              if (sl<SubscriptionService>().canUseFeature(AppFeature.viewReports)) {
+                _handleExport(context, 'excel');
+              } else {
+                SubscriptionDialog.show(context);
+              }
+            },
           ),
         ],
       ),
