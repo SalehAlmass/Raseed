@@ -122,15 +122,6 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add_business_rounded),
       ),
-      bottomNavigationBar: AppBottomNavigationBar(
-        activeIndex: 4, // Assuming we use it for something else or just highlight
-        onTap: (index) {
-           // Handle navigation
-           if (index == 0) Navigator.pushReplacementNamed(context, Routes.home);
-           if (index == 1) Navigator.pushReplacementNamed(context, Routes.customers);
-           if (index == 4) Navigator.pushReplacementNamed(context, Routes.store);
-        },
-      ),
     );
   }
 

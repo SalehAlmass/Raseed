@@ -112,11 +112,12 @@ class _StoreScreenState extends State<StoreScreen> {
     }
   }
 
-
   Future<void> _onPurchase(Product product) async {
     if (product.supplierId == null) return;
-    
-    final supplier = await sl<SupplierService>().getSupplierById(product.supplierId!);
+
+    final supplier = await sl<SupplierService>().getSupplierById(
+      product.supplierId!,
+    );
     if (supplier != null && mounted) {
       Navigator.push(
         context,
@@ -141,11 +142,11 @@ class _StoreScreenState extends State<StoreScreen> {
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.business_rounded),
-            onPressed: () => Navigator.pushNamed(context, Routes.suppliers),
-            tooltip: 'suppliers'.tr(),
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.business_rounded),
+          //   onPressed: () => Navigator.pushNamed(context, Routes.suppliers),
+          //   tooltip: 'suppliers'.tr(),
+          // ),
           IconButton(
             icon: const Icon(Icons.category),
             onPressed: () => Navigator.pushNamed(context, Routes.categories),
@@ -182,27 +183,37 @@ class _StoreScreenState extends State<StoreScreen> {
                 : _filteredProducts.isEmpty
                 ? Center(child: Text('no_products'.tr()))
                 : ListView.builder(
-                    padding: EdgeInsets.only(left: 20.w, right: 20.w, bottom: 100.h),
+                    padding: EdgeInsets.only(
+                      left: 20.w,
+                      right: 20.w,
+                      bottom: 100.h,
+                    ),
                     itemCount: _filteredProducts.length,
                     itemBuilder: (context, index) {
                       final product = _filteredProducts[index];
                       return _ProductTile(
                         product: product,
                         onEdit: () {
-                          if (sl<SubscriptionService>().canUseFeature(AppFeature.editInventory)) {
+                          if (sl<SubscriptionService>().canUseFeature(
+                            AppFeature.editInventory,
+                          )) {
                             _showAddEditDialog(product);
                           } else {
                             SubscriptionDialog.show(context);
                           }
                         },
                         onSell: () {
-                          if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
+                          if (sl<SubscriptionService>().canUseFeature(
+                            AppFeature.addSale,
+                          )) {
                             _showSellDialog(product);
                           } else {
                             SubscriptionDialog.show(context);
                           }
                         },
-                        onPurchase: product.supplierId == null ? null : () => _onPurchase(product),
+                        onPurchase: product.supplierId == null
+                            ? null
+                            : () => _onPurchase(product),
                       );
                     },
                   ),
@@ -288,7 +299,10 @@ class _ProductTile extends StatelessWidget {
                 children: [
                   Text(
                     product.name,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.sp,
+                    ),
                   ),
                   SizedBox(height: 4.h),
                   Text(
@@ -358,7 +372,10 @@ class _ProductTile extends StatelessWidget {
                             value: 'sell',
                             child: Row(
                               children: [
-                                const Icon(Icons.shopping_cart_outlined, size: 20),
+                                const Icon(
+                                  Icons.shopping_cart_outlined,
+                                  size: 20,
+                                ),
                                 SizedBox(width: 8.w),
                                 Text('sell'.tr()),
                               ],
@@ -396,7 +413,11 @@ class _ProductTile extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.event_note, size: 10.sp, color: Colors.grey[600]),
+                        Icon(
+                          Icons.event_note,
+                          size: 10.sp,
+                          color: Colors.grey[600],
+                        ),
                         SizedBox(width: 4.w),
                         Text(
                           DateFormat.yMd(context.locale.toString()).format(
@@ -421,4 +442,3 @@ class _ProductTile extends StatelessWidget {
     );
   }
 }
-
