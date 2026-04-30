@@ -131,8 +131,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
               
                   SizedBox(height: 15.h),
+                  _buildInventoryFieldsTile(context),
                   if (_isDeveloperMode) ...[
-                    _buildInventoryFieldsTile(context),
                     SizedBox(height: 15.h),
                     _buildModuleManagementTile(context),
                   ],

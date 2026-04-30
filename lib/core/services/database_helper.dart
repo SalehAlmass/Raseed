@@ -37,7 +37,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 25,
+      version: 26,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -87,7 +87,7 @@ class DatabaseHelper {
 
     await db.execute('''
       CREATE TABLE settings (
-        max_debt REAL DEFAULT 1000,
+        max_debt REAL DEFAULT 100000,
         reminder_days INTEGER DEFAULT 30,
         strict_mode INTEGER DEFAULT 0,
         debt_mode TEXT DEFAULT 'block',
@@ -106,7 +106,7 @@ class DatabaseHelper {
     ''');
 
     await db.insert('settings', {
-      'max_debt': 1000.0,
+      'max_debt': 100000.0,
       'reminder_days': 30,
       'strict_mode': 0,
       'currency': 'YER',
@@ -589,15 +589,14 @@ class DatabaseHelper {
 
     if (oldVersion < 25) {
       try {
-        await db.execute('ALTER TABLE settings ADD COLUMN store_profile TEXT');
-      } catch (e) {
-        debugPrint("store_profile already exists");
-      }
-      try {
         await db.execute('ALTER TABLE settings ADD COLUMN staff_config TEXT');
       } catch (e) {
         debugPrint("staff_config already exists");
       }
+    }
+    if (newVersion >= 26) {
+      // Force update max_debt to 100,000 if it was the old default (1000)
+      await db.update('settings', {'max_debt': 100000.0}, where: 'max_debt = ?', whereArgs: [1000.0]);
     }
   }
 
@@ -671,7 +670,7 @@ class DatabaseHelper {
       
       // 3. Reset settings to default values
       await txn.update('settings', {
-        'max_debt': 1000.0,
+        'max_debt': 100000.0,
         'reminder_days': 30,
         'strict_mode': 0,
         'currency': 'YER',
