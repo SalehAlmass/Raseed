@@ -196,7 +196,7 @@ class AppSettings {
   final StaffConfig staffConfig;
 
   AppSettings({
-    this.maxDebt = 1000.0,
+    this.maxDebt = 100000.0,
     this.reminderDays = 30,
     this.strictMode = false,
     this.debtMode = DebtMode.block,
@@ -238,7 +238,7 @@ class AppSettings {
 
   factory AppSettings.fromMap(Map<String, dynamic> map) {
     return AppSettings(
-      maxDebt: (map['max_debt'] as num?)?.toDouble() ?? 1000.0,
+      maxDebt: (map['max_debt'] as num?)?.toDouble() ?? 100000.0,
       reminderDays: map['reminder_days'] ?? 30,
       strictMode: (map['strict_mode'] ?? 0) == 1,
       debtMode: map['debt_mode'] != null 

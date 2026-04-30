@@ -201,7 +201,16 @@ class _HomeScreenState extends State<HomeScreen> {
         desc: 'contact_dev_msg'.tr(),
         icon: Icons.lock_clock_rounded,
         color: AppColors.error,
-        onTap: _contactDev, 
+        onTap: _contactDev,
+      ));
+    } else if (!subService.isSubscribed && !subService.isClockTampered) {
+      final remaining = subService.remainingDays;
+      alerts.add(_buildAlertItem(
+        title: 'trial_active'.tr(),
+        desc: 'trial_remaining'.tr(namedArgs: {'days': remaining.toString()}),
+        icon: Icons.timer_outlined,
+        color: AppColors.primary,
+        onTap: () {},
       ));
     }
 

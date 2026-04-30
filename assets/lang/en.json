@@ -528,5 +528,6 @@
   "void_success": "Transaction voided successfully",
   "contact_dev_msg": "Trial expired, please contact management to activate: 777359678",
   "trial_expired_home": "Alert: Version Not Activated",
+  "trial_active": "Trial Period Active",
   "trial_expired_whatsapp_msg": "Hello, my trial period has ended and I would like to activate the full version."
 }
