@@ -244,7 +244,7 @@ ALL inside ONE SQLite transaction
 
 ---
 
-# 🚀 NEW FEATURES IMPLEMENTED (V1.0 - V1.17)
+# 🚀 NEW FEATURES IMPLEMENTED (V1.0 - V1.18)
 
 ## 1. Advanced Product Inventory
 * **Multi-Unit System**: Support for Main Unit (e.g., Box) and Sub Unit (e.g., Piece) with a conversion factor.
@@ -263,6 +263,17 @@ ALL inside ONE SQLite transaction
 ## 4. Communication & Receipts
 * **WhatsApp Integration**: Option to automatically send WhatsApp notifications to customers upon payment or debt addition (`enable_whatsapp`).
 * **PDF Receipts**: Support for generating and sharing PDF receipts (`enable_pdf_receipt`).
+
+## 5. Kiosk Mode & POS UX
+* **Smart POS Header**: Replaces summary cards with a sleek, action-oriented header for Kiosk environments.
+* **Undo Last Sale**: Quick access "Undo" button to reverse the last transaction instantly.
+* **Long-press to Void**: Advanced transaction management in activity lists.
+
+## 6. Security & Developer Control
+* **Developer Mode**: Hidden portal (7 taps on Settings Title + PIN `8899`) to manage sensitive configurations.
+* **Feature Gating**: All premium actions (Sell, Edit, Export, Payments) are strictly gated by `SubscriptionService`.
+* **Proactive Subscription Status**: Home screen displays real-time trial status and "Trial Expired" alerts with direct WhatsApp contact for activation.
+* **Module Sequestration**: "Subscription" and "Module Management" settings are visible ONLY in Developer Mode.
 
 ---
 
