@@ -143,10 +143,13 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (_moduleConfig.showInventory) _buildAlertsSection(),
-              _buildSummaryCards(),
+              if (!_moduleConfig.showCustomers) 
+                _buildKioskHeader()
+              else
+                _buildSummaryCards(),
               SizedBox(height: 20.h),
               if (_moduleConfig.showAccounting) _buildAccountingSection(),
-              _buildMarketingSection(),
+              if (_moduleConfig.showCustomers) _buildMarketingSection(),
               SizedBox(height: 30.h),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -210,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // 3. Over Debt Alert
-    if (_overDebtCustomers.isNotEmpty) {
+    if (_overDebtCustomers.isNotEmpty && _moduleConfig.showCustomers) {
       alerts.add(_buildAlertItem(
         title: 'over_debt_alert'.tr(),
         desc: 'over_debt_desc'.tr(args: [_overDebtCustomers.length.toString()]),
@@ -539,6 +542,162 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildKioskHeader() {
+    return Container(
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'daily_sales'.tr(),
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                  SizedBox(height: 5.h),
+                  Text(
+                    CurrencyHelper.getFormatter('YER').format(
+                      _summary['daily_sales_yer'] ?? 0.0,
+                    ),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28.sp,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+              if (_recentTransactions.isNotEmpty)
+                _buildUndoButton(_recentTransactions.first),
+            ],
+          ),
+          SizedBox(height: 25.h),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _onNavTap(2), // Open Sale
+                  icon: const Icon(Icons.add_shopping_cart_rounded, size: 20),
+                  label: Text(
+                    'new_sale'.tr(),
+                    style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppColors.primary,
+                    padding: EdgeInsets.symmetric(vertical: 14.h),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15.r),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUndoButton(AppTransaction tx) {
+    return Tooltip(
+      message: 'undo_last_sale'.tr(),
+      child: InkWell(
+        onTap: () => _confirmVoidTransaction(tx),
+        borderRadius: BorderRadius.circular(12.r),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.undo_rounded, color: Colors.white, size: 18),
+              SizedBox(width: 6.w),
+              Text(
+                'undo'.tr(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmVoidTransaction(AppTransaction tx) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('void_transaction'.tr()),
+        content: Text('void_confirm'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('cancel'.tr()),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: Text('confirm'.tr()),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _transactionService.voidTransaction(tx);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('void_success'.tr())),
+          );
+          _loadData();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('error_occurred'.tr()),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   Widget _buildAccountingSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -707,7 +866,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       itemCount: transactions.length,
                       separatorBuilder: (context, index) => const Divider(),
                       itemBuilder: (context, index) {
-                        return _TransactionTile(tx: transactions[index]);
+                        return _TransactionTile(
+                          tx: transactions[index],
+                          onVoid: _confirmVoidTransaction,
+                        );
                       },
                     ),
             ),
@@ -763,7 +925,10 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount: _recentTransactions.length,
               separatorBuilder: (context, index) => const Divider(),
               itemBuilder: (context, index) {
-                return _TransactionTile(tx: _recentTransactions[index]);
+                return _TransactionTile(
+                  tx: _recentTransactions[index],
+                  onVoid: _confirmVoidTransaction,
+                );
               },
             ),
     );
@@ -1400,7 +1565,8 @@ class _ActionCard extends StatelessWidget {
 
 class _TransactionTile extends StatelessWidget {
   final AppTransaction tx;
-  const _TransactionTile({required this.tx});
+  final Function(AppTransaction) onVoid;
+  const _TransactionTile({required this.tx, required this.onVoid});
 
   @override
   Widget build(BuildContext context) {
@@ -1439,66 +1605,49 @@ class _TransactionTile extends StatelessWidget {
     final remaining = tx.amount - tx.paidAmount;
     final hasDebt = tx.type == TransactionType.sale && remaining > 0;
 
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(
-        backgroundColor: iconColor.withOpacity(0.1),
-        child: Icon(iconData, color: iconColor, size: 20),
-      ),
-      title: Text(
-        titleText,
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            DateFormat('MMM dd, hh:mm a').format(tx.date),
-            style: TextStyle(fontSize: 12.sp, color: Colors.grey),
-          ),
-          // if (hasDebt)
-          //   Text(
-          //     '${'remaining_amount'.tr()}: ${CurrencyHelper.getFormatter(tx.currency).format(remaining)}',
-          //     style: TextStyle(
-          //       fontSize: 11.sp,
-          //       color: Colors.orange[800],
-          //       fontWeight: FontWeight.bold,
-          //     ),
-          //   ),
-        ],
-      ),
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            CurrencyHelper.getFormatter(tx.currency).format(tx.amount),
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isRefund || isAddDebt
-                  ? AppColors.error
-                  : AppColors.success,
-            ),
-          ),
-          // if (hasDebt)
-          //   Text(
-          //     'paid'.tr() +
-          //         ': ' +
-          //         CurrencyHelper.getFormatter(
-          //           tx.currency,
-          //         ).format(tx.paidAmount),
-          //     style: TextStyle(fontSize: 10.sp, color: Colors.grey),
-          //   ),
-          if (hasDebt)
+    return InkWell(
+      onLongPress: () => onVoid(tx),
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: CircleAvatar(
+          backgroundColor: iconColor.withOpacity(0.1),
+          child: Icon(iconData, color: iconColor, size: 20),
+        ),
+        title: Text(
+          titleText,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Text(
-              '${'remmining'.tr()}: ${CurrencyHelper.getFormatter(tx.currency).format(remaining)}',
+              DateFormat('MMM dd, hh:mm a').format(tx.date),
+              style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+            ),
+          ],
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              CurrencyHelper.getFormatter(tx.currency).format(tx.amount),
               style: TextStyle(
-                fontSize: 11.sp,
-                color: Colors.orange[800],
                 fontWeight: FontWeight.bold,
+                color: isRefund || isAddDebt ? AppColors.error : AppColors.success,
               ),
             ),
-        ],
+            if (hasDebt)
+              Text(
+                '${'remmining'.tr()}: ${CurrencyHelper.getFormatter(tx.currency).format(remaining)}',
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  color: Colors.orange[800],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

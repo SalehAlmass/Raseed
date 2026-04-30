@@ -23,7 +23,7 @@ class AppBottomNavigationBar extends StatelessWidget {
     final List<_NavItem> allItems = [
       _NavItem(0, Icons.home_rounded, 'الرئيسية', true),
       _NavItem(1, Icons.people_rounded, 'customers'.tr(), config.showCustomers),
-      _NavItem(2, Icons.add_circle_rounded, 'new_sale'.tr(), config.showSales),
+      _NavItem(2, Icons.add_circle_rounded, 'new_sale'.tr(), config.showSales && config.showCustomers),
       _NavItem(3, Icons.bar_chart_rounded, 'reports'.tr(), config.showReports),
       _NavItem(4, Icons.store_rounded, 'store'.tr(), config.showInventory),
     ];

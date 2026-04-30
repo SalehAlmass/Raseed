@@ -521,5 +521,9 @@
   "print_option": "Print Options",
   "choose_printer_type": "Choose printer type",
   "select_printer": "Select Printer",
-  "no_bluetooth_devices": "No paired bluetooth devices found"
+  "no_bluetooth_devices": "No paired bluetooth devices found",
+  "undo_last_sale": "Undo Last Sale",
+  "void_confirm": "Are you sure you want to void this transaction? All accounting and stock will be reversed.",
+  "void_transaction": "Void Transaction",
+  "void_success": "Transaction voided successfully"
 }
