@@ -26,7 +26,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
 
   final List<SupplierTransactionItem> _items = [];
   double _totalAmount = 0;
-  final TextEditingController _paidAmountController = TextEditingController();
+  final TextEditingController _paidAmountController = TextEditingController(text: '');
   final TextEditingController _noteController = TextEditingController();
   
   List<Product> _products = [];
@@ -67,6 +67,12 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
 
   Future<void> _savePurchase() async {
     if (_items.isEmpty) return;
+    if (_totalAmount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('invoice_total_zero'.tr())),
+      );
+      return;
+    }
 
     final paid = double.tryParse(_paidAmountController.text) ?? 0;
     

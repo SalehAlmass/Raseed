@@ -426,7 +426,6 @@
   "onboarding_desc_2": "راقب كميات المنتجات وتواريخ الانتهاء واحصل على تنبيهات فورية عند اقتراب أي منتج من النفاد.",
   "onboarding_title_3": "تقارير واضحة وشاملة",
   "onboarding_desc_3": "تصدير التقارير وتتبع الأرباح وتحليل سلوك عملائك لاتخاذ قرارات تجارية أفضل.",
-
   "storage_permission_denied": "تم رفض إذن الوصول للتخزين، لا يمكن حفظ النسخة في المجلد المحدد.",
   "clock_tampered": "تم اكتشاف تلاعب في وقت الجهاز، تم إنهاء الفترة التجريبية لحماية النظام.",
   "remaining_amount": "المبلغ المتبقي (دين)",
@@ -453,7 +452,6 @@
   "debit": "مدين",
   "credit": "دائن",
   "balance": "الرصيد",
-  "account": "الحساب",
   "description": "البيان",
   "date": "التاريخ",
   "no_entries": "لا توجد قيود مسجلة",
@@ -463,5 +461,20 @@
   "purchase_entry_desc": "قيد مشتريات - فاتورة رقم {}",
   "supplier_payment_entry_desc": "سداد مورد - قيد رقم {}",
   "low_stock_alerts": "تنبيهات انخفاض المخزون",
-  "invalid_quantity": "يرجى إدخال كمية صحيحة"
+  "invalid_quantity": "يرجى إدخال كمية صحيحة",
+  "accounting_entry": "تسجيل قيد محاسبي",
+  "record_as_purchase_desc": "سيتم تسجيل هذه الزيادة في المخزون كفاتورة شراء رسمية للمورد المختار.",
+  "invoice_total_zero": "إجمالي الفاتورة يجب أن يكون أكبر من صفر",
+  "manage_inventory_fields": "إدارة حقول المخزون",
+  "manage_inventory_fields_desc": "تخصيص الحقول الظاهرة عند إضافة منتج",
+  "show_barcode_field": "عرض حقل الباركود",
+  "show_wholesale_price_field": "عرض حقل سعر الجملة",
+  "show_reorder_level_field": "عرض حقل حد إعادة الطلب",
+  "show_category_field": "عرض حقل التصنيف",
+  "show_expiry_field": "عرض حقل تاريخ الانتهاء",
+  "show_units_field": "عرض حقول الوحدات",
+  "show_supplier_field": "عرض حقول المورد",
+  "show_purchase_price_field": "عرض حقل سعر الشراء",
+  "auto_sale_margin": "نسبة ربح البيع الافتراضية (%)",
+  "auto_wholesale_margin": "نسبة ربح الجملة الافتراضية (%)"
 }

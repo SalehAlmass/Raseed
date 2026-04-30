@@ -12,6 +12,7 @@ import '../../../core/widgets/subscription_dialog.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/utils/currency_helper.dart';
 import 'widgets/add_edit_product_dialog.dart';
+import 'widgets/quick_purchase_dialog.dart';
 import '../../../core/routes/routes.dart';
 import '../../../core/widgets/app_bottom_navigation_bar.dart';
 import 'widgets/sell_product_dialog.dart';
@@ -110,6 +111,7 @@ class _StoreScreenState extends State<StoreScreen> {
       _loadProducts();
     }
   }
+
 
   Future<void> _onPurchase(Product product) async {
     if (product.supplierId == null) return;
@@ -407,3 +409,4 @@ class _ProductTile extends StatelessWidget {
     );
   }
 }
+

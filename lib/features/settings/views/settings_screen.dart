@@ -108,6 +108,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     keyboardType: TextInputType.number,
                   ),
               
+                  SizedBox(height: 15.h),
+                  _buildInventoryFieldsTile(context),
+              
                   SizedBox(height: 30.h),
                   _buildSectionHeader('crm_config'.tr()),
                   SizedBox(height: 15.h),
@@ -262,8 +265,176 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildInventoryFieldsTile(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(15.r),
+      ),
+      child: ListTile(
+        leading: Icon(Icons.inventory_2_outlined, color: AppColors.primary),
+        title: Text('manage_inventory_fields'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600)),
+        subtitle: Text('manage_inventory_fields_desc'.tr(), style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+        trailing: Icon(Icons.arrow_forward_ios, color: AppColors.textSecondary, size: 16.sp),
+        onTap: () => _showInventoryFieldsDialog(context),
+      ),
+    );
+  }
 
+  Future<void> _showInventoryFieldsDialog(BuildContext context) async {
+    final config = _settings.productFormConfig;
+    
+    // We create local state variables for the dialog
+    bool showBarcode = config.showBarcode;
+    bool showWholesale = config.showWholesale;
+    bool showReorder = config.showReorder;
+    bool showCategory = config.showCategory;
+    bool showExpiry = config.showExpiry;
+    bool showUnits = config.showUnits;
+    bool showSupplier = config.showSupplier;
+    bool showPurchasePrice = config.showPurchasePrice;
+    
+    final saleMarginCtrl = TextEditingController(text: (config.autoSaleMargin * 100).toStringAsFixed(0));
+    final wholesaleMarginCtrl = TextEditingController(text: (config.autoWholesaleMargin * 100).toStringAsFixed(0));
 
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+              title: Text('manage_inventory_fields'.tr(), style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SwitchListTile(
+                      title: Text('show_barcode_field'.tr()),
+                      value: showBarcode,
+                      onChanged: (val) => setState(() => showBarcode = val),
+                      activeColor: AppColors.primary,
+                    ),
+                    SwitchListTile(
+                      title: Text('show_wholesale_price_field'.tr()),
+                      value: showWholesale,
+                      onChanged: (val) => setState(() => showWholesale = val),
+                      activeColor: AppColors.primary,
+                    ),
+                    SwitchListTile(
+                      title: Text('show_reorder_level_field'.tr()),
+                      value: showReorder,
+                      onChanged: (val) => setState(() => showReorder = val),
+                      activeColor: AppColors.primary,
+                    ),
+                    SwitchListTile(
+                      title: Text('show_category_field'.tr()),
+                      value: showCategory,
+                      onChanged: (val) => setState(() => showCategory = val),
+                      activeColor: AppColors.primary,
+                    ),
+                    SwitchListTile(
+                      title: Text('show_expiry_field'.tr()),
+                      value: showExpiry,
+                      onChanged: (val) => setState(() => showExpiry = val),
+                      activeColor: AppColors.primary,
+                    ),
+                    SwitchListTile(
+                      title: Text('show_units_field'.tr()),
+                      value: showUnits,
+                      onChanged: (val) => setState(() => showUnits = val),
+                      activeColor: AppColors.primary,
+                    ),
+                    SwitchListTile(
+                      title: Text('show_purchase_price_field'.tr()),
+                      value: showPurchasePrice,
+                      onChanged: (val) => setState(() => showPurchasePrice = val),
+                      activeColor: AppColors.primary,
+                    ),
+                    SwitchListTile(
+                      title: Text('show_supplier_field'.tr()),
+                      value: showSupplier,
+                      onChanged: (val) => setState(() => showSupplier = val),
+                      activeColor: AppColors.primary,
+                    ),
+                    const Divider(),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                      child: Row(
+                        children: [
+                          Expanded(child: Text('auto_sale_margin'.tr())),
+                          SizedBox(
+                            width: 60.w,
+                            child: TextField(
+                              controller: saleMarginCtrl,
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              decoration: const InputDecoration(isDense: true),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                      child: Row(
+                        children: [
+                          Expanded(child: Text('auto_wholesale_margin'.tr())),
+                          SizedBox(
+                            width: 60.w,
+                            child: TextField(
+                              controller: wholesaleMarginCtrl,
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              decoration: const InputDecoration(isDense: true),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('cancel'.tr(), style: const TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    // Update settings state
+                    final newConfig = ProductFormConfig(
+                      showBarcode: showBarcode,
+                      showWholesale: showWholesale,
+                      showReorder: showReorder,
+                      showCategory: showCategory,
+                      showExpiry: showExpiry,
+                      showUnits: showUnits,
+                      showSupplier: showSupplier,
+                      showPurchasePrice: showPurchasePrice,
+                      autoSaleMargin: (double.tryParse(saleMarginCtrl.text) ?? 15) / 100.0,
+                      autoWholesaleMargin: (double.tryParse(wholesaleMarginCtrl.text) ?? 10) / 100.0,
+                    );
+                    this.setState(() {
+                      _settings = _settings.copyWith(productFormConfig: newConfig);
+                    });
+                    _saveSettings();
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                  ),
+                  child: Text('save'.tr()),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
   Widget _buildLanguageDropdown(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 5.h),

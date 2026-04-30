@@ -1,4 +1,62 @@
+import 'dart:convert';
+
 enum DebtMode { block, warning }
+
+class ProductFormConfig {
+  final bool showBarcode;
+  final bool showWholesale;
+  final bool showReorder;
+  final bool showCategory;
+  final bool showExpiry;
+  final bool showUnits;
+  final bool showSupplier;
+  final bool showPurchasePrice;
+  final double autoSaleMargin;
+  final double autoWholesaleMargin;
+
+  ProductFormConfig({
+    this.showBarcode = true,
+    this.showWholesale = true,
+    this.showReorder = true,
+    this.showCategory = true,
+    this.showExpiry = true,
+    this.showUnits = true,
+    this.showSupplier = true,
+    this.showPurchasePrice = true,
+    this.autoSaleMargin = 0.15,
+    this.autoWholesaleMargin = 0.10,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'showBarcode': showBarcode,
+      'showWholesale': showWholesale,
+      'showReorder': showReorder,
+      'showCategory': showCategory,
+      'showExpiry': showExpiry,
+      'showUnits': showUnits,
+      'showSupplier': showSupplier,
+      'showPurchasePrice': showPurchasePrice,
+      'autoSaleMargin': autoSaleMargin,
+      'autoWholesaleMargin': autoWholesaleMargin,
+    };
+  }
+
+  factory ProductFormConfig.fromMap(Map<String, dynamic> map) {
+    return ProductFormConfig(
+      showBarcode: map['showBarcode'] ?? true,
+      showWholesale: map['showWholesale'] ?? true,
+      showReorder: map['showReorder'] ?? true,
+      showCategory: map['showCategory'] ?? true,
+      showExpiry: map['showExpiry'] ?? true,
+      showUnits: map['showUnits'] ?? true,
+      showSupplier: map['showSupplier'] ?? true,
+      showPurchasePrice: map['showPurchasePrice'] ?? true,
+      autoSaleMargin: (map['autoSaleMargin'] as num?)?.toDouble() ?? 0.15,
+      autoWholesaleMargin: (map['autoWholesaleMargin'] as num?)?.toDouble() ?? 0.10,
+    );
+  }
+}
 
 class AppSettings {
   final double maxDebt;
@@ -12,6 +70,7 @@ class AppSettings {
   final int deadDays;
   final bool enableWhatsapp;
   final bool enablePdfReceipt;
+  final ProductFormConfig productFormConfig;
 
   AppSettings({
     this.maxDebt = 1000.0,
@@ -25,7 +84,8 @@ class AppSettings {
     this.deadDays = 90,
     this.enableWhatsapp = true,
     this.enablePdfReceipt = true,
-  });
+    ProductFormConfig? productFormConfig,
+  }) : productFormConfig = productFormConfig ?? ProductFormConfig();
 
   Map<String, dynamic> toMap() {
     return {
@@ -40,6 +100,7 @@ class AppSettings {
       'dead_days': deadDays,
       'enable_whatsapp': enableWhatsapp ? 1 : 0,
       'enable_pdf_receipt': enablePdfReceipt ? 1 : 0,
+      'product_form_config': jsonEncode(productFormConfig.toMap()),
     };
   }
 
@@ -58,6 +119,9 @@ class AppSettings {
       deadDays: map['dead_days'] ?? 90,
       enableWhatsapp: (map['enable_whatsapp'] ?? 1) == 1,
       enablePdfReceipt: (map['enable_pdf_receipt'] ?? 1) == 1,
+      productFormConfig: map['product_form_config'] != null 
+          ? ProductFormConfig.fromMap(jsonDecode(map['product_form_config']))
+          : ProductFormConfig(),
     );
   }
 
@@ -73,6 +137,7 @@ class AppSettings {
     int? deadDays,
     bool? enableWhatsapp,
     bool? enablePdfReceipt,
+    ProductFormConfig? productFormConfig,
   }) {
     return AppSettings(
       maxDebt: maxDebt ?? this.maxDebt,
@@ -86,6 +151,7 @@ class AppSettings {
       deadDays: deadDays ?? this.deadDays,
       enableWhatsapp: enableWhatsapp ?? this.enableWhatsapp,
       enablePdfReceipt: enablePdfReceipt ?? this.enablePdfReceipt,
+      productFormConfig: productFormConfig ?? this.productFormConfig,
     );
   }
 }

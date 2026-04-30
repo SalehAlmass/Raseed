@@ -37,7 +37,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 22,
+      version: 23,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -97,7 +97,8 @@ class DatabaseHelper {
         inactive_days INTEGER DEFAULT 30,
         dead_days INTEGER DEFAULT 90,
         enable_whatsapp INTEGER DEFAULT 1,
-        enable_pdf_receipt INTEGER DEFAULT 1
+        enable_pdf_receipt INTEGER DEFAULT 1,
+        product_form_config TEXT
       )
     ''');
 
@@ -565,6 +566,14 @@ class DatabaseHelper {
       ''');
 
       await _insertDefaultAccounts(db);
+    }
+
+    if (oldVersion < 23) {
+      try {
+        await db.execute("ALTER TABLE settings ADD COLUMN product_form_config TEXT");
+      } catch (e) {
+        if (!e.toString().contains('duplicate column name')) rethrow;
+      }
     }
   }
 

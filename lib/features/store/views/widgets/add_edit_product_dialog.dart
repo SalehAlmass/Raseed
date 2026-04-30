@@ -10,7 +10,12 @@ import '../../../../core/services/product_service.dart';
 import '../../../../core/services/category_service.dart';
 import '../../../../core/services/unit_service.dart';
 import '../../../../core/services/supplier_service.dart';
+import '../../../../core/services/supplier_transaction_service.dart';
 import '../../../../core/models/supplier.dart';
+import '../../../../core/models/supplier_transaction.dart';
+import '../../../../core/models/supplier_transaction_item.dart';
+import '../../../../core/models/app_settings.dart';
+import '../../../../core/services/settings_service.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/barcode_scanner_view.dart';
 
@@ -31,12 +36,11 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
 
   final _nameController = TextEditingController();
   final _barcodeController = TextEditingController();
-  final _conversionController = TextEditingController();
+  final _conversionController = TextEditingController(text: '1');
   final _purchasePriceController = TextEditingController();
   final _salePriceController = TextEditingController();
   final _wholesalePriceController = TextEditingController();
-  final _reorderLevelController = TextEditingController();
-  final _shelfLocationController = TextEditingController();
+  final _reorderLevelController = TextEditingController(text: '10');
 
   // Storage Controllers
   final _totalStockController = TextEditingController();
@@ -57,6 +61,14 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   bool _showAdvanced = false;
   bool _isSyncing = false;
   double _marginPercentage = 0.0;
+  int _lastSuggestedSale = 0;
+  int _lastSuggestedWholesale = 0;
+  int _initialStock = 0;
+  bool _recordAsPurchase = true;
+  final _paidAmountController = TextEditingController(text: '0');
+  
+  late AppSettings _settings;
+  ProductFormConfig _formConfig = ProductFormConfig();
 
   @override
   void initState() {
@@ -75,6 +87,10 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     _conversionController.addListener(
       _syncFromDetailed,
     ); // Re-sync if factor changes
+
+    // Auto-fill paid amount
+    _totalStockController.addListener(_updatePaidAmount);
+    _purchasePriceController.addListener(_updatePaidAmount);
   }
 
   @override
@@ -83,13 +99,13 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     _salePriceController.dispose();
     _wholesalePriceController.dispose();
     _reorderLevelController.dispose();
-    _shelfLocationController.dispose();
     _nameController.dispose();
     _barcodeController.dispose();
     _conversionController.dispose();
     _totalStockController.dispose();
     _mainStockController.dispose();
     _subStockController.dispose();
+    _paidAmountController.dispose();
     super.dispose();
   }
 
@@ -130,16 +146,79 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     _isSyncing = false;
   }
 
-  void _calculateMargin() {
-    final cost = double.tryParse(_purchasePriceController.text) ?? 0.0;
-    final price = double.tryParse(_salePriceController.text) ?? 0.0;
-    final factor = int.tryParse(_conversionController.text) ?? 1;
+  void _updatePaidAmount() {
+    if (!_recordAsPurchase) return;
 
-    if (price > 0 && cost > 0) {
-      final costPerSub = factor > 0 ? (cost / factor) : cost;
-      if (mounted) {
+    String currentStockText = _totalStockController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    final currentStock = int.tryParse(currentStockText) ?? 0;
+    final diff = currentStock - _initialStock;
+    if (diff <= 0) {
+      if (_paidAmountController.text != '0') {
+        _paidAmountController.text = '0';
+      }
+      return;
+    }
+
+    String purchasePriceText = _purchasePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '');
+    String factorText = _conversionController.text.replaceAll(RegExp(r'[^0-9]'), '');
+
+    final purchasePrice = double.tryParse(purchasePriceText) ?? 0.0;
+    final factor = int.tryParse(factorText) ?? 1;
+    final safeFactor = factor > 0 ? factor : 1;
+    final costPerSub = purchasePrice / safeFactor;
+
+    final total = (diff * costPerSub).round();
+    final totalStr = total.toString();
+
+    // Only update if it's different to avoid infinite loops or cursor jumps
+    if (_paidAmountController.text != totalStr) {
+      _paidAmountController.text = totalStr;
+    }
+  }
+
+  void _calculateMargin() {
+    // Keep only digits for calculation to avoid any locale/formatting issues
+    String costText = _purchasePriceController.text.replaceAll(RegExp(r'\D'), '');
+    String priceText = _salePriceController.text.replaceAll(RegExp(r'\D'), '');
+    String wholesalePriceText = _wholesalePriceController.text.replaceAll(RegExp(r'\D'), '');
+    String factorText = _conversionController.text.replaceAll(RegExp(r'\D'), '');
+
+    final cost = double.tryParse(costText) ?? 0.0;
+    final price = double.tryParse(priceText) ?? 0.0;
+    final wholesale = double.tryParse(wholesalePriceText) ?? 0.0;
+    final factor = int.tryParse(factorText) ?? 1;
+    final safeFactor = factor > 0 ? factor : 1;
+
+    if (cost > 0) {
+      final costPerSub = cost / safeFactor;
+      
+      // Suggest prices if empty, zero, or if it matches the last suggestion we made
+      bool updateSale = _salePriceController.text.isEmpty || price == 0 || price == _lastSuggestedSale;
+      bool updateWholesale = _wholesalePriceController.text.isEmpty || wholesale == 0 || wholesale == _lastSuggestedWholesale;
+
+      if (updateSale) {
+        final suggestedSale = (costPerSub * (1 + _formConfig.autoSaleMargin)).round();
+        if (mounted) {
+          _salePriceController.text = suggestedSale.toString();
+          _lastSuggestedSale = suggestedSale;
+        }
+      }
+
+      if (updateWholesale) {
+        final suggestedWholesale = (costPerSub * (1 + _formConfig.autoWholesaleMargin)).round();
+        if (mounted) {
+          _wholesalePriceController.text = suggestedWholesale.toString();
+          _lastSuggestedWholesale = suggestedWholesale;
+        }
+      }
+      
+      // Re-read price after suggestion to update margin
+      final currentPriceText = _salePriceController.text.replaceAll(RegExp(r'\D'), '');
+      final currentPrice = double.tryParse(currentPriceText) ?? 0.0;
+
+      if (currentPrice > 0 && mounted) {
         setState(() {
-          _marginPercentage = ((price - costPerSub) / price) * 100;
+          _marginPercentage = ((currentPrice - costPerSub) / currentPrice) * 100;
         });
       }
     } else {
@@ -155,12 +234,15 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     final cats = await _categoryService.getAllCategories();
     final units = await _unitService.getAllUnits();
     final suppliers = await sl<SupplierService>().getAllSuppliers();
+    final settings = await sl<SettingsService>().getSettings();
 
     if (mounted) {
       setState(() {
         _categories = cats;
         _units = units;
         _suppliers = suppliers;
+        _settings = settings;
+        _formConfig = settings.productFormConfig;
         _isLoading = false;
 
         if (widget.product != null) {
@@ -172,7 +254,6 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
           _salePriceController.text = p.price.toStringAsFixed(0);
           _wholesalePriceController.text = p.wholesalePrice.toStringAsFixed(0);
           _reorderLevelController.text = p.reorderLevel.toString();
-          _shelfLocationController.text = p.shelfLocation ?? '';
 
           _selectedCategory =
               _categories.where((c) => c.id == p.categoryId).firstOrNull ??
@@ -184,6 +265,8 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
               .firstOrNull;
 
           _totalStockController.text = p.stockQuantity.toString();
+          _initialStock = p.stockQuantity;
+          _recordAsPurchase = false; // Default to false for existing products
 
           if (p.batches.isNotEmpty) {
             final activeBatches = p.batches
@@ -219,21 +302,21 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
         double.tryParse(_wholesalePriceController.text) ?? 0.0;
     final reorderLevel = int.tryParse(_reorderLevelController.text) ?? 0;
     final totalStock = int.tryParse(_totalStockController.text) ?? 0;
+    final paidAmount = double.tryParse(_paidAmountController.text) ?? 0.0;
 
     final product = Product(
       id: widget.product?.id,
       name: _nameController.text,
-      price: salePrice,
-      costPrice: factor > 0 ? (purchasePrice / factor) : purchasePrice,
+      price: salePrice.roundToDouble(),
+      costPrice: factor > 0 ? (purchasePrice / factor).roundToDouble() : purchasePrice.roundToDouble(),
       stockQuantity: totalStock,
-      barcode: _barcodeController.text.isEmpty ? null : _barcodeController.text,
+      barcode: _barcodeController.text.isEmpty 
+          ? DateTime.now().millisecondsSinceEpoch.toString().substring(5) 
+          : _barcodeController.text,
       conversionFactor: factor,
-      packagePrice: purchasePrice,
-      wholesalePrice: wholesalePrice,
+      packagePrice: purchasePrice.roundToDouble(),
+      wholesalePrice: wholesalePrice.roundToDouble(),
       reorderLevel: reorderLevel,
-      shelfLocation: _shelfLocationController.text.isEmpty
-          ? null
-          : _shelfLocationController.text,
       categoryId: _selectedCategory?.id,
       mainUnitId: _mainUnit?.id,
       subUnitId: _subUnit?.id,
@@ -241,7 +324,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     );
 
     try {
-      int productId;
+      int? productId;
       if (widget.product == null) {
         productId = await _productService.addProduct(product);
         if (totalStock > 0) {
@@ -277,6 +360,29 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
           );
         }
       }
+      
+      // Handle Accounting (Purchase Invoice)
+      final diff = totalStock - _initialStock;
+      if (_recordAsPurchase && diff > 0 && _selectedSupplier != null) {
+        final item = SupplierTransactionItem(
+          productId: productId ?? product.id!,
+          productName: product.name ,
+          quantity: diff,
+          costPrice: (factor > 0 ? (purchasePrice / factor) : purchasePrice).roundToDouble(),
+        );
+
+        final tx = SupplierTransaction(
+          supplierId: _selectedSupplier!.id!,
+          type: SupplierTransactionType.purchase,
+          amount: (diff * (factor > 0 ? (purchasePrice / factor) : purchasePrice)).roundToDouble(),
+          paidAmount: paidAmount.roundToDouble(),
+          date: DateTime.now(),
+          items: [item],
+        );
+
+        await sl<SupplierTransactionService>().addTransaction(tx);
+      }
+
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted)
@@ -335,22 +441,23 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
           validator: (v) =>
               v == null || v.isEmpty ? 'required_field'.tr() : null,
         ),
-        SizedBox(height: 12.h),
-        _buildBarcodeField(),
+        if (_formConfig.showBarcode) ...[
+          SizedBox(height: 12.h),
+          _buildBarcodeField(),
+        ],
         SizedBox(height: 12.h),
         Row(
           children: [
-            if (!_showAdvanced) ...[
+            if (_formConfig.showPurchasePrice) ...[
               Expanded(
                 child: _buildModernField(
-                  _totalStockController,
-                  'stock_quantity'.tr(),
-                  Icons.inventory_2_outlined,
+                  _purchasePriceController,
+                  'purchase_price'.tr(),
+                  Icons.shopping_basket_outlined,
                   type: TextInputType.number,
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'required_field'.tr();
-                    if (int.tryParse(v) == null) return 'invalid_number'.tr();
-                    if (int.parse(v) < 0) return 'cannot_be_negative'.tr();
+                    if (v != null && v.isNotEmpty && double.tryParse(v) == null)
+                      return 'invalid_number'.tr();
                     return null;
                   },
                 ),
@@ -373,6 +480,21 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
             ),
           ],
         ),
+        if (!_showAdvanced) ...[
+          SizedBox(height: 12.h),
+          _buildModernField(
+            _totalStockController,
+            'stock_quantity'.tr(),
+            Icons.inventory_2_outlined,
+            type: TextInputType.number,
+            validator: (v) {
+              if (v == null || v.isEmpty) return 'required_field'.tr();
+              if (int.tryParse(v) == null) return 'invalid_number'.tr();
+              if (int.parse(v) < 0) return 'cannot_be_negative'.tr();
+              return null;
+            },
+          ),
+        ],
       ],
     );
   }
@@ -415,90 +537,84 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: 20.h),
-        _buildSectionTitle('stock_and_units'.tr(), Icons.square_foot_outlined),
-        SizedBox(height: 12.h),
-        _buildUnitPairSelection(),
-        SizedBox(height: 12.h),
-        _buildModernField(
-          _conversionController,
-          'units_per_package'.tr(),
-          Icons.unfold_more,
-          type: TextInputType.number,
-          validator: (v) {
-            if (v == null || v.isEmpty) return 'required_field'.tr();
-            final val = int.tryParse(v);
-            if (val == null) return 'invalid_number'.tr();
-            if (val < 1) return 'min_value_1'.tr();
-            return null;
-          },
-        ),
-        SizedBox(height: 12.h),
-        _buildQuantityGrid(), // Detailed grid
-        SizedBox(height: 12.h),
-        _buildModernField(
-          _reorderLevelController,
-          'reorder_level'.tr(),
-          Icons.report_problem_outlined,
-          type: TextInputType.number,
-          validator: (v) {
-            if (v != null && v.isNotEmpty && int.tryParse(v) == null)
-              return 'invalid_number'.tr();
-            return null;
-          },
-        ),
+        if (_formConfig.showUnits) ...[
+          SizedBox(height: 20.h),
+          _buildSectionTitle('stock_and_units'.tr(), Icons.square_foot_outlined),
+          SizedBox(height: 12.h),
+          _buildUnitPairSelection(),
+          SizedBox(height: 12.h),
+          _buildModernField(
+            _conversionController,
+            'units_per_package'.tr(),
+            Icons.unfold_more,
+            type: TextInputType.number,
+            validator: (v) {
+              if (v == null || v.isEmpty) return 'required_field'.tr();
+              final val = int.tryParse(v);
+              if (val == null) return 'invalid_number'.tr();
+              if (val < 1) return 'min_value_1'.tr();
+              return null;
+            },
+          ),
+          SizedBox(height: 12.h),
+          _buildQuantityGrid(), // Detailed grid
+        ],
+
+        if (_formConfig.showReorder) ...[
+          SizedBox(height: 12.h),
+          _buildModernField(
+            _reorderLevelController,
+            'reorder_level'.tr(),
+            Icons.report_problem_outlined,
+            type: TextInputType.number,
+            validator: (v) {
+              if (v != null && v.isNotEmpty && int.tryParse(v) == null)
+                return 'invalid_number'.tr();
+              return null;
+            },
+          ),
+        ],
 
         SizedBox(height: 24.h),
         _buildSectionTitle(
           'pricing_and_organization'.tr(),
           Icons.analytics_outlined,
         ),
-        SizedBox(height: 12.h),
-        _buildCategoryDropdown(),
-        SizedBox(height: 12.h),
-        _buildModernField(
-          _shelfLocationController,
-          'shelf_location'.tr(),
-          Icons.location_on_outlined,
-        ),
-        SizedBox(height: 12.h),
-        Row(
-          children: [
-            Expanded(
-              child: _buildModernField(
-                _purchasePriceController,
-                'purchase_price'.tr(),
-                Icons.shopping_basket_outlined,
-                type: TextInputType.number,
-                validator: (v) {
-                  if (v != null && v.isNotEmpty && double.tryParse(v) == null)
-                    return 'invalid_number'.tr();
-                  return null;
-                },
-              ),
-            ),
-            SizedBox(width: 8.w),
-            Expanded(
-              child: _buildModernField(
-                _wholesalePriceController,
-                'wholesale_price'.tr(),
-                Icons.groups_outlined,
-                type: TextInputType.number,
-                validator: (v) {
-                  if (v != null && v.isNotEmpty && double.tryParse(v) == null)
-                    return 'invalid_number'.tr();
-                  return null;
-                },
-              ),
-            ),
-          ],
-        ),
+        
+        if (_formConfig.showCategory) ...[
+          SizedBox(height: 12.h),
+          _buildCategoryDropdown(),
+        ],
+        
+        if (_formConfig.showWholesale) ...[
+          SizedBox(height: 12.h),
+          _buildModernField(
+            _wholesalePriceController,
+            'wholesale_price'.tr(),
+            Icons.groups_outlined,
+            type: TextInputType.number,
+            validator: (v) {
+              if (v != null && v.isNotEmpty && double.tryParse(v) == null)
+                return 'invalid_number'.tr();
+              return null;
+            },
+          ),
+        ],
+        
         SizedBox(height: 16.h),
         _buildMarginDisplay(),
-        SizedBox(height: 16.h),
-        _buildSupplierDropdown(),
-        SizedBox(height: 16.h),
-        _buildExpirySelector(),
+        
+        if (_formConfig.showSupplier) ...[
+          SizedBox(height: 16.h),
+          _buildSupplierDropdown(),
+          SizedBox(height: 16.h),
+          _buildPurchaseSection(),
+        ],
+        
+        if (_formConfig.showExpiry) ...[
+          SizedBox(height: 16.h),
+          _buildExpirySelector(),
+        ],
       ],
     );
   }
@@ -869,6 +985,58 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPurchaseSection() {
+    final currentStock = int.tryParse(_totalStockController.text) ?? 0;
+    final hasNewStock = currentStock > _initialStock;
+
+    // Show purchase section if adding new product OR increasing stock of existing product
+    if (!hasNewStock && widget.product != null) return const SizedBox.shrink();
+
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(15.r),
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.receipt_long_outlined, color: AppColors.primary, size: 20.sp),
+              SizedBox(width: 8.w),
+              Text(
+                'accounting_entry'.tr(),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp, color: AppColors.primary),
+              ),
+              const Spacer(),
+              Switch(
+                value: _recordAsPurchase,
+                onChanged: (val) => setState(() => _recordAsPurchase = val),
+                activeColor: AppColors.primary,
+              ),
+            ],
+          ),
+          if (_recordAsPurchase) ...[
+            SizedBox(height: 10.h),
+            Text(
+              'record_as_purchase_desc'.tr(),
+              style: TextStyle(fontSize: 11.sp, color: Colors.grey[600]),
+            ),
+            SizedBox(height: 12.h),
+            _buildModernField(
+              _paidAmountController,
+              'paid_amount'.tr(),
+              Icons.payments_outlined,
+              type: TextInputType.number,
+            ),
+          ],
+        ],
       ),
     );
   }
