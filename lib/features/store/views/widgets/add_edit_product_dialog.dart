@@ -42,6 +42,9 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   final _wholesalePriceController = TextEditingController();
   final _reorderLevelController = TextEditingController(text: '10');
 
+  final _salePriceFocusNode = FocusNode();
+  final _wholesalePriceFocusNode = FocusNode();
+
   // Storage Controllers
   final _totalStockController = TextEditingController();
   final _mainStockController = TextEditingController();
@@ -58,7 +61,6 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   DateTime? _expiryDate;
   bool _isLoading = true;
   bool _isSaving = false;
-  bool _showAdvanced = false;
   bool _isSyncing = false;
   double _marginPercentage = 0.0;
   int _lastSuggestedSale = 0;
@@ -99,6 +101,8 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     _salePriceController.dispose();
     _wholesalePriceController.dispose();
     _reorderLevelController.dispose();
+    _salePriceFocusNode.dispose();
+    _wholesalePriceFocusNode.dispose();
     _nameController.dispose();
     _barcodeController.dispose();
     _conversionController.dispose();
@@ -193,8 +197,9 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       final costPerSub = cost / safeFactor;
       
       // Suggest prices if empty, zero, or if it matches the last suggestion we made
-      bool updateSale = _salePriceController.text.isEmpty || price == 0 || price == _lastSuggestedSale;
-      bool updateWholesale = _wholesalePriceController.text.isEmpty || wholesale == 0 || wholesale == _lastSuggestedWholesale;
+      // AND the user is not currently focused on the field (to allow manual clearing/editing)
+      bool updateSale = (_salePriceController.text.isEmpty || price == 0 || price == _lastSuggestedSale) && !_salePriceFocusNode.hasFocus;
+      bool updateWholesale = (_wholesalePriceController.text.isEmpty || wholesale == 0 || wholesale == _lastSuggestedWholesale) && !_wholesalePriceFocusNode.hasFocus;
 
       if (updateSale) {
         final suggestedSale = (costPerSub * (1 + _formConfig.autoSaleMargin)).round();
@@ -414,9 +419,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                   child: Column(
                     children: [
                       _buildTier1Section(),
-                      SizedBox(height: 20.h),
-                      _buildAdvancedToggle(),
-                      if (_showAdvanced) _buildTier2Section(),
+                      _buildTier2Section(),
                       SizedBox(height: 20.h),
                     ],
                   ),
@@ -470,6 +473,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 'selling_price'.tr(),
                 Icons.sell_outlined,
                 type: TextInputType.number,
+                focusNode: _salePriceFocusNode,
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'required_field'.tr();
                   if (double.tryParse(v) == null) return 'invalid_number'.tr();
@@ -480,7 +484,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
             ),
           ],
         ),
-        if (!_showAdvanced) ...[
+        if (!_formConfig.showUnits) ...[
           SizedBox(height: 12.h),
           _buildModernField(
             _totalStockController,
@@ -496,40 +500,6 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
           ),
         ],
       ],
-    );
-  }
-
-  Widget _buildAdvancedToggle() {
-    return InkWell(
-      onTap: () => setState(() => _showAdvanced = !_showAdvanced),
-      borderRadius: BorderRadius.circular(12.r),
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppColors.primary.withOpacity(0.1)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              _showAdvanced ? Icons.keyboard_arrow_up : Icons.tune,
-              size: 20.sp,
-              color: AppColors.primary,
-            ),
-            SizedBox(width: 10.w),
-            Text(
-              _showAdvanced ? 'hide_details'.tr() : 'more_details'.tr(),
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
-                fontSize: 13.sp,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -593,6 +563,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
             'wholesale_price'.tr(),
             Icons.groups_outlined,
             type: TextInputType.number,
+            focusNode: _wholesalePriceFocusNode,
             validator: (v) {
               if (v != null && v.isNotEmpty && double.tryParse(v) == null)
                 return 'invalid_number'.tr();
@@ -601,8 +572,10 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
           ),
         ],
         
-        SizedBox(height: 16.h),
-        _buildMarginDisplay(),
+        if (_formConfig.showPurchasePrice) ...[
+          SizedBox(height: 16.h),
+          _buildMarginDisplay(),
+        ],
         
         if (_formConfig.showSupplier) ...[
           SizedBox(height: 16.h),
@@ -717,6 +690,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     IconData? icon, {
     TextInputType type = TextInputType.text,
     String? hint,
+    FocusNode? focusNode,
     String? Function(String?)? validator,
   }) {
     return Column(
@@ -736,6 +710,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
         TextFormField(
           controller: controller,
           keyboardType: type,
+          focusNode: focusNode,
           validator: validator,
           decoration: InputDecoration(
             hintText: hint,

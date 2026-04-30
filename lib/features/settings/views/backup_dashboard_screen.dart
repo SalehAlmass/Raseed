@@ -9,6 +9,7 @@ import '../../../core/services/firebase_backup_service.dart';
 import '../../../core/services/local_backup_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/routes/routes.dart';
+import '../../../core/services/settings_service.dart';
 
 class BackupDashboardScreen extends StatefulWidget {
   const BackupDashboardScreen({super.key});
@@ -97,8 +98,10 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
                     _buildQuickActions(user),
                     SizedBox(height: 24.h),
                     _buildLocalBackupSection(),
-                    SizedBox(height: 24.h),
-                    _buildCloudBackupSection(user != null),
+                    if (sl<SettingsService>().settings.moduleConfig.enableCloudBackup) ...[
+                      SizedBox(height: 24.h),
+                      _buildCloudBackupSection(user != null),
+                    ],
                   ],
                 ),
               ),
@@ -199,16 +202,18 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
                 onTap: _handleLocalBackup,
               ),
             ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: _QuickActionCard(
-                icon: Icons.cloud_sync_outlined,
-                label: 'local_and_cloud'.tr(),
-                color: AppColors.primary,
-                enabled: isLoggedIn,
-                onTap: isLoggedIn ? _handleCreateAndUpload : null,
+            if (sl<SettingsService>().settings.moduleConfig.enableCloudBackup) ...[
+              SizedBox(width: 12.w),
+              Expanded(
+                child: _QuickActionCard(
+                  icon: Icons.cloud_sync_outlined,
+                  label: 'local_and_cloud'.tr(),
+                  color: AppColors.primary,
+                  enabled: isLoggedIn,
+                  onTap: isLoggedIn ? _handleCreateAndUpload : null,
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ],

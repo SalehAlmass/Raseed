@@ -8,6 +8,9 @@ import '../../../core/models/app_settings.dart';
 import '../../../core/routes/routes.dart';
 import '../../../core/services/subscription_service.dart';
 import '../../../core/services/auth_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import '../../../core/widgets/pin_auth_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -27,6 +30,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _vipThresholdController = TextEditingController();
   final TextEditingController _inactiveDaysController = TextEditingController();
   final TextEditingController _deadDaysController = TextEditingController();
+  final TextEditingController _storeNameController = TextEditingController();
+  final TextEditingController _storePhoneController = TextEditingController();
+  final TextEditingController _storeAddressController = TextEditingController();
+  final TextEditingController _storeTaxNumberController = TextEditingController();
 
   @override
   void initState() {
@@ -43,6 +50,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _vipThresholdController.text = settings.vipThreshold.toString();
       _inactiveDaysController.text = settings.inactiveDays.toString();
       _deadDaysController.text = settings.deadDays.toString();
+      _storeNameController.text = settings.storeProfile.storeName ?? '';
+      _storePhoneController.text = settings.storeProfile.phone ?? '';
+      _storeAddressController.text = settings.storeProfile.address ?? '';
+      _storeTaxNumberController.text = settings.storeProfile.taxNumber ?? '';
       _isLoading = false;
     });
   }
@@ -54,6 +65,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       vipThreshold: double.tryParse(_vipThresholdController.text) ?? _settings.vipThreshold,
       inactiveDays: int.tryParse(_inactiveDaysController.text) ?? _settings.inactiveDays,
       deadDays: int.tryParse(_deadDaysController.text) ?? _settings.deadDays,
+      storeProfile: _settings.storeProfile.copyWith(
+        storeName: _storeNameController.text,
+        phone: _storePhoneController.text,
+        address: _storeAddressController.text,
+        taxNumber: _storeTaxNumberController.text,
+      ),
     );
     await _settingsService.updateSettings(newSettings);
     if (mounted) {
@@ -110,6 +127,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               
                   SizedBox(height: 15.h),
                   _buildInventoryFieldsTile(context),
+                  SizedBox(height: 15.h),
+                  _buildModuleManagementTile(context),
               
                   SizedBox(height: 30.h),
                   _buildSectionHeader('crm_config'.tr()),
@@ -158,6 +177,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   SizedBox(height: 15.h),
                   _buildLogoutTile(context),
               
+                  SizedBox(height: 30.h),
+                  _buildSectionHeader('store_profile'.tr()),
+                  SizedBox(height: 15.h),
+                  _buildStoreProfileSection(),
+
+                  SizedBox(height: 30.h),
+                  _buildSectionHeader('staff_mode'.tr()),
+                  SizedBox(height: 15.h),
+                  _buildStaffModeSection(),
+
                   SizedBox(height: 30.h),
                   _buildSectionHeader('advanced'.tr()),
                   SwitchListTile(
@@ -227,6 +256,175 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildStoreProfileSection() {
+    return Column(
+      children: [
+        Center(
+          child: Stack(
+            children: [
+              Container(
+                width: 100.w,
+                height: 100.w,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.primary.withOpacity(0.2), width: 2),
+                  image: _settings.storeProfile.logoPath != null
+                      ? DecorationImage(
+                          image: FileImage(File(_settings.storeProfile.logoPath!)),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                ),
+                child: _settings.storeProfile.logoPath == null
+                    ? Icon(Icons.store_rounded, size: 40.sp, color: Colors.grey)
+                    : null,
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: GestureDetector(
+                  onTap: _pickLogo,
+                  child: Container(
+                    padding: EdgeInsets.all(8.w),
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.camera_alt_rounded, size: 16.sp, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 20.h),
+        _buildSettingTile(
+          label: 'store_name'.tr(),
+          controller: _storeNameController,
+          icon: Icons.business_rounded,
+        ),
+        SizedBox(height: 10.h),
+        _buildSettingTile(
+          label: 'phone_number'.tr(),
+          controller: _storePhoneController,
+          icon: Icons.phone_rounded,
+          keyboardType: TextInputType.phone,
+        ),
+        SizedBox(height: 10.h),
+        _buildSettingTile(
+          label: 'address'.tr(),
+          controller: _storeAddressController,
+          icon: Icons.location_on_rounded,
+        ),
+        SizedBox(height: 10.h),
+        _buildSettingTile(
+          label: 'tax_number'.tr(),
+          controller: _storeTaxNumberController,
+          icon: Icons.receipt_long_rounded,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStaffModeSection() {
+    return Container(
+      padding: EdgeInsets.all(15.w),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(15.r),
+      ),
+      child: Column(
+        children: [
+          SwitchListTile(
+            title: Text('staff_mode'.tr()),
+            subtitle: Text('staff_mode_desc'.tr()),
+            value: _settings.staffConfig.isEnabled,
+            onChanged: (val) async {
+              if (val) {
+                // When enabling, must set PIN
+                _showSetPinDialog();
+              } else {
+                // When disabling, verify existing PIN
+                final verified = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => PinAuthDialog(correctPin: _settings.staffConfig.pinCode ?? '0000'),
+                );
+                if (verified == true) {
+                  setState(() {
+                    _settings = _settings.copyWith(
+                      staffConfig: StaffConfig(isEnabled: false, pinCode: _settings.staffConfig.pinCode),
+                    );
+                  });
+                }
+              }
+            },
+            activeColor: AppColors.primary,
+            contentPadding: EdgeInsets.zero,
+          ),
+          if (_settings.staffConfig.isEnabled) ...[
+            const Divider(),
+            ListTile(
+              title: Text('change_pin'.tr()),
+              leading: const Icon(Icons.pin_rounded),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: _showSetPinDialog,
+              contentPadding: EdgeInsets.zero,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickLogo() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        _settings = _settings.copyWith(
+          storeProfile: _settings.storeProfile.copyWith(logoPath: image.path),
+        );
+      });
+    }
+  }
+
+  void _showSetPinDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('set_staff_pin'.tr()),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          maxLength: 4,
+          obscureText: true,
+          decoration: InputDecoration(
+            hintText: 'xxxx',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('cancel'.tr())),
+          ElevatedButton(
+            onPressed: () {
+              if (controller.text.length == 4) {
+                setState(() {
+                  _settings = _settings.copyWith(
+                    staffConfig: StaffConfig(isEnabled: true, pinCode: controller.text),
+                  );
+                });
+                Navigator.pop(context);
+              }
+            },
+            child: Text('save'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSettingTile({
     required String label,
     required TextEditingController controller,
@@ -266,21 +464,196 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildInventoryFieldsTile(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(15.r),
-      ),
-      child: ListTile(
-        leading: Icon(Icons.inventory_2_outlined, color: AppColors.primary),
-        title: Text('manage_inventory_fields'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600)),
-        subtitle: Text('manage_inventory_fields_desc'.tr(), style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
-        trailing: Icon(Icons.arrow_forward_ios, color: AppColors.textSecondary, size: 16.sp),
-        onTap: () => _showInventoryFieldsDialog(context),
+    return InkWell(
+      onTap: () => _showInventoryFieldsDialog(context),
+      borderRadius: BorderRadius.circular(15.r),
+      child: Container(
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(15.r),
+          border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.tune_rounded, color: AppColors.primary, size: 24.sp),
+            SizedBox(width: 15.w),
+            Expanded(
+              child: Text(
+                'manage_inventory_fields'.tr(),
+                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios, color: AppColors.primary, size: 16.sp),
+          ],
+        ),
       ),
     );
   }
 
+  Widget _buildModuleManagementTile(BuildContext context) {
+    return InkWell(
+      onTap: () => _showModuleManagementDialog(context),
+      borderRadius: BorderRadius.circular(15.r),
+      child: Container(
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(15.r),
+          border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.dashboard_customize_rounded, color: AppColors.primary, size: 24.sp),
+            SizedBox(width: 15.w),
+            Expanded(
+              child: Text(
+                'manage_modules_features'.tr(),
+                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios, color: AppColors.primary, size: 16.sp),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showModuleManagementDialog(BuildContext context) async {
+    final config = _settings.moduleConfig;
+    
+    bool showInventory = config.showInventory;
+    bool showCustomers = config.showCustomers;
+    bool showSuppliers = config.showSuppliers;
+    bool showSales = config.showSales;
+    bool showReports = config.showReports;
+    bool showAccounting = config.showAccounting;
+    bool enableCloudBackup = config.enableCloudBackup;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+              title: Text('manage_modules_features'.tr(), style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('select_template'.tr(), style: TextStyle(fontSize: 12.sp, color: Colors.grey, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 10.h),
+                    Wrap(
+                      spacing: 8.w,
+                      runSpacing: 8.h,
+                      children: [
+                        _templateBtn('template_retail', () => setState(() {
+                          showInventory = true; showCustomers = true; showSuppliers = true; showSales = true; showReports = true; showAccounting = true; enableCloudBackup = true;
+                        }), setState),
+                        _templateBtn('template_services', () => setState(() {
+                          showInventory = false; showCustomers = true; showSuppliers = false; showSales = true; showReports = true; showAccounting = true; enableCloudBackup = true;
+                        }), setState),
+                        _templateBtn('template_cash', () => setState(() {
+                          showInventory = true; showCustomers = false; showSuppliers = false; showSales = true; showReports = true; showAccounting = false; enableCloudBackup = true;
+                        }), setState),
+                        _templateBtn('template_debts', () => setState(() {
+                          showInventory = false; showCustomers = true; showSuppliers = false; showSales = false; showReports = false; showAccounting = false; enableCloudBackup = true;
+                        }), setState),
+                        _templateBtn('template_warehouse', () => setState(() {
+                          showInventory = true; showCustomers = false; showSuppliers = true; showSales = false; showReports = false; showAccounting = false; enableCloudBackup = true;
+                        }), setState),
+                      ],
+                    ),
+                    const Divider(),
+                    SwitchListTile(
+                      title: Text('show_inventory'.tr()),
+                      value: showInventory,
+                      onChanged: (val) => setState(() => showInventory = val),
+                      activeColor: AppColors.primary,
+                    ),
+                    SwitchListTile(
+                      title: Text('show_customers'.tr()),
+                      value: showCustomers,
+                      onChanged: (val) => setState(() => showCustomers = val),
+                      activeColor: AppColors.primary,
+                    ),
+                    SwitchListTile(
+                      title: Text('show_suppliers'.tr()),
+                      value: showSuppliers,
+                      onChanged: (val) => setState(() => showSuppliers = val),
+                      activeColor: AppColors.primary,
+                    ),
+                    SwitchListTile(
+                      title: Text('show_sales'.tr()),
+                      value: showSales,
+                      onChanged: (val) => setState(() => showSales = val),
+                      activeColor: AppColors.primary,
+                    ),
+                    SwitchListTile(
+                      title: Text('show_reports'.tr()),
+                      value: showReports,
+                      onChanged: (val) => setState(() => showReports = val),
+                      activeColor: AppColors.primary,
+                    ),
+                    SwitchListTile(
+                      title: Text('show_accounting'.tr()),
+                      value: showAccounting,
+                      onChanged: (val) => setState(() => showAccounting = val),
+                      activeColor: AppColors.primary,
+                    ),
+                    const Divider(),
+                    SwitchListTile(
+                      title: Text('enable_cloud_backup'.tr()),
+                      subtitle: Text(enableCloudBackup ? 'cloud_mode'.tr() : 'local_mode'.tr()),
+                      value: enableCloudBackup,
+                      onChanged: (val) => setState(() => enableCloudBackup = val),
+                      activeColor: AppColors.primary,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('cancel'.tr(), style: const TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final newConfig = ModuleConfig(
+                      showInventory: showInventory,
+                      showCustomers: showCustomers,
+                      showSuppliers: showSuppliers,
+                      showSales: showSales,
+                      showReports: showReports,
+                      showAccounting: showAccounting,
+                      enableCloudBackup: enableCloudBackup,
+                    );
+                    this.setState(() {
+                      _settings = _settings.copyWith(moduleConfig: newConfig);
+                    });
+                    _settingsService.updateSettings(_settings);
+                    Navigator.pop(context);
+                  },
+                  child: Text('save'.tr()),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _templateBtn(String label, VoidCallback onSelected, StateSetter setState) {
+    return ActionChip(
+      label: Text(label.tr(), style: TextStyle(fontSize: 11.sp)),
+      onPressed: onSelected,
+      backgroundColor: AppColors.primary.withOpacity(0.1),
+      labelStyle: const TextStyle(color: AppColors.primary),
+      padding: EdgeInsets.zero,
+    );
+  }
   Future<void> _showInventoryFieldsDialog(BuildContext context) async {
     final config = _settings.productFormConfig;
     

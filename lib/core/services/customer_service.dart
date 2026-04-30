@@ -101,4 +101,15 @@ class CustomerService {
     final db = await _dbHelper.database;
     return await db.delete('customers', where: 'id = ?', whereArgs: [id]);
   }
+
+  Future<List<Customer>> getOverDebtCustomers(double maxDebt) async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'customers',
+      where: 'total_debt >= ?',
+      whereArgs: [maxDebt],
+      orderBy: 'total_debt DESC',
+    );
+    return List.generate(maps.length, (i) => Customer.fromMap(maps[i]));
+  }
 }

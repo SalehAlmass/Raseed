@@ -11,8 +11,20 @@ import '../../../core/models/customer.dart';
 import '../../../core/models/app_transaction.dart';
 import '../../../core/utils/currency_helper.dart';
 import 'package:intl/intl.dart';
+import '../../../core/services/settings_service.dart';
+import '../../../core/di/injection_container.dart';
+import '../../../core/models/app_settings.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class ExportService {
+  StoreProfile get _store => sl<SettingsService>().settings.storeProfile;
+
+  pw.MemoryImage? _getLogo() {
+    if (_store.logoPath != null && File(_store.logoPath!).existsSync()) {
+      return pw.MemoryImage(File(_store.logoPath!).readAsBytesSync());
+    }
+    return null;
+  }
   Future<void> exportToExcel(DashboardReport report, ReportFilter filter) async {
     final excel = Excel.createExcel();
     final sheet = excel['Report'];
@@ -217,6 +229,7 @@ class ExportService {
   }
 
   pw.Widget _buildCustomerPdfHeader(Customer customer) {
+    final logo = _getLogo();
     return pw.Header(
       level: 0,
       child: pw.Row(
@@ -226,20 +239,26 @@ class ExportService {
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Text(
-                'كشف حساب عميل',
+                'statement_of_account'.tr(),
                 style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
               ),
-              pw.Text('اسم العميل: ${customer.name}'),
-              pw.Text('رقم الهاتف: ${customer.phone}'),
+              pw.Text('${'customer_name'.tr()}: ${customer.name}'),
+              if (customer.phone.isNotEmpty) pw.Text('${'phone_number'.tr()}: ${customer.phone}'),
             ],
           ),
           pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
+              if (logo != null)
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 5),
+                  child: pw.Image(logo, width: 40, height: 40),
+                ),
               pw.Text(
-                'تطبيق رصيد RASEED',
-                style: pw.TextStyle(fontSize: 14, color: PdfColors.grey),
+                _store.storeName ?? 'app_name'.tr(),
+                style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
               ),
+              if (_store.phone != null) pw.Text(_store.phone!, style: const pw.TextStyle(fontSize: 8)),
               pw.Text(DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())),
             ],
           ),
@@ -249,6 +268,7 @@ class ExportService {
   }
 
   pw.Widget _buildPdfHeader(ReportFilter filter) {
+    final logo = _getLogo();
     return pw.Header(
       level: 0,
       child: pw.Row(
@@ -264,7 +284,12 @@ class ExportService {
           pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
-              pw.Text('RASEED App', style: pw.TextStyle(fontSize: 14, color: PdfColors.grey)),
+              if (logo != null)
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 5),
+                  child: pw.Image(logo, width: 40, height: 40),
+                ),
+              pw.Text(_store.storeName ?? 'RASEED App', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
               pw.Text(DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())),
             ],
           ),

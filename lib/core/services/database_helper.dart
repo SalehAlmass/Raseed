@@ -37,7 +37,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 23,
+      version: 25,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -98,7 +98,10 @@ class DatabaseHelper {
         dead_days INTEGER DEFAULT 90,
         enable_whatsapp INTEGER DEFAULT 1,
         enable_pdf_receipt INTEGER DEFAULT 1,
-        product_form_config TEXT
+        product_form_config TEXT,
+        module_config TEXT,
+        store_profile TEXT,
+        staff_config TEXT
       )
     ''');
 
@@ -570,9 +573,30 @@ class DatabaseHelper {
 
     if (oldVersion < 23) {
       try {
-        await db.execute("ALTER TABLE settings ADD COLUMN product_form_config TEXT");
+        await db.execute('ALTER TABLE settings ADD COLUMN product_form_config TEXT');
       } catch (e) {
-        if (!e.toString().contains('duplicate column name')) rethrow;
+        debugPrint("product_form_config already exists");
+      }
+    }
+
+    if (oldVersion < 24) {
+      try {
+        await db.execute('ALTER TABLE settings ADD COLUMN module_config TEXT');
+      } catch (e) {
+        debugPrint("module_config already exists");
+      }
+    }
+
+    if (oldVersion < 25) {
+      try {
+        await db.execute('ALTER TABLE settings ADD COLUMN store_profile TEXT');
+      } catch (e) {
+        debugPrint("store_profile already exists");
+      }
+      try {
+        await db.execute('ALTER TABLE settings ADD COLUMN staff_config TEXT');
+      } catch (e) {
+        debugPrint("staff_config already exists");
       }
     }
   }

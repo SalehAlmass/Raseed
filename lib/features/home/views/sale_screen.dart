@@ -15,6 +15,9 @@ import '../../../core/services/product_service.dart';
 import '../../../core/services/transaction_service.dart';
 import '../../../core/services/receipt_service.dart';
 import '../../../core/services/settings_service.dart';
+import '../../../core/services/printer_service.dart';
+import 'package:blue_thermal_printer/blue_thermal_printer.dart';
+import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/utils/currency_helper.dart';
 import '../../../core/widgets/barcode_scanner_view.dart';
@@ -277,7 +280,30 @@ class _SaleScreenState extends State<SaleScreen> {
         }
 
         if (printReceipt == true) {
-          await sl<ReceiptService>().printReceipt(transaction, customer: _selectedCustomer);
+          // Ask user which printer to use
+          final bool? useThermal = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text('print_option'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+              content: Text('choose_printer_type'.tr()),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false), // PDF
+                  child: Text('PDF (A4/80mm)'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true), // Thermal
+                  child: Text('Thermal (Bluetooth)'),
+                ),
+              ],
+            ),
+          );
+
+          if (useThermal == true) {
+            await _showBluetoothPrinterDialog(transaction);
+          } else if (useThermal == false) {
+            await sl<ReceiptService>().printReceipt(transaction, customer: _selectedCustomer);
+          }
         }
 
         if (mounted) {
@@ -310,6 +336,51 @@ class _SaleScreenState extends State<SaleScreen> {
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _showBluetoothPrinterDialog(AppTransaction transaction) async {
+    final printerService = sl<PrinterService>();
+    List<BluetoothDevice> devices = await printerService.getDevices();
+
+    if (mounted) {
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('select_printer'.tr()),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: devices.isEmpty
+                ? Text('no_bluetooth_devices'.tr())
+                : ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: devices.length,
+                    itemBuilder: (context, index) {
+                      final d = devices[index];
+                      return ListTile(
+                        title: Text(d.name ?? 'Unknown'),
+                        subtitle: Text(d.address ?? ''),
+                        onTap: () async {
+                          Navigator.pop(context);
+                          await printerService.printReceipt(
+                            device: d,
+                            transaction: transaction,
+                            customer: _selectedCustomer,
+                            paperSize: PaperSize.mm58, // Default to 58mm
+                          );
+                        },
+                      );
+                    },
+                  ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('cancel'.tr()),
+            ),
+          ],
+        ),
+      );
     }
   }
 

@@ -58,6 +58,126 @@ class ProductFormConfig {
   }
 }
 
+class ModuleConfig {
+  final bool showInventory;
+  final bool showCustomers;
+  final bool showSuppliers;
+  final bool showSales;
+  final bool showReports;
+  final bool showAccounting;
+  final bool enableCloudBackup;
+
+  ModuleConfig({
+    this.showInventory = true,
+    this.showCustomers = true,
+    this.showSuppliers = true,
+    this.showSales = true,
+    this.showReports = true,
+    this.showAccounting = true,
+    this.enableCloudBackup = true,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'showInventory': showInventory,
+      'showCustomers': showCustomers,
+      'showSuppliers': showSuppliers,
+      'showSales': showSales,
+      'showReports': showReports,
+      'showAccounting': showAccounting,
+      'enableCloudBackup': enableCloudBackup,
+    };
+  }
+
+  factory ModuleConfig.fromMap(Map<String, dynamic> map) {
+    return ModuleConfig(
+      showInventory: map['showInventory'] ?? true,
+      showCustomers: map['showCustomers'] ?? true,
+      showSuppliers: map['showSuppliers'] ?? true,
+      showSales: map['showSales'] ?? true,
+      showReports: map['showReports'] ?? true,
+      showAccounting: map['showAccounting'] ?? true,
+      enableCloudBackup: map['enableCloudBackup'] ?? true,
+    );
+  }
+}
+
+class StoreProfile {
+  final String? storeName;
+  final String? phone;
+  final String? address;
+  final String? taxNumber;
+  final String? logoPath;
+
+  StoreProfile({
+    this.storeName,
+    this.phone,
+    this.address,
+    this.taxNumber,
+    this.logoPath,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'storeName': storeName,
+      'phone': phone,
+      'address': address,
+      'taxNumber': taxNumber,
+      'logoPath': logoPath,
+    };
+  }
+
+  factory StoreProfile.fromMap(Map<String, dynamic> map) {
+    return StoreProfile(
+      storeName: map['storeName'],
+      phone: map['phone'],
+      address: map['address'],
+      taxNumber: map['taxNumber'],
+      logoPath: map['logoPath'],
+    );
+  }
+
+  StoreProfile copyWith({
+    String? storeName,
+    String? phone,
+    String? address,
+    String? taxNumber,
+    String? logoPath,
+  }) {
+    return StoreProfile(
+      storeName: storeName ?? this.storeName,
+      phone: phone ?? this.phone,
+      address: address ?? this.address,
+      taxNumber: taxNumber ?? this.taxNumber,
+      logoPath: logoPath ?? this.logoPath,
+    );
+  }
+}
+
+class StaffConfig {
+  final bool isEnabled;
+  final String? pinCode;
+
+  StaffConfig({
+    this.isEnabled = false,
+    this.pinCode,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'isEnabled': isEnabled,
+      'pinCode': pinCode,
+    };
+  }
+
+  factory StaffConfig.fromMap(Map<String, dynamic> map) {
+    return StaffConfig(
+      isEnabled: map['isEnabled'] ?? false,
+      pinCode: map['pinCode'],
+    );
+  }
+}
+
 class AppSettings {
   final double maxDebt;
   final int reminderDays;
@@ -71,6 +191,9 @@ class AppSettings {
   final bool enableWhatsapp;
   final bool enablePdfReceipt;
   final ProductFormConfig productFormConfig;
+  final ModuleConfig moduleConfig;
+  final StoreProfile storeProfile;
+  final StaffConfig staffConfig;
 
   AppSettings({
     this.maxDebt = 1000.0,
@@ -85,7 +208,13 @@ class AppSettings {
     this.enableWhatsapp = true,
     this.enablePdfReceipt = true,
     ProductFormConfig? productFormConfig,
-  }) : productFormConfig = productFormConfig ?? ProductFormConfig();
+    ModuleConfig? moduleConfig,
+    StoreProfile? storeProfile,
+    StaffConfig? staffConfig,
+  }) : productFormConfig = productFormConfig ?? ProductFormConfig(),
+       moduleConfig = moduleConfig ?? ModuleConfig(),
+       storeProfile = storeProfile ?? StoreProfile(),
+       staffConfig = staffConfig ?? StaffConfig();
 
   Map<String, dynamic> toMap() {
     return {
@@ -101,6 +230,9 @@ class AppSettings {
       'enable_whatsapp': enableWhatsapp ? 1 : 0,
       'enable_pdf_receipt': enablePdfReceipt ? 1 : 0,
       'product_form_config': jsonEncode(productFormConfig.toMap()),
+      'module_config': jsonEncode(moduleConfig.toMap()),
+      'store_profile': jsonEncode(storeProfile.toMap()),
+      'staff_config': jsonEncode(staffConfig.toMap()),
     };
   }
 
@@ -122,6 +254,15 @@ class AppSettings {
       productFormConfig: map['product_form_config'] != null 
           ? ProductFormConfig.fromMap(jsonDecode(map['product_form_config']))
           : ProductFormConfig(),
+      moduleConfig: map['module_config'] != null 
+          ? ModuleConfig.fromMap(jsonDecode(map['module_config']))
+          : ModuleConfig(),
+      storeProfile: map['store_profile'] != null 
+          ? StoreProfile.fromMap(jsonDecode(map['store_profile']))
+          : StoreProfile(),
+      staffConfig: map['staff_config'] != null 
+          ? StaffConfig.fromMap(jsonDecode(map['staff_config']))
+          : StaffConfig(),
     );
   }
 
@@ -138,6 +279,9 @@ class AppSettings {
     bool? enableWhatsapp,
     bool? enablePdfReceipt,
     ProductFormConfig? productFormConfig,
+    ModuleConfig? moduleConfig,
+    StoreProfile? storeProfile,
+    StaffConfig? staffConfig,
   }) {
     return AppSettings(
       maxDebt: maxDebt ?? this.maxDebt,
@@ -152,6 +296,9 @@ class AppSettings {
       enableWhatsapp: enableWhatsapp ?? this.enableWhatsapp,
       enablePdfReceipt: enablePdfReceipt ?? this.enablePdfReceipt,
       productFormConfig: productFormConfig ?? this.productFormConfig,
+      moduleConfig: moduleConfig ?? this.moduleConfig,
+      storeProfile: storeProfile ?? this.storeProfile,
+      staffConfig: staffConfig ?? this.staffConfig,
     );
   }
 }

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../theme/colors.dart';
+import '../services/settings_service.dart';
+import '../di/injection_container.dart';
+import 'pin_auth_dialog.dart';
 
 class AppBottomNavigationBar extends StatelessWidget {
   final int activeIndex;
@@ -15,22 +18,17 @@ class AppBottomNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 5 Tabs: Home, Customers, Sale, Reports, Store
-    final List<IconData> icons = [
-      Icons.home_rounded,
-      Icons.people_rounded,
-      Icons.add_circle_rounded, // Center highlighted button
-      Icons.bar_chart_rounded,
-      Icons.store_rounded,
+    final config = sl<SettingsService>().settings.moduleConfig;
+
+    final List<_NavItem> allItems = [
+      _NavItem(0, Icons.home_rounded, 'الرئيسية', true),
+      _NavItem(1, Icons.people_rounded, 'customers'.tr(), config.showCustomers),
+      _NavItem(2, Icons.add_circle_rounded, 'new_sale'.tr(), config.showSales),
+      _NavItem(3, Icons.bar_chart_rounded, 'reports'.tr(), config.showReports),
+      _NavItem(4, Icons.store_rounded, 'store'.tr(), config.showInventory),
     ];
 
-    final List<String> labels = [
-      'الرئيسية',
-      'customers'.tr(),
-      'new_sale'.tr(),
-      'reports'.tr(),
-      'store'.tr(),
-    ];
+    final visibleItems = allItems.where((i) => i.enabled).toList();
 
     return Container(
       padding: EdgeInsets.only(bottom: 25.h, left: 16.w, right: 16.w),
@@ -50,21 +48,35 @@ class AppBottomNavigationBar extends StatelessWidget {
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: List.generate(icons.length, (index) {
-            final isActive = activeIndex == index;
-            final isCenter = index == 2;
+          children: visibleItems.map((item) {
+            final isActive = activeIndex == item.index;
+            final isCenter = item.index == 2;
 
             if (isCenter) {
-              return _buildCenterAction(icons[index], onTap, index);
+              return _buildCenterAction(item.icon, onTap, item.index);
             }
 
             return _buildTabItem(
-              icon: icons[index],
-              label: labels[index],
+              icon: item.icon,
+              label: item.label,
               isActive: isActive,
-              onTap: () => onTap(index),
+              onTap: () async {
+                final settings = sl<SettingsService>().settings;
+                // Restricted indices: 3 (Reports), 4 (Store)
+                if (settings.staffConfig.isEnabled && (item.index == 3 || item.index == 4)) {
+                  final verified = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => PinAuthDialog(correctPin: settings.staffConfig.pinCode ?? '0000'),
+                  );
+                  if (verified == true) {
+                    onTap(item.index);
+                  }
+                } else {
+                  onTap(item.index);
+                }
+              },
             );
-          }),
+          }).toList(),
         ),
       ),
     );
@@ -141,4 +153,12 @@ class AppBottomNavigationBar extends StatelessWidget {
       ),
     );
   }
+}
+
+class _NavItem {
+  final int index;
+  final IconData icon;
+  final String label;
+  final bool enabled;
+  _NavItem(this.index, this.icon, this.label, this.enabled);
 }

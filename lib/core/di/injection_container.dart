@@ -25,6 +25,7 @@ import '../services/accounting_service.dart';
 import '../../features/reports/services/report_service.dart';
 import '../../features/reports/services/export_service.dart';
 import '../../features/reports/bloc/reports_bloc.dart';
+import '../services/printer_service.dart';
 
 final sl = GetIt.instance;
 
@@ -93,6 +94,7 @@ Future<void> init() async {
   sl.registerLazySingleton<CategoryService>(() => CategoryService());
   sl.registerLazySingleton<UnitService>(() => UnitService());
   sl.registerLazySingleton<ReceiptService>(() => ReceiptService());
+  sl.registerLazySingleton<PrinterService>(() => PrinterService());
 
   //! Reports
   sl.registerLazySingleton(() => ReportService());

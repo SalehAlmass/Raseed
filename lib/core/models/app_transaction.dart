@@ -66,6 +66,7 @@ class AppTransaction {
     DateTime? date,
     String? note,
     List<TransactionItem>? items,
+    bool? isVoid,
   }) {
     return AppTransaction(
       id: id ?? this.id,
@@ -77,6 +78,7 @@ class AppTransaction {
       date: date ?? this.date,
       note: note ?? this.note,
       items: items ?? this.items,
+      isVoid: isVoid ?? this.isVoid,
     );
   }
 }

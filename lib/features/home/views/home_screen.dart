@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:rseed/core/services/settings_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/di/injection_container.dart';
 import '../../../core/services/transaction_service.dart';
@@ -11,6 +10,9 @@ import '../../../core/services/database_helper.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/models/app_transaction.dart';
 import '../../../core/models/customer.dart';
+import '../../../core/models/app_settings.dart';
+import '../../../core/services/settings_service.dart';
+import '../../../core/widgets/pin_auth_dialog.dart';
 import '../../../core/models/product.dart';
 import '../../../core/services/product_service.dart';
 import '../../../core/services/subscription_service.dart';
@@ -20,6 +22,7 @@ import '../../../core/widgets/barcode_scanner_view.dart';
 import '../../../core/utils/currency_helper.dart';
 import '../../../core/routes/routes.dart';
 import '../../../core/widgets/app_bottom_navigation_bar.dart';
+import '../../marketing/views/whatsapp_marketing_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,6 +36,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, double> _summary = {'daily_sales': 0.0, 'total_debt': 0.0};
   List<AppTransaction> _recentTransactions = [];
   List<Product> _nearExpiryProducts = [];
+  List<Product> _lowStockProducts = [];
+  List<Customer> _overDebtCustomers = [];
   bool _isLoading = true;
   int _bottomNavIndex = 0;
 
@@ -49,14 +54,21 @@ class _HomeScreenState extends State<HomeScreen> {
     final summary = await _transactionService.getDashboardSummary();
     final recent = await _transactionService.getAllTransactions(limit: 5);
     final nearExpiry = await sl<ProductService>().getNearExpiryProducts();
+    final lowStock = await sl<ProductService>().getLowStockProducts();
+    final settings = sl<SettingsService>().settings;
+    final overDebt = await sl<CustomerService>().getOverDebtCustomers(settings.maxDebt);
 
     setState(() {
       _summary = summary;
       _recentTransactions = recent;
       _nearExpiryProducts = nearExpiry;
+      _lowStockProducts = lowStock;
+      _overDebtCustomers = overDebt;
       _isLoading = false;
     });
   }
+
+  ModuleConfig get _moduleConfig => sl<SettingsService>().settings.moduleConfig;
 
   @override
   Widget build(BuildContext context) {
@@ -76,26 +88,35 @@ class _HomeScreenState extends State<HomeScreen> {
           backgroundImage: AssetImage('assets/images/logo.png'),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.business_rounded),
-            onPressed: () => Navigator.pushNamed(
-              context,
-              Routes.suppliers,
-            ).then((_) => _loadData()),
-            tooltip: 'suppliers'.tr(),
-          ),
+          if (_moduleConfig.showSuppliers)
+            IconButton(
+              icon: const Icon(Icons.business_rounded),
+              onPressed: () => Navigator.pushNamed(
+                context,
+                Routes.suppliers,
+              ).then((_) => _loadData()),
+              tooltip: 'suppliers'.tr(),
+            ),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
-            onPressed: () => Navigator.pushNamed(
-              context,
-              '/settings',
-            ).then((_) => _loadData()),
+            onPressed: () async {
+              final settings = sl<SettingsService>().settings;
+              if (settings.staffConfig.isEnabled) {
+                final verified = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => PinAuthDialog(correctPin: settings.staffConfig.pinCode ?? '0000'),
+                );
+                if (verified != true) return;
+              }
+              Navigator.pushNamed(context, '/settings').then((_) => _loadData());
+            },
           ),
-          IconButton(
-            icon: const Icon(Icons.store_mall_directory),
-            onPressed: () =>
-                Navigator.pushNamed(context, '/store').then((_) => _loadData()),
-          ),
+          if (_moduleConfig.showInventory)
+            IconButton(
+              icon: const Icon(Icons.store_mall_directory),
+              onPressed: () =>
+                  Navigator.pushNamed(context, '/store').then((_) => _loadData()),
+            ),
           IconButton(
             icon: const Icon(Icons.delete_forever),
             onPressed: () => _showResetDataConfirmation(context),
@@ -121,10 +142,11 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildAlertsSection(),
+              if (_moduleConfig.showInventory) _buildAlertsSection(),
               _buildSummaryCards(),
               SizedBox(height: 20.h),
-              _buildAccountingSection(),
+              if (_moduleConfig.showAccounting) _buildAccountingSection(),
+              _buildMarketingSection(),
               SizedBox(height: 30.h),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -163,56 +185,188 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildAlertsSection() {
-    if (_nearExpiryProducts.isEmpty) return const SizedBox.shrink();
+    List<Widget> alerts = [];
 
+    // 1. Near Expiry Alert
+    if (_nearExpiryProducts.isNotEmpty) {
+      alerts.add(_buildAlertItem(
+        title: 'near_expiry_alert'.tr(),
+        desc: 'near_expiry_desc'.tr(args: [_nearExpiryProducts.length.toString()]),
+        icon: Icons.history_toggle_off_rounded,
+        color: AppColors.error,
+        onTap: () => _showProductsSheet('near_expiry_products'.tr(), _nearExpiryProducts),
+      ));
+    }
+
+    // 2. Low Stock Alert
+    if (_lowStockProducts.isNotEmpty) {
+      alerts.add(_buildAlertItem(
+        title: 'low_stock_alert'.tr(),
+        desc: 'low_stock_desc'.tr(args: [_lowStockProducts.length.toString()]),
+        icon: Icons.inventory_2_outlined,
+        color: Colors.orange,
+        onTap: () => _showProductsSheet('low_stock_products'.tr(), _lowStockProducts),
+      ));
+    }
+
+    // 3. Over Debt Alert
+    if (_overDebtCustomers.isNotEmpty) {
+      alerts.add(_buildAlertItem(
+        title: 'over_debt_alert'.tr(),
+        desc: 'over_debt_desc'.tr(args: [_overDebtCustomers.length.toString()]),
+        icon: Icons.person_pin_circle_outlined,
+        color: AppColors.primary,
+        onTap: () => _showOverDebtCustomersSheet(),
+      ));
+    }
+
+    if (alerts.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      children: alerts,
+    );
+  }
+
+  Widget _buildAlertItem({
+    required String title,
+    required String desc,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     return Container(
-      margin: EdgeInsets.only(bottom: 20.h),
+      margin: EdgeInsets.only(bottom: 12.h),
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.05),
+        color: color.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.error.withOpacity(0.1)),
+        border: Border.all(color: color.withOpacity(0.1)),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.warning_amber_rounded,
-            color: AppColors.error,
-            size: 24.sp,
-          ),
+          Icon(icon, color: color, size: 24.sp),
           SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'near_expiry_alert'.tr(),
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.error,
-                    fontSize: 14.sp,
-                  ),
+                  title,
+                  style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14.sp),
                 ),
                 Text(
-                  'near_expiry_desc'.tr(
-                    args: [_nearExpiryProducts.length.toString()],
-                  ),
-                  style: TextStyle(
-                    color: AppColors.error.withOpacity(0.8),
-                    fontSize: 12.sp,
-                  ),
+                  desc,
+                  style: TextStyle(color: color.withOpacity(0.8), fontSize: 12.sp),
                 ),
               ],
             ),
           ),
           TextButton(
-            onPressed: () {
-              _showProductsSheet(
-                'near_expiry_products'.tr(),
-                _nearExpiryProducts,
-              );
-            },
-            child: Text('view'.tr(), style: TextStyle(color: AppColors.error)),
+            onPressed: onTap,
+            child: Text('view'.tr(), style: TextStyle(color: color)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showOverDebtCustomersSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.all(16.w),
+              child: Text('over_debt_customers'.tr(), style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold)),
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _overDebtCustomers.length,
+                itemBuilder: (context, index) {
+                  final c = _overDebtCustomers[index];
+                  return ListTile(
+                    leading: CircleAvatar(child: Text(c.name[0])),
+                    title: Text(c.name),
+                    subtitle: Text(c.phone),
+                    trailing: Text(
+                      '${c.totalDebt.toStringAsFixed(0)} ${CurrencyHelper.getSymbol('YER')}',
+                      style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.bold),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMarketingSection() {
+    return Container(
+      margin: EdgeInsets.only(top: 20.h),
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.green.shade700, Colors.green.shade500],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(10.w),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.rocket_launch, color: Colors.white, size: 28.sp),
+          ),
+          SizedBox(width: 16.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'marketing'.tr(),
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16.sp),
+                ),
+                Text(
+                  'marketing_desc'.tr(),
+                  style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 11.sp),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const WhatsappMarketingScreen()),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.green.shade700,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+            ),
+            child: Text('open'.tr()),
           ),
         ],
       ),
@@ -348,35 +502,39 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSummaryCards() {
     return Row(
       children: [
-        Expanded(
-          child: FadeInDown(
-            duration: const Duration(milliseconds: 600),
-            child: _SummaryCard(
-              title: 'daily_sales'.tr(),
-              amounts: {'YER': _summary['daily_sales_yer'] ?? 0.0},
-              icon: Icons.trending_up_rounded,
-              color: AppColors.success,
-              onTap: () {
-                _showDailySalesSheet();
-              },
+        if (_moduleConfig.showSales) ...[
+          Expanded(
+            child: FadeInDown(
+              duration: const Duration(milliseconds: 600),
+              child: _SummaryCard(
+                title: 'daily_sales'.tr(),
+                amounts: {'YER': _summary['daily_sales_yer'] ?? 0.0},
+                icon: Icons.trending_up_rounded,
+                color: AppColors.success,
+                onTap: () {
+                  _showDailySalesSheet();
+                },
+              ),
             ),
           ),
-        ),
-        SizedBox(width: 12.w),
-        Expanded(
-          child: FadeInUp(
-            duration: const Duration(milliseconds: 600),
-            child: _SummaryCard(
-              title: 'total_debt'.tr(),
-              amounts: {'YER': _summary['total_debt_yer'] ?? 0.0},
-              icon: Icons.account_balance_wallet_rounded,
-              color: AppColors.error,
-              onTap: () {
-                _showDebtTransactionsSheet();
-              },
+          if (_moduleConfig.showCustomers) SizedBox(width: 12.w),
+        ],
+        if (_moduleConfig.showCustomers) ...[
+          Expanded(
+            child: FadeInUp(
+              duration: const Duration(milliseconds: 600),
+              child: _SummaryCard(
+                title: 'total_debt'.tr(),
+                amounts: {'YER': _summary['total_debt_yer'] ?? 0.0},
+                icon: Icons.account_balance_wallet_rounded,
+                color: AppColors.error,
+                onTap: () {
+                  _showDebtTransactionsSheet();
+                },
+              ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }

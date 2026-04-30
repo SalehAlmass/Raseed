@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -5,12 +6,23 @@ import 'package:printing/printing.dart';
 import '../models/app_transaction.dart';
 import '../models/customer.dart';
 import '../utils/currency_helper.dart';
+import '../services/settings_service.dart';
+import '../di/injection_container.dart';
+import '../models/app_settings.dart';
 
 class ReceiptService {
   Future<void> printReceipt(AppTransaction transaction, {Customer? customer}) async {
+    final settings = sl<SettingsService>().settings;
+    final store = settings.storeProfile;
+
     final pdf = pw.Document();
     final font = await PdfGoogleFonts.cairoRegular();
     final boldFont = await PdfGoogleFonts.cairoBold();
+
+    pw.MemoryImage? logoImage;
+    if (store.logoPath != null && File(store.logoPath!).existsSync()) {
+      logoImage = pw.MemoryImage(File(store.logoPath!).readAsBytesSync());
+    }
 
     // Receipt Size: 80mm width (approx 226 points)
     const pageWidth = 80 * PdfPageFormat.mm;
@@ -25,9 +37,17 @@ class ReceiptService {
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
               // Header
-              pw.Text('RASEED App', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-              pw.Text('تطبيق رصيد لإدارة المخزون', style: const pw.TextStyle(fontSize: 10)),
-              pw.SizedBox(height: 10),
+              if (logoImage != null)
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 5),
+                  child: pw.Image(logoImage, width: 40, height: 40),
+                ),
+              pw.Text(store.storeName ?? 'app_name'.tr(), style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+              if (store.phone != null) pw.Text(store.phone!, style: const pw.TextStyle(fontSize: 8)),
+              if (store.address != null) pw.Text(store.address!, style: const pw.TextStyle(fontSize: 8)),
+              if (store.taxNumber != null) pw.Text('${'tax_number'.tr()}: ${store.taxNumber}', style: const pw.TextStyle(fontSize: 8)),
+              
+              pw.SizedBox(height: 5),
               pw.Divider(thickness: 1, borderStyle: pw.BorderStyle.dashed),
               
               // Transaction Info

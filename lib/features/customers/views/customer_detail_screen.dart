@@ -290,14 +290,35 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      isSale
-                          ? 'sale'.tr()
-                          : (isRefund ? 'refund'.tr() : 'payment'.tr()),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15.sp,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          tx.type.name.tr(),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14.sp,
+                            decoration: tx.isVoid ? TextDecoration.lineThrough : null,
+                          ),
+                        ),
+                        if (tx.isVoid) ...[
+                          SizedBox(width: 8.w),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                            decoration: BoxDecoration(
+                              color: AppColors.error.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4.r),
+                            ),
+                            child: Text(
+                              'voided'.tr(),
+                              style: TextStyle(
+                                color: AppColors.error,
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                     Text(
                       DateFormat('MMM dd, yyyy').format(tx.date),
@@ -311,7 +332,8 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16.sp,
-                  color: isRefund ? AppColors.error : AppColors.success,
+                  color: tx.isVoid ? Colors.grey : (isRefund ? AppColors.error : AppColors.success),
+                  decoration: tx.isVoid ? TextDecoration.lineThrough : null,
                 ),
               ),
             ],
