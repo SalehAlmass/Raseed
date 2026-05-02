@@ -794,27 +794,63 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         SizedBox(height: 15.h),
-        Row(
-          children: [
-            Expanded(
-              child: _QuickActionCard(
-                label: 'daily_journal'.tr(),
-                icon: Icons.assignment_rounded,
-                color: Colors.blue,
-                onTap: () => Navigator.pushNamed(context, Routes.journal),
+        InkWell(
+          onTap: () => Navigator.pushNamed(context, Routes.accountingHub),
+          borderRadius: BorderRadius.circular(20.r),
+          child: Container(
+            padding: EdgeInsets.all(20.w),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue.shade700, Colors.blue.shade500],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: BorderRadius.circular(20.r),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.blue.withOpacity(0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: _QuickActionCard(
-                label: 'chart_of_accounts'.tr(),
-                icon: Icons.account_tree_rounded,
-                color: Colors.orange,
-                onTap: () =>
-                    Navigator.pushNamed(context, Routes.chartOfAccounts),
-              ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.account_balance_rounded, color: Colors.white, size: 28.sp),
+                ),
+                SizedBox(width: 20.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'accounting_hub'.tr(),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18.sp,
+                        ),
+                      ),
+                      Text(
+                        'manage_business_finances'.tr(),
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 12.sp,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.arrow_forward_ios_rounded, color: Colors.white.withOpacity(0.7), size: 18.sp),
+              ],
             ),
-          ],
+          ),
         ),
       ],
     );

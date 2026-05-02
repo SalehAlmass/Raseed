@@ -23,4 +23,8 @@ class Routes {
   static const String suppliers = '/suppliers';
   static const String journal = '/journal';
   static const String chartOfAccounts = '/chart_of_accounts';
+  static const String expenses = '/expenses';
+  static const String purchaseOrders = '/purchase_orders';
+  static const String accountingInsights = '/accounting_insights';
+  static const String accountingHub = '/accounting_hub';
 }

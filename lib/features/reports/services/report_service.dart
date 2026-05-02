@@ -71,13 +71,25 @@ class ReportService {
   }
 
   Future<double> _getTotalProfit(dynamic db, String start, String end, String currency) async {
-    final res = await db.rawQuery('''
+    // 1. Gross Profit (Sales - COGS)
+    final salesProfitRes = await db.rawQuery('''
       SELECT SUM(ti.quantity * (ti.price - ti.cost_price)) as total
       FROM transactions t
       JOIN transaction_items ti ON t.id = ti.transaction_id
       WHERE t.type = ? AND t.is_void = 0 AND t.currency = ? AND t.date BETWEEN ? AND ?
     ''', [TransactionType.sale.name, currency, start, end]);
-    return (res.first['total'] as num?)?.toDouble() ?? 0.0;
+    
+    double grossProfit = (salesProfitRes.first['total'] as num?)?.toDouble() ?? 0.0;
+
+    // 2. Subtract Expenses
+    final expensesRes = await db.rawQuery('''
+      SELECT SUM(amount) as total FROM expenses
+      WHERE date BETWEEN ? AND ?
+    ''', [start, end]);
+    
+    double totalExpenses = (expensesRes.first['total'] as num?)?.toDouble() ?? 0.0;
+
+    return grossProfit - totalExpenses;
   }
 
   Future<double> _getTotalDebt(dynamic db) async {

@@ -22,6 +22,8 @@ import '../services/firebase_backup_service.dart';
 import '../services/supplier_service.dart';
 import '../services/supplier_transaction_service.dart';
 import '../services/accounting_service.dart';
+import '../services/expense_service.dart';
+import '../services/procurement_service.dart';
 import '../../features/reports/services/report_service.dart';
 import '../../features/reports/services/export_service.dart';
 import '../../features/reports/bloc/reports_bloc.dart';
@@ -79,6 +81,8 @@ Future<void> init() async {
   sl.registerLazySingleton<SubscriptionService>(() => SubscriptionService(sl<SharedPreferences>()));
   sl.registerLazySingleton<TransactionService>(() => TransactionService(sl<CustomerService>(), sl<SettingsService>()));
   sl.registerLazySingleton<ProductService>(() => ProductService(sl<TransactionService>()));
+  sl.registerLazySingleton(() => ExpenseService());
+  sl.registerLazySingleton(() => ProcurementService());
 
   // Auth (Google Sign-In kept for Firebase Auth via Google only; Drive scope removed)
   sl.registerLazySingleton<GoogleSignIn>(() => GoogleSignIn(scopes: ['email']));

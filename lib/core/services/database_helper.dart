@@ -37,7 +37,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 26,
+      version: 28,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -246,6 +246,45 @@ class DatabaseHelper {
         credit REAL DEFAULT 0,
         FOREIGN KEY (entry_id) REFERENCES journal_entries (id) ON DELETE CASCADE,
         FOREIGN KEY (account_id) REFERENCES accounts (id)
+      )
+    ''');
+
+    // New tables for v27
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS expenses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category_id INTEGER,
+        amount REAL NOT NULL,
+        date TEXT NOT NULL,
+        note TEXT,
+        image_path TEXT,
+        account_id INTEGER,
+        FOREIGN KEY (account_id) REFERENCES accounts (id)
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS purchase_orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        supplier_id INTEGER NOT NULL,
+        date TEXT NOT NULL,
+        status TEXT NOT NULL, -- pending, received, cancelled
+        total_amount REAL NOT NULL,
+        note TEXT,
+        FOREIGN KEY (supplier_id) REFERENCES suppliers (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS purchase_order_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        purchase_order_id INTEGER NOT NULL,
+        product_id INTEGER NOT NULL,
+        product_name TEXT NOT NULL,
+        quantity INTEGER NOT NULL,
+        cost_price REAL NOT NULL,
+        FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders (id) ON DELETE CASCADE,
+        FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL
       )
     ''');
 
@@ -594,9 +633,93 @@ class DatabaseHelper {
         debugPrint("staff_config already exists");
       }
     }
-    if (newVersion >= 26) {
+    if (oldVersion < 26) {
       // Force update max_debt to 100,000 if it was the old default (1000)
       await db.update('settings', {'max_debt': 100000.0}, where: 'max_debt = ?', whereArgs: [1000.0]);
+    }
+
+    if (oldVersion < 27) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS expenses (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          category_id INTEGER,
+          amount REAL NOT NULL,
+          date TEXT NOT NULL,
+          note TEXT,
+          image_path TEXT,
+          account_id INTEGER,
+          FOREIGN KEY (account_id) REFERENCES accounts (id)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS purchase_orders (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          supplier_id INTEGER NOT NULL,
+          date TEXT NOT NULL,
+          status TEXT NOT NULL, -- pending, received, cancelled
+          total_amount REAL NOT NULL,
+          note TEXT,
+          FOREIGN KEY (supplier_id) REFERENCES suppliers (id) ON DELETE CASCADE
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS purchase_order_items (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          purchase_order_id INTEGER NOT NULL,
+          product_id INTEGER NOT NULL,
+          product_name TEXT NOT NULL,
+          quantity INTEGER NOT NULL,
+          cost_price REAL NOT NULL,
+          FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders (id) ON DELETE CASCADE,
+          FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL
+        )
+      ''');
+    }
+
+    if (oldVersion < 28) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT NOT NULL UNIQUE,
+          password TEXT NOT NULL,
+          name TEXT NOT NULL,
+          role TEXT NOT NULL, -- admin, cashier, warehouse
+          created_at TEXT NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS shifts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          start_time TEXT NOT NULL,
+          end_time TEXT,
+          opening_balance REAL NOT NULL,
+          closing_balance_system REAL,
+          closing_balance_actual REAL,
+          status TEXT NOT NULL, -- open, closed
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+      ''');
+
+      try {
+        await db.execute('ALTER TABLE transactions ADD COLUMN shift_id INTEGER');
+      } catch (e) {
+        debugPrint("shift_id already exists");
+      }
+
+      // Create a default admin user if none exists
+      // username: admin, password: admin (will be hashed later)
+      final now = DateTime.now().toIso8601String();
+      await db.insert('users', {
+        'username': 'admin',
+        'password': 'admin', 
+        'name': 'المدير العام',
+        'role': 'admin',
+        'created_at': now
+      });
     }
   }
 

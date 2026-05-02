@@ -24,6 +24,10 @@ import '../../features/subscription/views/subscription_screen.dart';
 import '../../features/suppliers/views/supplier_list_screen.dart';
 import '../../features/accounting/views/daily_journal_screen.dart';
 import '../../features/accounting/views/chart_of_accounts_screen.dart';
+import '../../features/accounting/views/expense_list_screen.dart';
+import '../../features/suppliers/views/purchase_order_list_screen.dart';
+import '../../features/reports/views/accounting_insights_screen.dart';
+import '../../features/accounting/views/accounting_hub_screen.dart';
 
 /// Application Router
 class AppRouter {
@@ -75,6 +79,14 @@ class AppRouter {
         return _buildRoute(const DailyJournalScreen(), settings);
       case Routes.chartOfAccounts:
         return _buildRoute(const ChartOfAccountsScreen(), settings);
+      case Routes.expenses:
+        return _buildRoute(const ExpenseListScreen(), settings);
+      case Routes.purchaseOrders:
+        return _buildRoute(const PurchaseOrderListScreen(), settings);
+      case Routes.accountingInsights:
+        return _buildRoute(const AccountingInsightsScreen(), settings);
+      case Routes.accountingHub:
+        return _buildRoute(const AccountingHubScreen(), settings);
       default:
         return _buildRoute(
           Scaffold(
