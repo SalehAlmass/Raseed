@@ -27,4 +27,7 @@ class Routes {
   static const String purchaseOrders = '/purchase_orders';
   static const String accountingInsights = '/accounting_insights';
   static const String accountingHub = '/accounting_hub';
+  static const String employees = '/employees';
+  static const String shifts = '/shifts';
+  static const String masterPassword = '/master_password';
 }

@@ -64,7 +64,7 @@ class _SplashScreenState extends State<SplashScreen>
               }
             }
           } else {
-            Navigator.pushReplacementNamed(context, Routes.auth);
+            Navigator.pushReplacementNamed(context, Routes.masterPassword);
           }
         }
       }

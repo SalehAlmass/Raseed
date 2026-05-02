@@ -276,17 +276,44 @@ class DatabaseHelper {
     ''');
 
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS purchase_order_items (
+      FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL
+    )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        purchase_order_id INTEGER NOT NULL,
-        product_id INTEGER NOT NULL,
-        product_name TEXT NOT NULL,
-        quantity INTEGER NOT NULL,
-        cost_price REAL NOT NULL,
-        FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders (id) ON DELETE CASCADE,
-        FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        name TEXT NOT NULL,
+        role TEXT NOT NULL, -- admin, cashier, warehouse
+        created_at TEXT NOT NULL
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE shifts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        start_time TEXT NOT NULL,
+        end_time TEXT,
+        opening_balance REAL NOT NULL,
+        closing_balance_system REAL,
+        closing_balance_actual REAL,
+        status TEXT NOT NULL, -- open, closed
+        FOREIGN KEY (user_id) REFERENCES users (id)
+      )
+    ''');
+
+    // Create a default admin user
+    final now = DateTime.now().toIso8601String();
+    await db.insert('users', {
+      'username': 'admin',
+      'password': 'admin',
+      'name': 'المدير العام',
+      'role': 'admin',
+      'created_at': now
+    });
 
     // Insert Default Chart of Accounts
     await _insertDefaultAccounts(db);

@@ -16,14 +16,32 @@ class MasterPasswordScreen extends StatefulWidget {
 }
 
 class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
+  final TextEditingController _usernameController = TextEditingController(text: 'admin');
   final TextEditingController _passwordController = TextEditingController();
   final AuthService _authService = sl<AuthService>();
   bool _obscureText = true;
   String? _errorText;
+  bool _isLoading = false;
 
-  void _verifyPassword() async {
-    final isValid = await _authService.verifyMasterPassword(_passwordController.text);
-    if (isValid) {
+  void _handleLogin() async {
+    if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
+      setState(() => _errorText = 'please_fill_all_fields'.tr());
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorText = null;
+    });
+
+    final success = await _authService.login(
+      _usernameController.text.trim(),
+      _passwordController.text,
+    );
+
+    setState(() => _isLoading = false);
+
+    if (success) {
       if (mounted) {
         final settings = await sl<SettingsService>().getSettings();
         if (!settings.onboardingCompleted) {
@@ -44,8 +62,8 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 30.w),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 50.h),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -67,7 +85,7 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
               FadeInUp(
                 delay: const Duration(milliseconds: 200),
                 child: Text(
-                  'enter_master_password'.tr(),
+                  'staff_login'.tr(),
                   style: TextStyle(
                     fontSize: 24.sp,
                     fontWeight: FontWeight.bold,
@@ -86,15 +104,30 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
                   ),
                 ),
               ),
-              SizedBox(height: 50.h),
+              SizedBox(height: 40.h),
               FadeInUp(
                 delay: const Duration(milliseconds: 400),
                 child: TextField(
+                  controller: _usernameController,
+                  decoration: InputDecoration(
+                    labelText: 'username'.tr(),
+                    prefixIcon: const Icon(Icons.person_outline),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15.r),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 16.h),
+              FadeInUp(
+                delay: const Duration(milliseconds: 450),
+                child: TextField(
                   controller: _passwordController,
                   obscureText: _obscureText,
-                  style: TextStyle(fontSize: 18.sp, letterSpacing: 2),
+                  style: TextStyle(fontSize: 18.sp),
                   decoration: InputDecoration(
-                    hintText: '******',
+                    labelText: 'password'.tr(),
+                    prefixIcon: const Icon(Icons.lock_outline),
                     errorText: _errorText,
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -107,6 +140,7 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
                       borderRadius: BorderRadius.circular(15.r),
                     ),
                   ),
+                  onSubmitted: (_) => _handleLogin(),
                 ),
               ),
               SizedBox(height: 30.h),
@@ -116,7 +150,7 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
                   width: double.infinity,
                   height: 55.h,
                   child: ElevatedButton(
-                    onPressed: _verifyPassword,
+                    onPressed: _isLoading ? null : _handleLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
@@ -124,10 +158,12 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
                         borderRadius: BorderRadius.circular(15.r),
                       ),
                     ),
-                    child: Text(
-                      'unlock'.tr(),
-                      style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-                    ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Text(
+                            'login_btn'.tr(),
+                            style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                          ),
                   ),
                 ),
               ),

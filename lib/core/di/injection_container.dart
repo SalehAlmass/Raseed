@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:rseed/core/services/shift_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
@@ -28,6 +29,7 @@ import '../../features/reports/services/report_service.dart';
 import '../../features/reports/services/export_service.dart';
 import '../../features/reports/bloc/reports_bloc.dart';
 import '../services/printer_service.dart';
+import '../services/fiscal_year_service.dart';
 
 final sl = GetIt.instance;
 
@@ -86,7 +88,9 @@ Future<void> init() async {
 
   // Auth (Google Sign-In kept for Firebase Auth via Google only; Drive scope removed)
   sl.registerLazySingleton<GoogleSignIn>(() => GoogleSignIn(scopes: ['email']));
-  sl.registerLazySingleton<AuthService>(() => AuthService(sl<SubscriptionService>(), sl<GoogleSignIn>()));
+  sl.registerLazySingleton<AuthService>(() => AuthService(sl<SubscriptionService>(), sl<GoogleSignIn>(), sl<SharedPreferences>()));
+  sl.registerLazySingleton(() => ShiftService());
+  sl.registerLazySingleton(() => FiscalYearService());
 
   //! Backup Services
   sl.registerLazySingleton<LocalBackupService>(() => LocalBackupService(sl<SharedPreferences>()));

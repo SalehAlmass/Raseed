@@ -3,6 +3,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/routes/routes.dart';
 import '../../../core/theme/colors.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/fiscal_year_service.dart';
+import '../../../core/di/injection_container.dart';
 
 class AccountingHubScreen extends StatelessWidget {
   const AccountingHubScreen({super.key});
@@ -146,7 +149,65 @@ class AccountingHubScreen extends StatelessWidget {
           color: Colors.teal,
           onTap: () => Navigator.pushNamed(context, Routes.reports),
         ),
+        _HubCard(
+          title: 'shift_management'.tr(),
+          desc: 'manage_cash_drawer'.tr(),
+          icon: Icons.lock_clock_rounded,
+          color: Colors.indigo,
+          onTap: () => Navigator.pushNamed(context, Routes.shifts),
+        ),
+        if (sl<AuthService>().isAdmin)
+          _HubCard(
+            title: 'employee_management'.tr(),
+            desc: 'manage_staff_permissions'.tr(),
+            icon: Icons.people_alt_rounded,
+            color: Colors.brown,
+            onTap: () => Navigator.pushNamed(context, Routes.employees),
+          ),
+        if (sl<AuthService>().isAdmin)
+          _HubCard(
+            title: 'annual_closing'.tr(),
+            desc: 'perform_closing_desc'.tr(),
+            icon: Icons.event_repeat_rounded,
+            color: Colors.red.shade900,
+            onTap: () => _showClosingDialog(context),
+          ),
       ],
+    );
+  }
+
+  void _showClosingDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('confirm_closing'.tr()),
+        content: Text('perform_closing_desc'.tr()),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('cancel'.tr())),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              // Show loading
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const Center(child: CircularProgressIndicator()),
+              );
+              
+              await sl<FiscalYearService>().performAnnualClosing(DateTime.now().year.toString());
+              
+              if (context.mounted) {
+                Navigator.pop(context); // Remove loading
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('closing_success'.tr()), backgroundColor: Colors.green),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade900, foregroundColor: Colors.white),
+            child: Text('confirm'.tr()),
+          ),
+        ],
+      ),
     );
   }
 }

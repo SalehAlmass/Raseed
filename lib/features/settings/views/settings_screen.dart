@@ -982,7 +982,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: ListTile(
         leading: const Icon(Icons.logout, color: AppColors.error),
         title: Text('logout'.tr(), style:  TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: AppColors.error)),
-        subtitle: Text(user.email ?? '', style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+        subtitle: Text(user.username, style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
         onTap: () async {
           await _authService.logout();
           setState(() {});

@@ -28,6 +28,8 @@ import '../../features/accounting/views/expense_list_screen.dart';
 import '../../features/suppliers/views/purchase_order_list_screen.dart';
 import '../../features/reports/views/accounting_insights_screen.dart';
 import '../../features/accounting/views/accounting_hub_screen.dart';
+import '../../features/auth/views/employee_management_screen.dart';
+import '../../features/auth/views/shift_management_screen.dart';
 
 /// Application Router
 class AppRouter {
@@ -87,6 +89,12 @@ class AppRouter {
         return _buildRoute(const AccountingInsightsScreen(), settings);
       case Routes.accountingHub:
         return _buildRoute(const AccountingHubScreen(), settings);
+      case Routes.employees:
+        return _buildRoute(const EmployeeManagementScreen(), settings);
+      case Routes.shifts:
+        return _buildRoute(const ShiftManagementScreen(), settings);
+      case Routes.masterPassword:
+        return _buildRoute(const MasterPasswordScreen(), settings);
       default:
         return _buildRoute(
           Scaffold(
