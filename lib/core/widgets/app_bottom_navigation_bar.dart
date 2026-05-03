@@ -23,7 +23,7 @@ class AppBottomNavigationBar extends StatelessWidget {
     final List<_NavItem> allItems = [
       _NavItem(0, Icons.home_rounded, 'الرئيسية', true),
       _NavItem(1, Icons.people_rounded, 'customers'.tr(), config.showCustomers),
-      _NavItem(2, Icons.add_circle_rounded, 'new_sale'.tr(), config.showSales && config.showCustomers),
+      _NavItem(2, Icons.point_of_sale_rounded, 'new_sale'.tr(), config.showSales),
       _NavItem(3, Icons.bar_chart_rounded, 'reports'.tr(), config.showReports),
       _NavItem(4, Icons.store_rounded, 'store'.tr(), config.showInventory),
     ];
@@ -133,22 +133,51 @@ class AppBottomNavigationBar extends StatelessWidget {
     return GestureDetector(
       onTap: () => onTap(index),
       child: Transform.translate(
-        offset: Offset(0, -5.h), // Light lift
+        offset: Offset(0, -15.h), // Lifted higher
         child: Container(
-          width: 55.w,
-          height: 55.w,
+          width: 68.w,
+          height: 68.w,
           decoration: BoxDecoration(
-            color: AppColors.primary,
+            gradient: LinearGradient(
+              colors: [
+                AppColors.primary,
+                AppColors.primary.withOpacity(0.85),
+                const Color(0xFF6200EA), // Adding a deep purple hint for premium feel
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
                 color: AppColors.primary.withOpacity(0.4),
-                blurRadius: 15,
-                offset: const Offset(0, 8),
+                blurRadius: 25,
+                spreadRadius: 2,
+                offset: const Offset(0, 12),
+              ),
+              // Inner glow
+              BoxShadow(
+                color: Colors.white.withOpacity(0.3),
+                blurRadius: 12,
+                offset: const Offset(-2, -2),
               ),
             ],
+            border: Border.all(
+              color: Colors.white.withOpacity(0.35),
+              width: 2.5,
+            ),
           ),
-          child: Icon(icon, color: Colors.white, size: 32.sp),
+          child: Container(
+            margin: EdgeInsets.all(3.w),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withOpacity(0.15),
+                width: 1,
+              ),
+            ),
+            child: Icon(icon, color: Colors.white, size: 36.sp),
+          ),
         ),
       ),
     );

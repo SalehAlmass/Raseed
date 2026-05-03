@@ -679,7 +679,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () => _onNavTap(2), // Open Sale
-                  icon: const Icon(Icons.add_shopping_cart_rounded, size: 20),
+                  icon: const Icon(Icons.point_of_sale_rounded, size: 22),
                   label: Text(
                     'new_sale'.tr(),
                     style: TextStyle(

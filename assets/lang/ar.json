@@ -544,6 +544,7 @@
   "profit_analysis": "تحليل الأرباح والراكد والخسائر",
   "accounts_structure": "تنظيم الحسابات والمراكز المالية",
   "financial_reports": "التقارير المالية",
+  "export_data": "تصدير البيانات والتقارير",
   "expense_added_successfully": "تم إضافة المصروف بنجاح",
   "error_adding_expense": "حدث خطأ أثناء إضافة المصروف",
   "add_expense": "إضافة مصروف",
