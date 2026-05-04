@@ -244,7 +244,7 @@ ALL inside ONE SQLite transaction
 
 ---
 
-# 🚀 NEW FEATURES IMPLEMENTED (V1.0 - V1.18)
+# 🚀 NEW FEATURES IMPLEMENTED (V1.0 - V1.28)
 
 ## 1. Advanced Product Inventory
 * **Multi-Unit System**: Support for Main Unit (e.g., Box) and Sub Unit (e.g., Piece) with a conversion factor.
@@ -274,6 +274,35 @@ ALL inside ONE SQLite transaction
 * **Feature Gating**: All premium actions (Sell, Edit, Export, Payments) are strictly gated by `SubscriptionService`.
 * **Proactive Subscription Status**: Home screen displays real-time trial status and "Trial Expired" alerts with direct WhatsApp contact for activation.
 * **Module Sequestration**: "Subscription" and "Module Management" settings are visible ONLY in Developer Mode.
+
+## 7. Accounting Hub & Financial Ledger
+* **Double-Entry Foundation**: Implementation of `accounts`, `journal_entries`, and `journal_entry_lines` for professional bookkeeping.
+* **Chart of Accounts**: Pre-configured accounts for Assets (Cash, Inventory, AR), Liabilities (AP), Revenue, and Expenses.
+* **Expense Management**: Dedicated module to track business expenses with category-based organization and ledger integration.
+
+## 8. Supplier & Procurement Management
+* **Supplier Lifecycle**: Full registry for suppliers with debt tracking and transaction history.
+* **Procurement Workflow**: Purchase orders and supplier transactions that automatically update inventory and accounts payable.
+* **Supplier-Product Linkage**: Associate products with preferred suppliers for streamlined reordering.
+
+## 9. Shift Management & Staff Security
+* **Multi-Role Access Control**: Defined roles (Admin, Cashier, Warehouse) to restrict access to sensitive financial data.
+* **Shift Reconciliation**: Tracking of opening/closing balances with "System vs Actual" cash reporting to prevent leaks.
+* **User-Specific Tracking**: All transactions are tagged with the active user and shift ID for audit trails.
+
+## 10. Advanced Reporting & Exports
+* **Document Generation**: Professional PDF and Excel exports for Sales, Expenses, and Profit/Loss reports.
+* **Interactive Dashboard**: Statistical cards are interactive, allowing one-tap filtering of transactions (e.g., overdue rents, pending payments).
+* **Thermal Printer Support**: Integrated printing for 58mm/80mm POS receipts.
+
+## 11. Cloud & Data Integrity
+* **Google Drive Backup**: Seamless integration for backing up and restoring the SQLite database to the user's cloud storage.
+* **Automated Local Backups**: Regular snapshots of the database to prevent data loss.
+
+## 12. Premium Visual Identity
+* **Custom Typography**: Standardized on `Cairo-Black.ttf` for a high-end, Arabic-optimized user experience.
+* **Responsive Kiosk Design**: UI components optimized for both handheld mobile and large tablet/POS displays.
+* **Adaptive Product Entry**: "Quick vs Advanced" UI toggle to balance ease of use with professional accounting detail.
 
 ---
 
