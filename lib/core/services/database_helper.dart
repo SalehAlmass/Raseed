@@ -37,7 +37,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 28,
+      version: 30,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -179,8 +179,19 @@ class DatabaseHelper {
         name TEXT NOT NULL,
         phone TEXT NOT NULL,
         company TEXT,
+        category_id INTEGER,
+        rating REAL DEFAULT 0.0,
         total_debt REAL DEFAULT 0,
+        total_paid REAL DEFAULT 0,
         last_transaction_date TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE supplier_categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        icon TEXT
       )
     ''');
 
@@ -747,6 +758,24 @@ class DatabaseHelper {
         'role': 'admin',
         'created_at': now
       });
+    }
+
+    if (oldVersion < 29) {
+      try {
+        await db.execute('ALTER TABLE suppliers ADD COLUMN total_paid REAL DEFAULT 0');
+      } catch (e) {
+        debugPrint("total_paid already exists");
+      }
+    }
+
+    if (oldVersion < 30) {
+      try {
+        await db.execute('CREATE TABLE supplier_categories (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, icon TEXT)');
+        await db.execute('ALTER TABLE suppliers ADD COLUMN category_id INTEGER');
+        await db.execute('ALTER TABLE suppliers ADD COLUMN rating REAL DEFAULT 0.0');
+      } catch (e) {
+        debugPrint("Supplier enhancements already exist");
+      }
     }
   }
 

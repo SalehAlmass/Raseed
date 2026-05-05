@@ -20,76 +20,70 @@ class TransactionService {
 
   Future<int> addTransaction(AppTransaction transaction) async {
     final db = await _dbHelper.database;
-
-    // --- Strict Validations ---
-    
-    // 1. Check for debt repayment rules
-    if (transaction.type == TransactionType.payment && transaction.customerId != null) {
-      final customerMap = await db.query(
-        'customers', 
-        where: 'id = ?', 
-        whereArgs: [transaction.customerId],
-      ).then((maps) => maps.first);
-      
-      final currentDebt = (customerMap['total_debt'] as num).toDouble();
-      
-      if (currentDebt <= 0) {
-        throw Exception('no_debt_to_repay');
-      }
-      
-      if (transaction.amount > currentDebt) {
-        throw Exception('payment_exceeds_debt');
-      }
-    }
-
-    // 2. Check for Sale overpayment
-    if (transaction.type == TransactionType.sale && transaction.paidAmount > transaction.amount) {
-      throw Exception('amount_exceeds_total');
-    }
-
-    // 3. Check for Stock (if SALE and strictMode ON)
     final settings = await _settingsService.getSettings();
-    if (transaction.type == TransactionType.sale && settings.strictMode) {
-      for (final item in transaction.items) {
-        final productMap = await db.query(
-          'products',
-          columns: ['stock_quantity'],
-          where: 'id = ?',
-          whereArgs: [item.productId],
-        ).then((maps) => maps.first);
-        
-        final currentStock = (productMap['stock_quantity'] as num).toInt();
-        if (currentStock < item.quantity) {
-          throw Exception('insufficient_stock');
-        }
-      }
-    }
-
-    // 4. Check for debt limit
-    if (transaction.type == TransactionType.sale && transaction.customerId != null) {
-      final customerMap = await db.query(
-        'customers', 
-        where: 'id = ?', 
-        whereArgs: [transaction.customerId],
-      ).then((maps) => maps.first);
-      
-      final currentDebt = (customerMap['total_debt'] as num).toDouble();
-      final remainingDebt = transaction.amount - transaction.paidAmount;
-      final totalNewDebt = currentDebt + remainingDebt;
-      
-      if (totalNewDebt > settings.maxDebt) {
-        if (settings.debtMode == DebtMode.block) {
-          throw Exception('over_limit');
-        } else if (settings.debtMode == DebtMode.warning) {
-          // In a real app, we might return a status that includes a warning.
-          // For now, we allow it but we could log it or throw a specific 'warning_triggered' 
-          // that the UI can catch and then re-summit with a flag.
-          // Simplification: just allow it if mode is warning, but we could add a note.
-        }
-      }
-    }
 
     return await db.transaction((txn) async {
+      // --- Strict Validations (Inside Transaction) ---
+      
+      // 1. Check for debt repayment rules
+      if (transaction.type == TransactionType.payment && transaction.customerId != null) {
+        final customerMap = await txn.query(
+          'customers', 
+          where: 'id = ?', 
+          whereArgs: [transaction.customerId],
+        ).then((maps) => maps.first);
+        
+        final currentDebt = (customerMap['total_debt'] as num).toDouble();
+        
+        if (currentDebt <= 0) {
+          throw Exception('no_debt_to_repay');
+        }
+        
+        if (transaction.amount > currentDebt) {
+          throw Exception('payment_exceeds_debt');
+        }
+      }
+
+      // 2. Check for Sale overpayment
+      if (transaction.type == TransactionType.sale && transaction.paidAmount > transaction.amount) {
+        throw Exception('amount_exceeds_total');
+      }
+
+      // 3. Check for Stock (if SALE and strictMode ON)
+      if (transaction.type == TransactionType.sale && settings.strictMode) {
+        for (final item in transaction.items) {
+          final productMap = await txn.query(
+            'products',
+            columns: ['stock_quantity'],
+            where: 'id = ?',
+            whereArgs: [item.productId],
+          ).then((maps) => maps.first);
+          
+          final currentStock = (productMap['stock_quantity'] as num).toInt();
+          if (currentStock < item.quantity) {
+            throw Exception('insufficient_stock');
+          }
+        }
+      }
+
+      // 4. Check for debt limit
+      if (transaction.type == TransactionType.sale && transaction.customerId != null) {
+        final customerMap = await txn.query(
+          'customers', 
+          where: 'id = ?', 
+          whereArgs: [transaction.customerId],
+        ).then((maps) => maps.first);
+        
+        final currentDebt = (customerMap['total_debt'] as num).toDouble();
+        final remainingDebt = transaction.amount - transaction.paidAmount;
+        final totalNewDebt = currentDebt + remainingDebt;
+        
+        if (totalNewDebt > settings.maxDebt) {
+          if (settings.debtMode == DebtMode.block) {
+            throw Exception('over_limit');
+          }
+        }
+      }
       // 1. Insert transaction
       final int transactionId = await txn.insert('transactions', transaction.toMap());
 
@@ -200,105 +194,86 @@ class TransactionService {
   }
 
   Future<void> _generateJournalEntry(int transactionId, AppTransaction transaction, Transaction txn) async {
-    try {
-      final accService = sl<AccountingService>();
-      final now = DateTime.now();
+    final accService = sl<AccountingService>();
+    final now = DateTime.now();
 
-      if (transaction.type == TransactionType.sale) {
-        // --- 1. Record Revenue & Receivables ---
-        // Debit: Cash (1100) -> 2
-        // Debit: Accounts Receivable (1300) -> 4
-        // Credit: Sales Revenue (4100) -> 10
+    if (transaction.type == TransactionType.sale) {
+      // --- 1. Record Revenue & Receivables ---
+      List<JournalEntryLine> lines = [];
+      
+      // Revenue side (Credit)
+      lines.add(JournalEntryLine(entryId: 0, accountId: 10, credit: transaction.amount));
 
-        List<JournalEntryLine> lines = [];
-        
-        // Revenue side (Credit)
-        lines.add(JournalEntryLine(entryId: 0, accountId: 10, credit: transaction.amount));
+      // Payment side (Debit)
+      if (transaction.paidAmount > 0) {
+        lines.add(JournalEntryLine(entryId: 0, accountId: 2, debit: transaction.paidAmount));
+      }
+      
+      final creditAmount = transaction.amount - transaction.paidAmount;
+      if (creditAmount > 0) {
+        lines.add(JournalEntryLine(entryId: 0, accountId: 4, debit: creditAmount));
+      }
 
-        // Payment side (Debit)
-        if (transaction.paidAmount > 0) {
-          lines.add(JournalEntryLine(entryId: 0, accountId: 2, debit: transaction.paidAmount));
-        }
-        
-        final creditAmount = transaction.amount - transaction.paidAmount;
-        if (creditAmount > 0) {
-          lines.add(JournalEntryLine(entryId: 0, accountId: 4, debit: creditAmount));
-        }
+      final entryId = await txn.insert('journal_entries', {
+        'date': transaction.date.toIso8601String(),
+        'description': 'sale_entry_desc'.tr(args: [transactionId.toString()]),
+        'reference_type': 'sale',
+        'reference_id': transactionId,
+        'created_at': now.toIso8601String(),
+      });
 
-        final entryId = await txn.insert('journal_entries', {
+      for (var line in lines) {
+        await txn.insert('journal_entry_lines', {
+          ...line.toMap(),
+          'entry_id': entryId,
+        });
+        await _updateAccountBalance(txn, line.accountId, line.debit, line.credit);
+      }
+
+      // --- 2. Record Inventory & COGS ---
+      final items = await txn.query('transaction_items', where: 'transaction_id = ?', whereArgs: [transactionId]);
+      double totalCost = 0;
+      for (var item in items) {
+        totalCost += (item['quantity'] as num) * (item['cost_price'] as num);
+      }
+
+      if (totalCost > 0) {
+        final cogsEntryId = await txn.insert('journal_entries', {
           'date': transaction.date.toIso8601String(),
-          'description': 'sale_entry_desc'.tr(args: [transactionId.toString()]),
-          'reference_type': 'sale',
+          'description': 'sale_cost_entry_desc'.tr(args: [transactionId.toString()]),
+          'reference_type': 'sale_cost',
           'reference_id': transactionId,
           'created_at': now.toIso8601String(),
         });
 
-        for (var line in lines) {
-          await txn.insert('journal_entry_lines', {
-            ...line.toMap(),
-            'entry_id': entryId,
-          });
-          // Update balances
-          await _updateAccountBalance(txn, line.accountId, line.debit, line.credit);
-        }
-
-        // --- 2. Record Inventory & COGS ---
-        // Debit: COGS (5100) -> 12
-        // Credit: Inventory (1200) -> 3
-        
-        // We need the cost. We can calculate it from the transaction items we just inserted
-        final items = await txn.query('transaction_items', where: 'transaction_id = ?', whereArgs: [transactionId]);
-        double totalCost = 0;
-        for (var item in items) {
-          totalCost += (item['quantity'] as num) * (item['cost_price'] as num);
-        }
-
-        if (totalCost > 0) {
-          final cogsEntryId = await txn.insert('journal_entries', {
-            'date': transaction.date.toIso8601String(),
-            'description': 'sale_cost_entry_desc'.tr(args: [transactionId.toString()]),
-            'reference_type': 'sale_cost',
-            'reference_id': transactionId,
-            'created_at': now.toIso8601String(),
-          });
-
-          final cogsLines = [
-            JournalEntryLine(entryId: cogsEntryId, accountId: 12, debit: totalCost), // COGS Debit
-            JournalEntryLine(entryId: cogsEntryId, accountId: 3, credit: totalCost), // Inventory Credit
-          ];
-
-          for (var line in cogsLines) {
-            await txn.insert('journal_entry_lines', line.toMap());
-            await _updateAccountBalance(txn, line.accountId, line.debit, line.credit);
-          }
-        }
-      } else if (transaction.type == TransactionType.payment) {
-        // Debit: Cash (1100) -> 2
-        // Credit: Accounts Receivable (1300) -> 4
-        
-        final entryId = await txn.insert('journal_entries', {
-          'date': transaction.date.toIso8601String(),
-          'description': 'customer_payment_entry_desc'.tr(args: [transactionId.toString()]),
-          'reference_type': 'payment',
-          'reference_id': transactionId,
-          'created_at': now.toIso8601String(),
-        });
-
-        final lines = [
-          JournalEntryLine(entryId: entryId, accountId: 2, debit: transaction.amount),
-          JournalEntryLine(entryId: entryId, accountId: 4, credit: transaction.amount),
+        final cogsLines = [
+          JournalEntryLine(entryId: cogsEntryId, accountId: 12, debit: totalCost), // COGS Debit
+          JournalEntryLine(entryId: cogsEntryId, accountId: 3, credit: totalCost), // Inventory Credit
         ];
 
-        for (var line in lines) {
+        for (var line in cogsLines) {
           await txn.insert('journal_entry_lines', line.toMap());
           await _updateAccountBalance(txn, line.accountId, line.debit, line.credit);
         }
       }
-    } catch (e) {
-      print('Accounting error: $e');
-      // In a real system, we might want to handle this more gracefully, 
-      // but here we allow the transaction to proceed if accounting fails? 
-      // Actually, it's better to keep it inside the same transaction.
+    } else if (transaction.type == TransactionType.payment) {
+      final entryId = await txn.insert('journal_entries', {
+        'date': transaction.date.toIso8601String(),
+        'description': 'customer_payment_entry_desc'.tr(args: [transactionId.toString()]),
+        'reference_type': 'payment',
+        'reference_id': transactionId,
+        'created_at': now.toIso8601String(),
+      });
+
+      final lines = [
+        JournalEntryLine(entryId: entryId, accountId: 2, debit: transaction.amount),
+        JournalEntryLine(entryId: entryId, accountId: 4, credit: transaction.amount),
+      ];
+
+      for (var line in lines) {
+        await txn.insert('journal_entry_lines', line.toMap());
+        await _updateAccountBalance(txn, line.accountId, line.debit, line.credit);
+      }
     }
   }
 
@@ -448,7 +423,10 @@ class TransactionService {
         }
       }
 
-      // 3. Mark as void (don't physically delete)
+      // 3. Reverse Accounting Journal Entries
+      await _reverseJournalEntries(transaction.id!, transaction.type.name, txn);
+
+      // 4. Mark as void (don't physically delete)
       await txn.update(
         'transactions',
         {'is_void': 1},
@@ -456,6 +434,42 @@ class TransactionService {
         whereArgs: [transaction.id],
       );
     });
+  }
+
+  Future<void> _reverseJournalEntries(int referenceId, String type, Transaction txn) async {
+    // Find all journal entries for this reference
+    final List<Map<String, dynamic>> entries = await txn.query(
+      'journal_entries',
+      where: 'reference_id = ? AND reference_type LIKE ?',
+      whereArgs: [referenceId, '$type%'],
+    );
+
+    for (var entryMap in entries) {
+      final int entryId = entryMap['id'];
+      
+      // Get all lines for this entry
+      final List<Map<String, dynamic>> lines = await txn.query(
+        'journal_entry_lines',
+        where: 'entry_id = ?',
+        whereArgs: [entryId],
+      );
+
+      // Reverse the balance impact for each line
+      for (var lineMap in lines) {
+        final int accountId = lineMap['account_id'];
+        final double debit = (lineMap['debit'] as num).toDouble();
+        final double credit = (lineMap['credit'] as num).toDouble();
+        
+        // To reverse: pass credit as debit and debit as credit
+        await _updateAccountBalance(txn, accountId, credit, debit);
+      }
+
+      // Delete the lines and entry (or we could mark as void if we had a column)
+      // Since we don't have a column, and these are purely derived from the transaction,
+      // deleting them keeps the system clean and balanced.
+      await txn.delete('journal_entry_lines', where: 'entry_id = ?', whereArgs: [entryId]);
+      await txn.delete('journal_entries', where: 'id = ?', whereArgs: [entryId]);
+    }
   }
 
   /// Process a refund/return transaction

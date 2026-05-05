@@ -7,6 +7,8 @@ class SupplierTransactionItem {
   final double costPrice;
   final String currency;
 
+  double get total => quantity * costPrice;
+
   SupplierTransactionItem({
     this.id,
     this.transactionId,

@@ -210,7 +210,8 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       }
 
       if (updateWholesale) {
-        final suggestedWholesale = (costPerSub * (1 + _formConfig.autoWholesaleMargin)).round();
+        // Calculate wholesale price based on the larger unit (carton/package price)
+        final suggestedWholesale = (cost * (1 + _formConfig.autoWholesaleMargin)).round();
         if (mounted) {
           _wholesalePriceController.text = suggestedWholesale.toString();
           _lastSuggestedWholesale = suggestedWholesale;
@@ -300,14 +301,41 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     }
 
     setState(() => _isSaving = true);
-    final factor = int.tryParse(_conversionController.text) ?? 1;
-    final purchasePrice = double.tryParse(_purchasePriceController.text) ?? 0.0;
-    final salePrice = double.tryParse(_salePriceController.text) ?? 0.0;
-    final wholesalePrice =
-        double.tryParse(_wholesalePriceController.text) ?? 0.0;
-    final reorderLevel = int.tryParse(_reorderLevelController.text) ?? 0;
-    final totalStock = int.tryParse(_totalStockController.text) ?? 0;
-    final paidAmount = double.tryParse(_paidAmountController.text) ?? 0.0;
+    
+    final factor = int.tryParse(_conversionController.text.replaceAll(RegExp(r'\D'), '')) ?? 1;
+    final purchasePrice = double.tryParse(_purchasePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final salePrice = double.tryParse(_salePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final wholesalePrice = double.tryParse(_wholesalePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final reorderLevel = int.tryParse(_reorderLevelController.text.replaceAll(RegExp(r'\D'), '')) ?? 0;
+    final totalStock = int.tryParse(_totalStockController.text.replaceAll(RegExp(r'\D'), '')) ?? 0;
+    final paidAmount = double.tryParse(_paidAmountController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    // Validation: Paid amount cannot exceed total purchase amount for new stock
+    final diffStock = totalStock - _initialStock;
+    if (_recordAsPurchase && diffStock > 0 && _selectedSupplier != null) {
+      final unitCost = factor > 0 ? (purchasePrice / factor) : purchasePrice;
+      final totalRequired = (diffStock * unitCost).roundToDouble();
+      
+      if (paidAmount > totalRequired) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: Text('warning'.tr(), style: const TextStyle(color: Colors.orange)),
+              content: Text('paid_amount_exceeds'.tr()),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text('confirm'.tr()),
+                ),
+              ],
+            ),
+          );
+        }
+        setState(() => _isSaving = false);
+        return;
+      }
+    }
 
     final product = Product(
       id: widget.product?.id,
@@ -440,7 +468,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
           _nameController,
           'product_name'.tr(),
           Icons.inventory_2_outlined,
-          hint: 'product_name_hint'.tr(),
+          hint: 'product_name'.tr(),
           validator: (v) =>
               v == null || v.isEmpty ? 'required_field'.tr() : null,
         ),

@@ -1,4 +1,5 @@
 import '../models/supplier.dart';
+import '../models/supplier_category.dart';
 import 'database_helper.dart';
 
 class SupplierService {
@@ -62,5 +63,27 @@ class SupplierService {
         whereArgs: [supplierId],
       );
     }
+  }
+
+  Future<void> updateSupplierRating(int supplierId, double rating) async {
+    final db = await _dbHelper.database;
+    await db.update('suppliers', {'rating': rating}, where: 'id = ?', whereArgs: [supplierId]);
+  }
+
+  // Category Management
+  Future<List<SupplierCategory>> getAllCategories() async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> maps = await db.query('supplier_categories', orderBy: 'name ASC');
+    return List.generate(maps.length, (i) => SupplierCategory.fromMap(maps[i]));
+  }
+
+  Future<int> addCategory(SupplierCategory category) async {
+    final db = await _dbHelper.database;
+    return await db.insert('supplier_categories', category.toMap());
+  }
+
+  Future<int> deleteCategory(int id) async {
+    final db = await _dbHelper.database;
+    return await db.delete('supplier_categories', where: 'id = ?', whereArgs: [id]);
   }
 }

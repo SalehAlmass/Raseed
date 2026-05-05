@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/di/injection_container.dart';
 import '../../../core/models/supplier.dart';
 import '../../../core/models/supplier_transaction.dart';
@@ -12,6 +13,7 @@ import '../../reports/services/report_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/utils/currency_helper.dart';
 import 'purchase_screen.dart';
+import 'create_purchase_order_screen.dart';
 
 class SupplierDetailScreen extends StatefulWidget {
   final Supplier supplier;
@@ -126,14 +128,14 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.error, AppColors.error.withOpacity(0.8)],
+          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
-            color: AppColors.error.withOpacity(0.3),
+            color: AppColors.primary.withOpacity(0.3),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -141,24 +143,75 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
       ),
       child: Column(
         children: [
-          Text(
-            'supplier_debt'.tr(),
-            style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14.sp),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (_supplier.rating > 0)
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10.r)),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                      SizedBox(width: 4.w),
+                      Text(_supplier.rating.toStringAsFixed(1), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                )
+              else
+                const SizedBox.shrink(),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, color: Colors.white70),
+                onPressed: () => _showEditRatingDialog(),
+              ),
+            ],
           ),
-          SizedBox(height: 8.h),
-          Text(
-            CurrencyHelper.getFormatter('YER').format(_supplier.totalDebt),
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 28.sp,
-              fontWeight: FontWeight.bold,
-            ),
+          SizedBox(height: 10.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Column(
+                children: [
+                  Text(
+                    'total_paid'.tr(),
+                    style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13.sp),
+                  ),
+                  SizedBox(height: 5.h),
+                  Text(
+                    CurrencyHelper.getFormatter('YER').format(_supplier.totalPaid),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              Container(height: 40.h, width: 1, color: Colors.white24),
+              Column(
+                children: [
+                  Text(
+                    'remining'.tr(),
+                    style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13.sp),
+                  ),
+                  SizedBox(height: 5.h),
+                  Text(
+                    CurrencyHelper.getFormatter('YER').format(_supplier.totalDebt),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
           if (_supplier.company != null) ...[
-            SizedBox(height: 12.h),
+            SizedBox(height: 15.h),
             Text(
               _supplier.company!,
-              style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13.sp),
+              style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13.sp, fontWeight: FontWeight.w500),
             ),
           ]
         ],
@@ -205,31 +258,86 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
   }
 
   Widget _buildActionButtons() {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: _ActionButton(
-            label: 'purchase'.tr(),
-            icon: Icons.add_shopping_cart,
-            color: AppColors.primary,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PurchaseScreen(initialSupplier: _supplier),
+        Row(
+          children: [
+            Expanded(
+              child: _ActionButton(
+                label: 'purchase'.tr(),
+                icon: Icons.add_shopping_cart,
+                color: AppColors.primary,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PurchaseScreen(initialSupplier: _supplier),
+                  ),
+                ).then((_) => _loadData()),
               ),
-            ).then((_) => _loadData()),
-          ),
+            ),
+            SizedBox(width: 15.w),
+            Expanded(
+              child: _ActionButton(
+                label: 'pay_supplier'.tr(),
+                icon: Icons.payment,
+                color: AppColors.success,
+                onTap: () => _showPaymentDialog(),
+              ),
+            ),
+          ],
         ),
-        SizedBox(width: 15.w),
-        Expanded(
-          child: _ActionButton(
-            label: 'pay_supplier'.tr(),
-            icon: Icons.payment,
-            color: AppColors.success,
-            onTap: () => _showPaymentDialog(),
-          ),
+        SizedBox(height: 15.h),
+        _ActionButton(
+          label: 'create_po'.tr(),
+          icon: Icons.assignment_outlined,
+          color: Colors.orange,
+          isFullWidth: true,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CreatePurchaseOrderScreen(initialSupplier: _supplier),
+            ),
+          ).then((_) => _loadData()),
         ),
       ],
+    );
+  }
+
+  void _showEditRatingDialog() {
+    double currentRating = _supplier.rating;
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('rating'.tr()),
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (index) {
+              return IconButton(
+                icon: Icon(
+                  index < currentRating ? Icons.star_rounded : Icons.star_outline_rounded,
+                  color: Colors.amber,
+                  size: 32.sp,
+                ),
+                onPressed: () => setDialogState(() => currentRating = index + 1.0),
+              );
+            }),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text('cancel'.tr())),
+            ElevatedButton(
+              onPressed: () async {
+                await _supplierService.updateSupplierRating(_supplier.id!, currentRating);
+                if (mounted) {
+                  Navigator.pop(context);
+                  _loadData();
+                }
+              },
+              child: Text('save'.tr()),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -346,12 +454,128 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
                 ),
             ],
           ),
+          onTap: () {
+            if (isPurchase) _showPurchaseInvoice(tx);
+          },
           onLongPress: () {
              if (!tx.isVoid) _showVoidConfirmation(tx);
           },
         );
       },
     );
+  }
+
+  void _showPurchaseInvoice(SupplierTransaction tx) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+        title: Row(
+          children: [
+            const Icon(Icons.receipt_long_outlined, color: AppColors.primary),
+            SizedBox(width: 10.w),
+            Text('purchase_invoice'.tr()),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${'date'.tr()}: ${DateFormat('yyyy/MM/dd HH:mm').format(tx.date)}',
+                style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+              ),
+              const Divider(),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: tx.items.length,
+                  itemBuilder: (context, i) {
+                    final item = tx.items[i];
+                    return ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(item.productName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text('${item.quantity} x ${CurrencyHelper.getFormatter(tx.currency).format(item.costPrice)}'),
+                      trailing: Text(
+                        CurrencyHelper.getFormatter(tx.currency).format(item.total),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const Divider(),
+              _buildInvoiceRow('total_amount'.tr(), tx.amount, isBold: true),
+              _buildInvoiceRow('paid_amount'.tr(), tx.paidAmount, color: AppColors.success),
+              _buildInvoiceRow('remining'.tr(), tx.amount - tx.paidAmount, color: AppColors.error, isBold: true),
+              if (tx.note != null && tx.note!.isNotEmpty) ...[
+                SizedBox(height: 10.h),
+                Text('${'note'.tr()}: ${tx.note}', style: TextStyle(fontSize: 12.sp, fontStyle: FontStyle.italic)),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('done'.tr())),
+          ElevatedButton.icon(
+            onPressed: () => _shareInvoice(tx),
+            icon: const Icon(Icons.share, size: 18),
+            label: Text('whatsapp'.tr()),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInvoiceRow(String label, double value, {Color? color, bool isBold = false}) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 13.sp, fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
+          Text(
+            CurrencyHelper.getFormatter('YER').format(value),
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _shareInvoice(SupplierTransaction tx) async {
+    String phone = _supplier.phone;
+    phone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    if (phone.startsWith('0')) phone = phone.substring(1);
+    if (!phone.startsWith('+') && !phone.startsWith('00') && !phone.startsWith('967')) {
+      phone = '967$phone';
+    }
+    phone = phone.replaceAll('+', '').replaceAll('00', '');
+
+    String message = '📦 *${'purchase_invoice'.tr()}*\n';
+    message += '📅 ${DateFormat('yyyy/MM/dd').format(tx.date)}\n';
+    message += '👤 ${'supplier'.tr()}: ${_supplier.name}\n';
+    message += '--------------------------\n';
+    for (var item in tx.items) {
+      message += '🔹 ${item.productName}: ${item.quantity} x ${item.costPrice} = ${item.total}\n';
+    }
+    message += '--------------------------\n';
+    message += '💰 *${'total_amount'.tr()}: ${tx.amount}*\n';
+    message += '✅ ${'paid_amount'.tr()}: ${tx.paidAmount}\n';
+    message += '⏳ *${'remining'.tr()}: ${tx.amount - tx.paidAmount}*\n';
+    
+    final url = "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
+    try {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } catch (_) {}
   }
 
   void _showVoidConfirmation(SupplierTransaction tx) {
@@ -418,12 +642,14 @@ class _ActionButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color color;
+  final bool isFullWidth;
   final VoidCallback onTap;
 
   const _ActionButton({
     required this.label,
     required this.icon,
     required this.color,
+    this.isFullWidth = false,
     required this.onTap,
   });
 
@@ -433,6 +659,7 @@ class _ActionButton extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(15.r),
       child: Container(
+        width: isFullWidth ? double.infinity : null,
         padding: EdgeInsets.all(15.w),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),

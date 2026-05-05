@@ -33,18 +33,21 @@ class SupplierTransactionService {
         }
       }
 
-      // 3. Update supplier debt
+      // 3. Update supplier debt and total paid
       double debtChange = 0;
+      double paidChange = 0;
       if (tx.type == SupplierTransactionType.purchase) {
         debtChange = tx.amount - tx.paidAmount;
+        paidChange = tx.paidAmount;
       } else if (tx.type == SupplierTransactionType.payment) {
         debtChange = -tx.amount;
+        paidChange = tx.amount;
       }
 
-      if (debtChange != 0 && !tx.isVoid) {
+      if ((debtChange != 0 || paidChange != 0) && !tx.isVoid) {
         await txn.execute(
-          'UPDATE suppliers SET total_debt = total_debt + ?, last_transaction_date = ? WHERE id = ?',
-          [debtChange, tx.date.toIso8601String(), tx.supplierId],
+          'UPDATE suppliers SET total_debt = total_debt + ?, total_paid = total_paid + ?, last_transaction_date = ? WHERE id = ?',
+          [debtChange, paidChange, tx.date.toIso8601String(), tx.supplierId],
         );
       }
 
@@ -182,18 +185,21 @@ class SupplierTransactionService {
         }
       }
 
-      // 3. Reverse debt
+      // 3. Reverse debt and paid amount
       double debtReverse = 0;
+      double paidReverse = 0;
       if (tx.type == SupplierTransactionType.purchase) {
         debtReverse = -(tx.amount - tx.paidAmount);
+        paidReverse = -tx.paidAmount;
       } else if (tx.type == SupplierTransactionType.payment) {
         debtReverse = tx.amount;
+        paidReverse = -tx.amount;
       }
 
-      if (debtReverse != 0) {
+      if (debtReverse != 0 || paidReverse != 0) {
         await txn.execute(
-          'UPDATE suppliers SET total_debt = total_debt + ? WHERE id = ?',
-          [debtReverse, tx.supplierId],
+          'UPDATE suppliers SET total_debt = total_debt + ?, total_paid = total_paid + ? WHERE id = ?',
+          [debtReverse, paidReverse, tx.supplierId],
         );
       }
     });

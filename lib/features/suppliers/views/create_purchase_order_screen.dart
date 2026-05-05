@@ -9,7 +9,8 @@ import '../../../core/services/product_service.dart';
 import '../../../core/services/procurement_service.dart';
 
 class CreatePurchaseOrderScreen extends StatefulWidget {
-  const CreatePurchaseOrderScreen({super.key});
+  final Supplier? initialSupplier;
+  const CreatePurchaseOrderScreen({super.key, this.initialSupplier});
 
   @override
   State<CreatePurchaseOrderScreen> createState() => _CreatePurchaseOrderScreenState();
@@ -30,6 +31,7 @@ class _CreatePurchaseOrderScreenState extends State<CreatePurchaseOrderScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedSupplier = widget.initialSupplier;
     _loadData();
   }
 
