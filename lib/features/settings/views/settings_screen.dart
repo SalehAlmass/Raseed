@@ -899,6 +899,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onChanged: (Locale? newLocale) {
             if (newLocale != null) {
               context.setLocale(newLocale);
+              // Update settings to sync language preference
+              final newSettings = _settings.copyWith(languageCode: newLocale.languageCode);
+              _settingsService.updateSettings(newSettings);
             }
           },
         ),

@@ -194,6 +194,7 @@ class AppSettings {
   final ModuleConfig moduleConfig;
   final StoreProfile storeProfile;
   final StaffConfig staffConfig;
+  final String languageCode;
 
   AppSettings({
     this.maxDebt = 100000.0,
@@ -207,6 +208,7 @@ class AppSettings {
     this.deadDays = 90,
     this.enableWhatsapp = true,
     this.enablePdfReceipt = true,
+    this.languageCode = 'ar',
     ProductFormConfig? productFormConfig,
     ModuleConfig? moduleConfig,
     StoreProfile? storeProfile,
@@ -233,6 +235,7 @@ class AppSettings {
       'module_config': jsonEncode(moduleConfig.toMap()),
       'store_profile': jsonEncode(storeProfile.toMap()),
       'staff_config': jsonEncode(staffConfig.toMap()),
+      'language_code': languageCode,
     };
   }
 
@@ -263,6 +266,7 @@ class AppSettings {
       staffConfig: map['staff_config'] != null 
           ? StaffConfig.fromMap(jsonDecode(map['staff_config']))
           : StaffConfig(),
+      languageCode: map['language_code'] ?? 'ar',
     );
   }
 
@@ -282,6 +286,7 @@ class AppSettings {
     ModuleConfig? moduleConfig,
     StoreProfile? storeProfile,
     StaffConfig? staffConfig,
+    String? languageCode,
   }) {
     return AppSettings(
       maxDebt: maxDebt ?? this.maxDebt,
@@ -299,6 +304,7 @@ class AppSettings {
       moduleConfig: moduleConfig ?? this.moduleConfig,
       storeProfile: storeProfile ?? this.storeProfile,
       staffConfig: staffConfig ?? this.staffConfig,
+      languageCode: languageCode ?? this.languageCode,
     );
   }
 }

@@ -15,13 +15,14 @@ class AuthService extends ChangeNotifier {
   
   AppUser? _currentUser; 
   User? _firebaseUser;   
+  late Future<void> initialization;
   
   AuthService(this._subscriptionService, this._googleSignIn, this._prefs) {
     _firebaseAuth.authStateChanges().listen((User? user) {
       _firebaseUser = user;
       notifyListeners();
     });
-    _tryAutoLogin();
+    initialization = _tryAutoLogin();
   }
 
   Future<void> _tryAutoLogin() async {

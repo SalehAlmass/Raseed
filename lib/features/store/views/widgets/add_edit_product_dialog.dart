@@ -608,8 +608,10 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
         if (_formConfig.showSupplier) ...[
           SizedBox(height: 16.h),
           _buildSupplierDropdown(),
-          SizedBox(height: 16.h),
-          _buildPurchaseSection(),
+          if (_selectedSupplier != null) ...[
+            SizedBox(height: 16.h),
+            _buildPurchaseSection(),
+          ],
         ],
         
         if (_formConfig.showExpiry) ...[

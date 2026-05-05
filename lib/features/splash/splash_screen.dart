@@ -49,6 +49,7 @@ class _SplashScreenState extends State<SplashScreen>
     Future.delayed(const Duration(seconds: 3), () async {
       if (mounted) {
         final authService = sl<AuthService>();
+        await authService.initialization; // Wait for auto-login to finish
         final isAuthenticated = await authService.isAuthenticated();
 
         if (mounted) {

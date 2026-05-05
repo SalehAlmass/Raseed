@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:rseed/core/services/settings_service.dart';
 import 'core/routes/app_router.dart';
 import 'core/routes/routes.dart';
 import 'core/theme/app_theme.dart';
@@ -43,12 +44,16 @@ void main() async {
   // Initialize subscription trial & anti-tamper logic
   await di.sl<SubscriptionService>().initTrial();
 
+  // Load saved locale from settings
+  final settings = await di.sl<SettingsService>().getSettings();
+  final savedLocale = Locale(settings.languageCode);
+
   runApp(
     EasyLocalization(
       supportedLocales: LocalizationManager.supportedLocales,
       path: LocalizationManager.translationsPath,
       fallbackLocale: LocalizationManager.fallbackLocale,
-      startLocale: LocalizationManager.fallbackLocale,
+      startLocale: savedLocale,
       child: const MyApp(),
     ),
   );

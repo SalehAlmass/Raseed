@@ -37,7 +37,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 30,
+      version: 31,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -101,7 +101,8 @@ class DatabaseHelper {
         product_form_config TEXT,
         module_config TEXT,
         store_profile TEXT,
-        staff_config TEXT
+        staff_config TEXT,
+        language_code TEXT DEFAULT 'ar'
       )
     ''');
 
@@ -114,6 +115,7 @@ class DatabaseHelper {
       'vip_threshold': 100000.0,
       'inactive_days': 30,
       'dead_days': 90,
+      'language_code': 'ar'
     });
 
     await db.execute('''
@@ -775,6 +777,14 @@ class DatabaseHelper {
         await db.execute('ALTER TABLE suppliers ADD COLUMN rating REAL DEFAULT 0.0');
       } catch (e) {
         debugPrint("Supplier enhancements already exist");
+      }
+    }
+
+    if (oldVersion < 31) {
+      try {
+        await db.execute("ALTER TABLE settings ADD COLUMN language_code TEXT DEFAULT 'ar'");
+      } catch (e) {
+        debugPrint("language_code already exists");
       }
     }
   }
