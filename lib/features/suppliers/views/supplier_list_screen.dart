@@ -340,7 +340,7 @@ class _SupplierTile extends StatelessWidget {
                         fontSize: 12.sp,
                       ),
                     ),
-                    Text('remining'.tr(), style: TextStyle(fontSize: 9.sp, color: Colors.grey)),
+                    Text('remaining'.tr(), style: TextStyle(fontSize: 9.sp, color: Colors.grey)),
                   ],
                 ),
               ],

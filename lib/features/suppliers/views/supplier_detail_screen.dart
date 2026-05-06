@@ -191,7 +191,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
               Column(
                 children: [
                   Text(
-                    'remining'.tr(),
+                    'remaining'.tr(),
                     style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13.sp),
                   ),
                   SizedBox(height: 5.h),
@@ -510,7 +510,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
               const Divider(),
               _buildInvoiceRow('total_amount'.tr(), tx.amount, isBold: true),
               _buildInvoiceRow('paid_amount'.tr(), tx.paidAmount, color: AppColors.success),
-              _buildInvoiceRow('remining'.tr(), tx.amount - tx.paidAmount, color: AppColors.error, isBold: true),
+              _buildInvoiceRow('remaining'.tr(), tx.amount - tx.paidAmount, color: AppColors.error, isBold: true),
               if (tx.note != null && tx.note!.isNotEmpty) ...[
                 SizedBox(height: 10.h),
                 Text('${'note'.tr()}: ${tx.note}', style: TextStyle(fontSize: 12.sp, fontStyle: FontStyle.italic)),
@@ -570,7 +570,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
     message += '--------------------------\n';
     message += '💰 *${'total_amount'.tr()}: ${tx.amount}*\n';
     message += '✅ ${'paid_amount'.tr()}: ${tx.paidAmount}\n';
-    message += '⏳ *${'remining'.tr()}: ${tx.amount - tx.paidAmount}*\n';
+    message += '⏳ *${'remaining'.tr()}: ${tx.amount - tx.paidAmount}*\n';
     
     final url = "https://wa.me/$phone?text=${Uri.encodeComponent(message)}";
     try {
