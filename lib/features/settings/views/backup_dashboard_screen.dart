@@ -10,6 +10,8 @@ import '../../../core/services/local_backup_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/routes/routes.dart';
 import '../../../core/services/settings_service.dart';
+import '../../../core/models/user.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class BackupDashboardScreen extends StatefulWidget {
   const BackupDashboardScreen({super.key});
@@ -65,7 +67,8 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = _authService.currentUser;
+    // Prefer firebase user for cloud backup context, fall back to local user
+    final dynamic user = _authService.firebaseUser ?? _authService.currentUser;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -142,7 +145,9 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isLoggedIn ? (user.email ?? 'signed_in'.tr()) : 'guest_mode'.tr(),
+                  isLoggedIn 
+                    ? (user is AppUser ? user.username : (user.email ?? 'signed_in'.tr())) 
+                    : 'guest_mode'.tr(),
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15.sp),
                 ),
                 SizedBox(height: 2.h),
