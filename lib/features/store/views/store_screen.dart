@@ -131,6 +131,39 @@ class _StoreScreenState extends State<StoreScreen> {
     }
   }
 
+  void _onDelete(Product product) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('delete_confirm'.tr()),
+        content: Text('delete_product_warning'.tr()), // Note: Ensure this key exists or use a generic one
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('cancel'.tr()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              'delete'.tr(),
+              style: const TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _productService.deleteProduct(product.id!);
+      _loadProducts();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('success'.tr())),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -214,6 +247,7 @@ class _StoreScreenState extends State<StoreScreen> {
                         onPurchase: product.supplierId == null
                             ? null
                             : () => _onPurchase(product),
+                        onDelete: () => _onDelete(product),
                       );
                     },
                   ),
@@ -245,12 +279,14 @@ class _ProductTile extends StatelessWidget {
   final Product product;
   final VoidCallback onEdit;
   final VoidCallback onSell;
+  final VoidCallback onDelete;
   final VoidCallback? onPurchase;
 
   const _ProductTile({
     required this.product,
     required this.onEdit,
     required this.onSell,
+    required this.onDelete,
     this.onPurchase,
   });
 
@@ -364,6 +400,8 @@ class _ProductTile extends StatelessWidget {
                           onSell();
                         } else if (value == 'purchase') {
                           onPurchase?.call();
+                        } else if (value == 'delete') {
+                          onDelete();
                         }
                       },
                       itemBuilder: (context) => [
@@ -399,6 +437,23 @@ class _ProductTile extends StatelessWidget {
                               const Icon(Icons.edit_outlined, size: 20),
                               SizedBox(width: 8.w),
                               Text('edit'.tr()),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.delete_outline,
+                                size: 20,
+                                color: AppColors.error,
+                              ),
+                              SizedBox(width: 8.w),
+                              Text(
+                                'delete'.tr(),
+                                style: const TextStyle(color: AppColors.error),
+                              ),
                             ],
                           ),
                         ),

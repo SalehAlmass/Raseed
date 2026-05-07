@@ -53,6 +53,7 @@
   "edit_product": "Edit Product",
   "delete": "Delete",
   "delete_confirm": "Delete Confirmation",
+  "delete_product_warning": "Are you sure you want to delete this product? All associated stock batches will be deleted. Past transactions will remain recorded in reports.",
   "error_occurred": "An error occurred",
   "none_manual": "None (Manual Entry)",
   "product_not_found": "Product Not Found",

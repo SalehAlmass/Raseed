@@ -121,7 +121,7 @@ class ReportService {
       FROM transaction_items ti
       JOIN transactions t ON t.id = ti.transaction_id
       WHERE t.type = ? AND t.is_void = 0 AND t.currency = ? AND t.date BETWEEN ? AND ?
-      GROUP BY product_id ORDER BY value DESC LIMIT 5
+      GROUP BY product_id, product_name ORDER BY value DESC LIMIT 5
     ''', [TransactionType.sale.name, currency, start, end]);
     return res.map<ReportMetric>((r) => ReportMetric(label: r['label'] as String, value: (r['value'] as num?)?.toDouble() ?? 0.0)).toList();
   }
@@ -201,7 +201,7 @@ class ReportService {
       FROM transaction_items ti
       JOIN transactions t ON t.id = ti.transaction_id
       WHERE t.type = 'sale' AND t.is_void = 0 AND t.date BETWEEN ? AND ?
-      GROUP BY product_id
+      GROUP BY product_id, product_name
       ORDER BY (revenue - cost) DESC
     ''', [start, end]);
 
