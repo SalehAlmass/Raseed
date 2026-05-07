@@ -460,6 +460,8 @@
   "customer_payment_entry_desc": "Customer Payment - Entry #{}",
   "purchase_entry_desc": "Purchase Entry - Invoice #{}",
   "supplier_payment_entry_desc": "Supplier Payment - Entry #{}",
+  "refund_entry_desc": "Sales Return Entry - Invoice #{}",
+  "refund_cost_entry_desc": "Reverse COGS Entry - Invoice #{}",
   "low_stock_alerts": "Low Stock Alerts",
   "invalid_quantity": "Please enter a valid quantity",
   "manage_inventory_fields": "Manage Inventory Fields",

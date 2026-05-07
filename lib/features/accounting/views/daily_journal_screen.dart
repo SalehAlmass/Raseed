@@ -111,6 +111,16 @@ class _JournalEntryCard extends StatelessWidget {
             style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 15.h),
+          Padding(
+            padding: EdgeInsets.only(bottom: 8.h),
+            child: Row(
+              children: [
+                Expanded(flex: 2, child: Text('description'.tr(), style: TextStyle(fontSize: 11.sp, color: Colors.grey, fontWeight: FontWeight.bold))),
+                Expanded(child: Text('debit'.tr(), textAlign: TextAlign.center, style: TextStyle(fontSize: 11.sp, color: Colors.grey, fontWeight: FontWeight.bold))),
+                Expanded(child: Text('credit'.tr(), textAlign: TextAlign.center, style: TextStyle(fontSize: 11.sp, color: Colors.grey, fontWeight: FontWeight.bold))),
+              ],
+            ),
+          ),
           const Divider(),
           ...entry.lines.map((line) => Padding(
                 padding: EdgeInsets.symmetric(vertical: 4.h),

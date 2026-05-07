@@ -461,6 +461,8 @@
   "customer_payment_entry_desc": "سداد عميل - قيد رقم {}",
   "purchase_entry_desc": "قيد مشتريات - فاتورة رقم {}",
   "supplier_payment_entry_desc": "سداد مورد - قيد رقم {}",
+  "refund_entry_desc": "قيد مرتجع مبيعات - فاتورة رقم {}",
+  "refund_cost_entry_desc": "عكس تكلفة مبيعات - فاتورة رقم {}",
   "low_stock_alerts": "تنبيهات انخفاض المخزون",
   "invalid_quantity": "يرجى إدخال كمية صحيحة",
   "accounting_entry": "تسجيل قيد محاسبي",

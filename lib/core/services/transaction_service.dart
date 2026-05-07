@@ -201,10 +201,7 @@ class TransactionService {
       // --- 1. Record Revenue & Receivables ---
       List<JournalEntryLine> lines = [];
       
-      // Revenue side (Credit)
-      lines.add(JournalEntryLine(entryId: 0, accountId: 10, credit: transaction.amount));
-
-      // Payment side (Debit)
+      // Payment side (Debit) - Added first for proper accounting order
       if (transaction.paidAmount > 0) {
         lines.add(JournalEntryLine(entryId: 0, accountId: 2, debit: transaction.paidAmount));
       }
@@ -213,6 +210,9 @@ class TransactionService {
       if (creditAmount > 0) {
         lines.add(JournalEntryLine(entryId: 0, accountId: 4, debit: creditAmount));
       }
+
+      // Revenue side (Credit)
+      lines.add(JournalEntryLine(entryId: 0, accountId: 10, credit: transaction.amount));
 
       final entryId = await txn.insert('journal_entries', {
         'date': transaction.date.toIso8601String(),
@@ -273,6 +273,54 @@ class TransactionService {
       for (var line in lines) {
         await txn.insert('journal_entry_lines', line.toMap());
         await _updateAccountBalance(txn, line.accountId, line.debit, line.credit);
+      }
+    } else if (transaction.type == TransactionType.refund) {
+      // --- 1. Reverse Revenue & Receivables ---
+      final refundAmount = transaction.amount.abs();
+      
+      final entryId = await txn.insert('journal_entries', {
+        'date': transaction.date.toIso8601String(),
+        'description': 'refund_entry_desc'.tr(args: [transactionId.toString()]),
+        'reference_type': 'refund',
+        'reference_id': transactionId,
+        'created_at': now.toIso8601String(),
+      });
+
+      final lines = [
+        JournalEntryLine(entryId: entryId, accountId: 10, debit: refundAmount), // Revenue Debit (Decrease)
+        JournalEntryLine(entryId: entryId, accountId: 4, credit: refundAmount), // AR Credit (Decrease debt)
+      ];
+
+      for (var line in lines) {
+        await txn.insert('journal_entry_lines', line.toMap());
+        await _updateAccountBalance(txn, line.accountId, line.debit, line.credit);
+      }
+
+      // --- 2. Reverse Inventory & COGS ---
+      final items = await txn.query('transaction_items', where: 'transaction_id = ?', whereArgs: [transactionId]);
+      double totalCost = 0;
+      for (var item in items) {
+        totalCost += (item['quantity'] as num).abs() * (item['cost_price'] as num);
+      }
+
+      if (totalCost > 0) {
+        final cogsEntryId = await txn.insert('journal_entries', {
+          'date': transaction.date.toIso8601String(),
+          'description': 'refund_cost_entry_desc'.tr(args: [transactionId.toString()]),
+          'reference_type': 'refund_cost',
+          'reference_id': transactionId,
+          'created_at': now.toIso8601String(),
+        });
+
+        final cogsLines = [
+          JournalEntryLine(entryId: cogsEntryId, accountId: 3, debit: totalCost), // Inventory Debit (Back in stock)
+          JournalEntryLine(entryId: cogsEntryId, accountId: 12, credit: totalCost), // COGS Credit (Decrease expense)
+        ];
+
+        for (var line in cogsLines) {
+          await txn.insert('journal_entry_lines', line.toMap());
+          await _updateAccountBalance(txn, line.accountId, line.debit, line.credit);
+        }
       }
     }
   }

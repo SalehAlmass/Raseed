@@ -202,6 +202,35 @@ class SupplierTransactionService {
           [debtReverse, paidReverse, tx.supplierId],
         );
       }
+
+      // 4. Reverse Journal Entries
+      await _reverseJournalEntries(txId, txn);
     });
+  }
+
+  Future<void> _reverseJournalEntries(int txId, Transaction txn) async {
+    // 1. Find all journal entries related to this transaction
+    final entries = await txn.query('journal_entries', 
+      where: 'reference_id = ? AND (reference_type = ? OR reference_type = ?)', 
+      whereArgs: [txId, 'purchase', 'payment']
+    );
+
+    for (var entry in entries) {
+      final entryId = entry['id'] as int;
+      final lines = await txn.query('journal_entry_lines', where: 'entry_id = ?', whereArgs: [entryId]);
+      
+      for (var line in lines) {
+        final debit = (line['debit'] as num).toDouble();
+        final credit = (line['credit'] as num).toDouble();
+        final accountId = line['account_id'] as int;
+
+        // Reverse the effect on account balance: Credit original debit, Debit original credit
+        await _updateAccountBalance(txn, accountId, credit, debit);
+      }
+
+      // Delete the lines and entry
+      await txn.delete('journal_entry_lines', where: 'entry_id = ?', whereArgs: [entryId]);
+      await txn.delete('journal_entries', where: 'id = ?', whereArgs: [entryId]);
+    }
   }
 }
