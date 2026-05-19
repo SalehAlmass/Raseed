@@ -88,7 +88,7 @@ Future<void> init() async {
 
   // Auth
   sl.registerLazySingleton<GoogleSignIn>(() => GoogleSignIn(
-    clientId: '406414577926-gmnm5h7pi388s3g72m42c4u3vkg1nhhd.apps.googleusercontent.com',
+    serverClientId: '406414577926-qb5rvqqaecah94e52l0de7924dhipga1.apps.googleusercontent.com',
     scopes: [
       'email',
       'https://www.googleapis.com/auth/drive.file',

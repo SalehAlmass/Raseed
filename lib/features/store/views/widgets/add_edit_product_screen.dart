@@ -51,6 +51,11 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   final _mainStockController = TextEditingController();
   final _subStockController = TextEditingController();
 
+  // SAR Currency Converter Controllers
+  final _sarPurchasePriceController = TextEditingController();
+  final _exchangeRateController = TextEditingController();
+  bool _useSarConversion = false;
+
   List<Category> _categories = [];
   List<Unit> _units = [];
 
@@ -83,6 +88,10 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     _salePriceController.addListener(_calculateMargin);
     _conversionController.addListener(_calculateMargin);
 
+    // SAR Currency Conversion listeners
+    _sarPurchasePriceController.addListener(_updateSarToYemeniConversion);
+    _exchangeRateController.addListener(_updateSarToYemeniConversion);
+
     // Quantity Synchronization Logic
     _totalStockController.addListener(_syncFromTotal);
     _mainStockController.addListener(_syncFromDetailed);
@@ -111,7 +120,25 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     _mainStockController.dispose();
     _subStockController.dispose();
     _paidAmountController.dispose();
+    _sarPurchasePriceController.dispose();
+    _exchangeRateController.dispose();
     super.dispose();
+  }
+
+  void _updateSarToYemeniConversion() {
+    if (!_useSarConversion) return;
+
+    final sarCost = double.tryParse(_sarPurchasePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final rate = double.tryParse(_exchangeRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+
+    if (sarCost > 0 && rate > 0) {
+      final yemeniCost = (sarCost * rate).round();
+      if (_purchasePriceController.text != yemeniCost.toString()) {
+        _purchasePriceController.text = yemeniCost.toString();
+        // Save the rate to prefs so it persists for the next products
+        sl<SharedPreferences>().setDouble('last_sar_exchange_rate', rate);
+      }
+    }
   }
 
   void _syncFromTotal() {
@@ -242,6 +269,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     final units = await _unitService.getAllUnits();
     final suppliers = await sl<SupplierService>().getAllSuppliers();
     final settings = await sl<SettingsService>().getSettings();
+    final lastRate = sl<SharedPreferences>().getDouble('last_sar_exchange_rate') ?? 400.0;
 
     if (mounted) {
       setState(() {
@@ -250,6 +278,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         _suppliers = suppliers;
         _settings = settings;
         _formConfig = settings.productFormConfig;
+        _exchangeRateController.text = lastRate.toStringAsFixed(0);
         _isLoading = false;
 
         if (widget.product != null) {
