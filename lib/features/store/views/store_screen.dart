@@ -316,12 +316,12 @@ class _StoreScreenState extends State<StoreScreen> {
           // ),
           IconButton(
             icon: const Icon(Icons.category),
-            onPressed: () => Navigator.pushNamed(context, Routes.categories),
+            onPressed: () => Navigator.pushNamed(context, Routes.categories).then((_) => _loadProducts()),
             tooltip: 'manage_categories'.tr(),
           ),
           IconButton(
             icon: const Icon(Icons.straighten),
-            onPressed: () => Navigator.pushNamed(context, Routes.units),
+            onPressed: () => Navigator.pushNamed(context, Routes.units).then((_) => _loadProducts()),
             tooltip: 'manage_units'.tr(),
           ),
         ],

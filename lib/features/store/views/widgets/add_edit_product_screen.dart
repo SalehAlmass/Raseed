@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:rseed/core/routes/routes.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/models/product.dart';
 import '../../../../core/models/batch.dart';
@@ -628,23 +629,51 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   }
 
   Widget _buildSupplierDropdown() {
-    return DropdownButtonFormField<Supplier>(
-      value: _selectedSupplier,
-      decoration: InputDecoration(
-        labelText: 'suppliers'.tr(),
-        prefixIcon: const Icon(Icons.business_rounded),
-        filled: true,
-        fillColor: Colors.grey[50],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide.none,
+    final isArabic = context.locale.languageCode == 'ar';
+    return Row(
+      children: [
+        Expanded(
+          child: DropdownButtonFormField<Supplier>(
+            value: _selectedSupplier,
+            decoration: InputDecoration(
+              labelText: 'suppliers'.tr(),
+              prefixIcon: const Icon(Icons.business_rounded),
+              filled: true,
+              fillColor: Colors.grey[50],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+                borderSide: BorderSide.none,
+              ),
+              isDense: true,
+            ),
+            items: _suppliers
+                .map((s) => DropdownMenuItem(value: s, child: Text(s.name)))
+                .toList(),
+            onChanged: (val) => setState(() => _selectedSupplier = val),
+          ),
         ),
-        isDense: true,
-      ),
-      items: _suppliers
-          .map((s) => DropdownMenuItem(value: s, child: Text(s.name)))
-          .toList(),
-      onChanged: (val) => setState(() => _selectedSupplier = val),
+        SizedBox(width: 8.w),
+        IconButton.filled(
+          onPressed: () async {
+            await Navigator.pushNamed(context, Routes.suppliers);
+            final suppliers = await sl<SupplierService>().getAllSuppliers();
+            setState(() {
+              _suppliers = suppliers;
+              if (_selectedSupplier != null && !suppliers.any((s) => s.id == _selectedSupplier!.id)) {
+                _selectedSupplier = null;
+              }
+            });
+          },
+          icon: const Icon(Icons.add),
+          style: IconButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+          tooltip: isArabic ? 'إدارة الموردين' : 'Manage Suppliers',
+        ),
+      ],
     );
   }
 
@@ -780,23 +809,51 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   }
 
   Widget _buildCategoryDropdown() {
-    return DropdownButtonFormField<Category>(
-      value: _selectedCategory,
-      decoration: InputDecoration(
-        labelText: 'category'.tr(),
-        prefixIcon: const Icon(Icons.category_outlined),
-        filled: true,
-        fillColor: Colors.grey[50],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide.none,
+    final isArabic = context.locale.languageCode == 'ar';
+    return Row(
+      children: [
+        Expanded(
+          child: DropdownButtonFormField<Category>(
+            value: _selectedCategory,
+            decoration: InputDecoration(
+              labelText: 'category'.tr(),
+              prefixIcon: const Icon(Icons.category_outlined),
+              filled: true,
+              fillColor: Colors.grey[50],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+                borderSide: BorderSide.none,
+              ),
+              isDense: true,
+            ),
+            items: _categories
+                .map((c) => DropdownMenuItem(value: c, child: Text(c.name)))
+                .toList(),
+            onChanged: (val) => setState(() => _selectedCategory = val),
+          ),
         ),
-        isDense: true,
-      ),
-      items: _categories
-          .map((c) => DropdownMenuItem(value: c, child: Text(c.name)))
-          .toList(),
-      onChanged: (val) => setState(() => _selectedCategory = val),
+        SizedBox(width: 8.w),
+        IconButton.filled(
+          onPressed: () async {
+            await Navigator.pushNamed(context, Routes.categories);
+            final cats = await _categoryService.getAllCategories();
+            setState(() {
+              _categories = cats;
+              if (_selectedCategory != null && !cats.any((c) => c.id == _selectedCategory!.id)) {
+                _selectedCategory = null;
+              }
+            });
+          },
+          icon: const Icon(Icons.add),
+          style: IconButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+          tooltip: isArabic ? 'إدارة الأصناف' : 'Manage Categories',
+        ),
+      ],
     );
   }
 

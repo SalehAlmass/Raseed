@@ -109,135 +109,203 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator())
         : Padding(
-            padding: EdgeInsets.all(20.w),
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
             child: SingleChildScrollView(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildSectionHeader('merchant_config'.tr()),
-                  SizedBox(height: 15.h),
-                  _buildSettingTile(
-                    label: 'max_debt_limit'.tr(),
-                    controller: _maxDebtController,
-                    icon: Icons.money_off,
-                    keyboardType: TextInputType.number,
+                  // 1. Merchant Config Section
+                  _buildAccordionSection(
+                    title: 'merchant_config'.tr(),
+                    icon: Icons.storefront_rounded,
+                    children: [
+                      _buildSettingTile(
+                        label: 'max_debt_limit'.tr(),
+                        controller: _maxDebtController,
+                        icon: Icons.money_off,
+                        keyboardType: TextInputType.number,
+                      ),
+                      SizedBox(height: 12.h),
+                      _buildSettingTile(
+                        label: 'reminder_days'.tr(),
+                        controller: _reminderDaysController,
+                        icon: Icons.notification_important_outlined,
+                        keyboardType: TextInputType.number,
+                      ),
+                      SizedBox(height: 16.h),
+                      Text(
+                        context.locale.languageCode == 'ar' ? 'إجراء تجاوز حد الدين' : 'Action on Exceeding Debt Limit',
+                        style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+                      ),
+                      SizedBox(height: 6.h),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 5.h),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(15.r),
+                          border: Border.all(color: Colors.grey.withOpacity(0.15)),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<DebtMode>(
+                            value: _settings.debtMode,
+                            isExpanded: true,
+                            icon: Icon(Icons.security, color: AppColors.primary, size: 20.sp),
+                            items: [
+                              DropdownMenuItem(
+                                value: DebtMode.block,
+                                child: Text(
+                                  context.locale.languageCode == 'ar' ? 'حظر البيع (منع المعاملة)' : 'Block Sale (Strict)',
+                                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: DebtMode.warning,
+                                child: Text(
+                                  context.locale.languageCode == 'ar' ? 'تحذير فقط (السماح بالبيع)' : 'Warning Only (Allow)',
+                                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
+                            onChanged: (DebtMode? newValue) {
+                              if (newValue != null) {
+                                setState(() {
+                                  _settings = _settings.copyWith(debtMode: newValue);
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+                      _buildInventoryFieldsTile(context),
+                      if (_isDeveloperMode) ...[
+                        SizedBox(height: 12.h),
+                        _buildModuleManagementTile(context),
+                      ],
+                    ],
                   ),
-                  SizedBox(height: 20.h),
-                   _buildSettingTile(
-                    label: 'reminder_days'.tr(),
-                    controller: _reminderDaysController,
-                    icon: Icons.notification_important_outlined,
-                    keyboardType: TextInputType.number,
-                  ),
-              
-                  SizedBox(height: 15.h),
-                  _buildInventoryFieldsTile(context),
-                  if (_isDeveloperMode) ...[
-                    SizedBox(height: 15.h),
-                    _buildModuleManagementTile(context),
-                  ],
-              
-                  SizedBox(height: 30.h),
-                  _buildSectionHeader('crm_config'.tr()),
-                  SizedBox(height: 15.h),
-                  _buildSettingTile(
-                    label: 'vip_threshold'.tr(),
-                    controller: _vipThresholdController,
-                    icon: Icons.star_border_rounded,
-                    keyboardType: TextInputType.number,
-                  ),
-                  SizedBox(height: 15.h),
-                  _buildSettingTile(
-                    label: 'inactive_days'.tr(),
-                    controller: _inactiveDaysController,
-                    icon: Icons.timer_outlined,
-                    keyboardType: TextInputType.number,
-                  ),
-                   SizedBox(height: 15.h),
-                  _buildSettingTile(
-                    label: 'dead_days'.tr(),
-                    controller: _deadDaysController,
-                    icon: Icons.hourglass_empty,
-                    keyboardType: TextInputType.number,
-                  ),
-              
-                  SizedBox(height: 30.h),
-                  _buildSectionHeader('language'.tr()),
-                  SizedBox(height: 15.h),
-                  _buildLanguageDropdown(context),
-                  SizedBox(height: 30.h),
-                  _buildSectionHeader('pdf_page_format'.tr()),
-                  SizedBox(height: 15.h),
-                  _buildPdfPageFormatDropdown(context),
-                  SizedBox(height: 30.h),
-                  _buildSectionHeader('receipt_width'.tr()),
-                  SizedBox(height: 15.h),
-                  _buildReceiptWidthDropdown(context),
-                  SizedBox(height: 30.h),
-                  _buildSectionHeader('about'.tr()),
-                  SizedBox(height: 15.h),
-                  _buildAboutTile(context),
-                  SizedBox(height: 30.h),
-                  _buildSectionHeader('account_backup'.tr()),
-                  SizedBox(height: 15.h),
-                  _buildBackupTile(context),
-              
-                  SizedBox(height: 30.h),
-                  if (_isDeveloperMode) ...[
-                    _buildSectionHeader('subscription'.tr()),
-                    SizedBox(height: 15.h),
-                    _buildSubscriptionTile(context),
-                    SizedBox(height: 30.h),
-                  ],
-                  _buildSectionHeader('account'.tr()),
-                  SizedBox(height: 15.h),
-                  _buildLogoutTile(context),
-              
-                  SizedBox(height: 30.h),
-                  _buildSectionHeader('store_profile'.tr()),
-                  SizedBox(height: 15.h),
-                  _buildStoreProfileSection(),
 
-                  SizedBox(height: 30.h),
-                  _buildSectionHeader('staff_mode'.tr()),
-                  SizedBox(height: 15.h),
-                  _buildStaffModeSection(),
+                  // 2. Store Profile Section
+                  _buildAccordionSection(
+                    title: 'store_profile'.tr(),
+                    icon: Icons.store_rounded,
+                    children: [
+                      _buildStoreProfileSection(),
+                    ],
+                  ),
 
-                  SizedBox(height: 30.h),
-                  _buildSectionHeader('advanced'.tr()),
-                  SwitchListTile(
-                    title: Text('strict_mode'.tr()),
-                    subtitle: Text('strict_mode_desc'.tr()),
-                    value: _settings.strictMode,
-                    onChanged: (val) {
-                      setState(() {
-                        _settings = _settings.copyWith(strictMode: val);
-                      });
-                    },
-                    activeColor: AppColors.primary,
+                  // 3. CRM Config Section
+                  _buildAccordionSection(
+                    title: 'crm_config'.tr(),
+                    icon: Icons.people_outline_rounded,
+                    children: [
+                      _buildSettingTile(
+                        label: 'vip_threshold'.tr(),
+                        controller: _vipThresholdController,
+                        icon: Icons.star_border_rounded,
+                        keyboardType: TextInputType.number,
+                      ),
+                      SizedBox(height: 12.h),
+                      _buildSettingTile(
+                        label: 'inactive_days'.tr(),
+                        controller: _inactiveDaysController,
+                        icon: Icons.timer_outlined,
+                        keyboardType: TextInputType.number,
+                      ),
+                      SizedBox(height: 12.h),
+                      _buildSettingTile(
+                        label: 'dead_days'.tr(),
+                        controller: _deadDaysController,
+                        icon: Icons.hourglass_empty,
+                        keyboardType: TextInputType.number,
+                      ),
+                    ],
                   ),
-                  SwitchListTile(
-                    title: Text('enable_whatsapp_notification'.tr()),
-                    subtitle: Text('enable_whatsapp_notification_desc'.tr()),
-                    value: _settings.enableWhatsapp,
-                    onChanged: (val) {
-                      setState(() {
-                        _settings = _settings.copyWith(enableWhatsapp: val);
-                      });
-                    },
-                    activeColor: AppColors.primary,
+
+                  // 4. Print & PDF Settings Section
+                  _buildAccordionSection(
+                    title: context.locale.languageCode == 'ar' ? 'إعدادات الطباعة والـ PDF' : 'Print & PDF Settings',
+                    icon: Icons.print_rounded,
+                    children: [
+                      Text('pdf_page_format'.tr(), style: TextStyle(color: Colors.grey, fontSize: 12.sp)),
+                      SizedBox(height: 6.h),
+                      _buildPdfPageFormatDropdown(context),
+                      SizedBox(height: 16.h),
+                      Text('receipt_width'.tr(), style: TextStyle(color: Colors.grey, fontSize: 12.sp)),
+                      SizedBox(height: 6.h),
+                      _buildReceiptWidthDropdown(context),
+                      SizedBox(height: 12.h),
+                      SwitchListTile(
+                        title: Text('enable_pdf_receipt_prompt'.tr()),
+                        subtitle: Text('enable_pdf_receipt_prompt_desc'.tr()),
+                        value: _settings.enablePdfReceipt,
+                        onChanged: (val) {
+                          setState(() {
+                            _settings = _settings.copyWith(enablePdfReceipt: val);
+                          });
+                        },
+                        activeColor: AppColors.primary,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ],
                   ),
-                  SwitchListTile(
-                    title: Text('enable_pdf_receipt_prompt'.tr()),
-                    subtitle: Text('enable_pdf_receipt_prompt_desc'.tr()),
-                    value: _settings.enablePdfReceipt,
-                    onChanged: (val) {
-                      setState(() {
-                        _settings = _settings.copyWith(enablePdfReceipt: val);
-                      });
-                    },
-                    activeColor: AppColors.primary,
+
+                  // 5. Advanced & Staff Mode Section
+                  _buildAccordionSection(
+                    title: 'advanced'.tr(),
+                    icon: Icons.admin_panel_settings_rounded,
+                    children: [
+                      _buildStaffModeSection(),
+                      SizedBox(height: 16.h),
+                      SwitchListTile(
+                        title: Text('strict_mode'.tr()),
+                        subtitle: Text('strict_mode_desc'.tr()),
+                        value: _settings.strictMode,
+                        onChanged: (val) {
+                          setState(() {
+                            _settings = _settings.copyWith(strictMode: val);
+                          });
+                        },
+                        activeColor: AppColors.primary,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      const Divider(),
+                      SwitchListTile(
+                        title: Text('enable_whatsapp_notification'.tr()),
+                        subtitle: Text('enable_whatsapp_notification_desc'.tr()),
+                        value: _settings.enableWhatsapp,
+                        onChanged: (val) {
+                          setState(() {
+                            _settings = _settings.copyWith(enableWhatsapp: val);
+                          });
+                        },
+                        activeColor: AppColors.primary,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ],
                   ),
+
+                  // 6. General & Account Section
+                  _buildAccordionSection(
+                    title: context.locale.languageCode == 'ar' ? 'الإعدادات العامة والحساب' : 'General & Account Settings',
+                    icon: Icons.settings_rounded,
+                    children: [
+                      Text('language'.tr(), style: TextStyle(color: Colors.grey, fontSize: 12.sp)),
+                      SizedBox(height: 6.h),
+                      _buildLanguageDropdown(context),
+                      SizedBox(height: 16.h),
+                      _buildBackupTile(context),
+                      SizedBox(height: 12.h),
+                      _buildAboutTile(context),
+                      if (_isDeveloperMode) ...[
+                        SizedBox(height: 12.h),
+                        _buildSubscriptionTile(context),
+                      ],
+                      SizedBox(height: 16.h),
+                      _buildLogoutTile(context),
+                    ],
+                  ),
+
                   SizedBox(height: 40.h),
                   SizedBox(
                     width: double.infinity,
@@ -261,13 +329,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 16.sp,
-        fontWeight: FontWeight.bold,
-        color: AppColors.primary,
+  Widget _buildAccordionSection({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16.h),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+        ),
+        child: ExpansionTile(
+          leading: Container(
+            padding: EdgeInsets.all(8.w),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 20.sp),
+          ),
+          title: Text(
+            title,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          iconColor: AppColors.primary,
+          collapsedIconColor: AppColors.textSecondary,
+          childrenPadding: EdgeInsets.only(left: 16.w, right: 16.w, bottom: 20.h),
+          expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        ),
       ),
     );
   }
