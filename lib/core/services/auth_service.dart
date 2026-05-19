@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 import 'database_helper.dart';
@@ -10,18 +9,12 @@ class AuthService extends ChangeNotifier {
   final SubscriptionService _subscriptionService;
   final GoogleSignIn _googleSignIn;
   final SharedPreferences _prefs;
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   
   AppUser? _currentUser; 
-  User? _firebaseUser;   
   late Future<void> initialization;
   
   AuthService(this._subscriptionService, this._googleSignIn, this._prefs) {
-    _firebaseAuth.authStateChanges().listen((User? user) {
-      _firebaseUser = user;
-      notifyListeners();
-    });
     initialization = _tryAutoLogin();
   }
 
@@ -38,8 +31,8 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<bool> isAuthenticated() async {
-    // Return true if either a staff is logged in locally or a firebase user is active
-    return _currentUser != null || _firebaseUser != null;
+    // Return true if a staff is logged in locally
+    return _currentUser != null;
   }
 
   // --- Local RBAC Methods ---
@@ -76,41 +69,25 @@ class AuthService extends ChangeNotifier {
   Future<void> logout() async {
     _currentUser = null;
     await _prefs.remove('logged_in_user_id');
-    await _firebaseAuth.signOut();
     await _googleSignIn.signOut();
     notifyListeners();
   }
 
   // --- Firebase / Cloud Methods (from previous implementation) ---
 
-  User? get firebaseUser => _firebaseUser;
-
-  Future<UserCredential> loginWithEmail(String email, String password) async {
-    return await _firebaseAuth.signInWithEmailAndPassword(email: email, password: password);
-  }
-
-  Future<UserCredential> registerWithEmail(String email, String password) async {
-    return await _firebaseAuth.createUserWithEmailAndPassword(email: email, password: password);
-  }
-
-  Future<User?> signInWithGoogle() async {
+  Future<GoogleSignInAccount?> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return null;
-
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      final UserCredential userCredential = await _firebaseAuth.signInWithCredential(credential);
-      return userCredential.user;
+      return googleUser;
     } catch (e) {
       debugPrint("Google Sign-In Error: $e");
       return null;
     }
   }
+
+  // --- Google Drive Support ---
+  GoogleSignIn get googleSignIn => _googleSignIn;
+  GoogleSignInAccount? get googleUser => _googleSignIn.currentUser;
 
   // --- Staff Management ---
 

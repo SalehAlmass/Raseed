@@ -1,17 +1,18 @@
 import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/di/injection_container.dart';
 import '../../../core/services/auth_service.dart';
-import '../../../core/services/firebase_backup_service.dart';
 import '../../../core/services/local_backup_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/routes/routes.dart';
 import '../../../core/services/settings_service.dart';
+import '../../../core/services/google_drive_backup_service.dart';
 import '../../../core/models/user.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 
 class BackupDashboardScreen extends StatefulWidget {
   const BackupDashboardScreen({super.key});
@@ -22,15 +23,16 @@ class BackupDashboardScreen extends StatefulWidget {
 
 class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
   final LocalBackupService _localBackup = sl<LocalBackupService>();
-  final FirebaseBackupService _firebaseBackup = sl<FirebaseBackupService>();
+  final GoogleDriveBackupService _googleDriveBackup = sl<GoogleDriveBackupService>();
   final AuthService _authService = sl<AuthService>();
+  final InternetConnectionChecker _internetChecker = sl<InternetConnectionChecker>();
 
   bool _isLoading = false;
   double _progress = 0;
   String _statusMsg = '';
 
   List<File> _localBackups = [];
-  List<Reference> _cloudBackups = [];
+  List<drive.File> _driveBackups = [];
 
   @override
   void initState() {
@@ -48,15 +50,29 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
       // Local I/O — fast
       _localBackups = await _localBackup.listLocalBackups();
 
-      // Firebase network call — add timeout to avoid blocking UI for too long
-      if (_firebaseBackup.isLoggedIn) {
-        try {
-          _cloudBackups = await _firebaseBackup
-              .listFirebaseBackups()
-              .timeout(const Duration(seconds: 8));
-        } catch (_) {
-          _cloudBackups = [];
+      // Check internet before making cloud calls to prevent SDK spam
+      final hasInternet = await _internetChecker.hasConnection;
+
+      if (hasInternet) {
+        // Attempt silent Google Sign-In if not already logged in
+        if (_authService.googleUser == null) {
+          try {
+            await _authService.googleSignIn.signInSilently();
+          } catch (_) {}
         }
+        
+        // Google Drive network call
+        if (_googleDriveBackup.isLoggedIn) {
+          try {
+            _driveBackups = await _googleDriveBackup
+                .listDriveBackups()
+                .timeout(const Duration(seconds: 8));
+          } catch (_) {
+            _driveBackups = [];
+          }
+        }
+      } else {
+        _driveBackups = [];
       }
     } catch (e) {
       debugPrint('[BackupScreen] load error: $e');
@@ -67,8 +83,7 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Prefer firebase user for cloud backup context, fall back to local user
-    final dynamic user = _authService.firebaseUser ?? _authService.currentUser;
+    final user = _authService.currentUser;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -180,7 +195,7 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
               tooltip: 'logout'.tr(),
               onPressed: () async {
                 await _authService.logout();
-                if (mounted) setState(() => _cloudBackups = []);
+                if (mounted) setState(() => _driveBackups = []);
               },
             ),
         ],
@@ -215,7 +230,7 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
                   label: 'local_and_cloud'.tr(),
                   color: AppColors.primary,
                   enabled: isLoggedIn,
-                  onTap: isLoggedIn ? _handleCreateAndUpload : null,
+                  onTap: isLoggedIn ? _handleCreateAndUploadDrive : null,
                 ),
               ),
             ],
@@ -415,7 +430,7 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
   // ─── Cloud Backup Section ──────────────────────────────────────────────────
 
   Widget _buildCloudBackupSection(bool isLoggedIn) {
-    final lastDate = _firebaseBackup.getLastCloudBackupDate();
+    final lastDate = _googleDriveBackup.getLastDriveBackupDate();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -450,21 +465,21 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
           else
             SizedBox(height: 12.h),
           _ActionCard(
-            title: 'upload_to_firebase'.tr(),
-            subtitle: 'upload_to_firebase_desc'.tr(),
-            icon: Icons.cloud_upload_outlined,
-            color: AppColors.success,
-            onTap: _handleFirebaseUpload,
+            title: 'upload_to_drive'.tr(),
+            subtitle: 'upload_to_drive_desc'.tr(),
+            icon: Icons.add_to_drive_outlined,
+            color: Colors.blue,
+            onTap: _handleGoogleDriveUpload,
           ),
           SizedBox(height: 10.h),
           _ActionCard(
-            title: 'restore_from_cloud'.tr(),
-            subtitle: 'restore_from_cloud_desc'.tr(),
-            icon: Icons.cloud_download_outlined,
-            color: AppColors.info,
-            onTap: _cloudBackups.isEmpty ? null : () => _showCloudRestoreSheet(),
+            title: 'restore_from_drive'.tr(),
+            subtitle: 'restore_from_drive_desc'.tr(),
+            icon: Icons.cloud_download_rounded,
+            color: Colors.blueAccent,
+            onTap: _driveBackups.isEmpty ? null : () => _showDriveRestoreSheet(),
           ),
-          if (_cloudBackups.isNotEmpty) ...[
+          if (_driveBackups.isNotEmpty) ...[
             SizedBox(height: 12.h),
             _buildCloudBackupList(),
           ],
@@ -484,25 +499,32 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
             style: TextStyle(fontSize: 12.sp, color: Colors.grey, fontWeight: FontWeight.bold),
           ),
         ),
-        ..._cloudBackups.take(5).map((ref) {
-          final name = ref.name;
-          return Container(
-            margin: EdgeInsets.only(bottom: 6.h),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(10.r),
-            ),
-            child: ListTile(
-              dense: true,
-              leading: const Icon(Icons.cloud_circle_outlined, color: AppColors.primary),
-              title: Text(name, style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w500)),
-              trailing: IconButton(
-                icon: const Icon(Icons.restore, color: AppColors.primary, size: 20),
-                onPressed: () => _handleRestoreCloud(ref),
+
+        if (_driveBackups.isNotEmpty) ...[
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 4.h),
+            child: Text('Google Drive Backups:', style: TextStyle(fontSize: 10.sp, color: Colors.grey, fontWeight: FontWeight.bold)),
+          ),
+          ..._driveBackups.take(5).map((driveFile) {
+            final name = driveFile.name ?? 'Unknown';
+            return Container(
+              margin: EdgeInsets.only(bottom: 6.h),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(10.r),
               ),
-            ),
-          );
-        }),
+              child: ListTile(
+                dense: true,
+                leading: const Icon(Icons.add_to_drive, color: Colors.blue),
+                title: Text(name, style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w500)),
+                trailing: IconButton(
+                  icon: const Icon(Icons.restore, color: AppColors.primary, size: 20),
+                  onPressed: () => _handleRestoreDrive(driveFile),
+                ),
+              ),
+            );
+          }),
+        ],
       ],
     );
   }
@@ -589,58 +611,12 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
     });
   }
 
-  Future<void> _handleFirebaseUpload() async {
-    final localFiles = await _localBackup.listLocalBackups();
-    if (localFiles.isEmpty) {
-      // Create a fresh local backup first then upload
-      await _handleCreateAndUpload();
-      return;
-    }
-    await _runWithLoading(() async {
-      setState(() => _statusMsg = 'uploading_to_cloud'.tr());
-      await _firebaseBackup.uploadBackupToFirebase(
-        localFiles.first,
-        onProgress: (p) => setState(() => _progress = p),
-      );
-      _showSuccess('backup_success'.tr());
-      await _loadBackupLists();
-    });
-  }
-
-  Future<void> _handleCreateAndUpload() async {
-    await _runWithLoading(() async {
-      setState(() => _statusMsg = 'creating_backup'.tr());
-      await _firebaseBackup.createAndUpload(
-        onProgress: (p) => setState(() {
-          _progress = p;
-          _statusMsg = p < 0.35 ? 'creating_backup'.tr() : 'uploading_to_cloud'.tr();
-        }),
-      );
-      _showSuccess('backup_success'.tr());
-      await _loadBackupLists();
-    });
-  }
-
   Future<void> _handleRestoreLocal(File file) async {
     final confirm = await _showConfirmDialog(
         'restore_local_confirm'.tr(), 'restore_warning'.tr());
     if (!confirm) return;
     await _runWithLoading(() async {
       await _localBackup.restoreLocalBackup(file);
-      _showRestartMessage();
-    });
-  }
-
-  Future<void> _handleRestoreCloud(Reference ref) async {
-    final confirm = await _showConfirmDialog(
-        'restore_cloud_confirm'.tr(), 'restore_warning'.tr());
-    if (!confirm) return;
-    await _runWithLoading(() async {
-      setState(() => _statusMsg = 'downloading_backup'.tr());
-      await _firebaseBackup.restoreFromFirebaseBackup(
-        ref,
-        onProgress: (p) => setState(() => _progress = p),
-      );
       _showRestartMessage();
     });
   }
@@ -661,21 +637,59 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
     );
   }
 
-  void _showCloudRestoreSheet() {
+  Future<void> _handleGoogleDriveUpload() async {
+    if (!await _internetChecker.hasConnection) {
+      _showError('no_internet_connection'.tr());
+      return;
+    }
+    // Always create a fresh local backup of the current database before uploading
+    await _handleCreateAndUploadDrive();
+  }
+
+  Future<void> _handleCreateAndUploadDrive() async {
+    await _runWithLoading(() async {
+      setState(() => _statusMsg = 'creating_backup'.tr());
+      await _googleDriveBackup.createAndUpload(
+        onProgress: (p) => setState(() {
+          _progress = p;
+          _statusMsg = p < 0.35 ? 'creating_backup'.tr() : 'uploading_to_cloud'.tr();
+        }),
+      );
+      _showSuccess('backup_success'.tr());
+      await _loadBackupLists();
+    });
+  }
+
+  Future<void> _handleRestoreDrive(drive.File driveFile) async {
+    final confirm = await _showConfirmDialog(
+        'restore_cloud_confirm'.tr(), 'restore_warning'.tr());
+    if (!confirm) return;
+    await _runWithLoading(() async {
+      setState(() => _statusMsg = 'downloading_backup'.tr());
+      await _googleDriveBackup.restoreFromDriveBackup(
+        driveFile,
+        onProgress: (p) => setState(() => _progress = p),
+      );
+      _showRestartMessage();
+    });
+  }
+
+  void _showDriveRestoreSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20.r))),
       builder: (_) => _BackupListSheet(
-        title: 'restore_from_cloud'.tr(),
-        items: _cloudBackups.map((r) => r.name).toList(),
+        title: 'restore_from_drive'.tr(),
+        items: _driveBackups.map((r) => r.name ?? 'Unknown').toList(),
         onSelect: (idx) {
           Navigator.pop(context);
-          _handleRestoreCloud(_cloudBackups[idx]);
+          _handleRestoreDrive(_driveBackups[idx]);
         },
       ),
     );
   }
+
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
 

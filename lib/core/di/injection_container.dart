@@ -19,7 +19,7 @@ import '../services/category_service.dart';
 import '../services/unit_service.dart';
 import '../services/receipt_service.dart';
 import '../services/local_backup_service.dart';
-import '../services/firebase_backup_service.dart';
+import '../services/google_drive_backup_service.dart';
 import '../services/supplier_service.dart';
 import '../services/supplier_transaction_service.dart';
 import '../services/accounting_service.dart';
@@ -86,16 +86,23 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ExpenseService());
   sl.registerLazySingleton(() => ProcurementService());
 
-  // Auth (Google Sign-In kept for Firebase Auth via Google only; Drive scope removed)
-  sl.registerLazySingleton<GoogleSignIn>(() => GoogleSignIn(scopes: ['email']));
+  // Auth
+  sl.registerLazySingleton<GoogleSignIn>(() => GoogleSignIn(
+    clientId: '406414577926-gmnm5h7pi388s3g72m42c4u3vkg1nhhd.apps.googleusercontent.com',
+    scopes: [
+      'email',
+      'https://www.googleapis.com/auth/drive.file',
+      'https://www.googleapis.com/auth/drive.appdata'
+    ],
+  ));
   sl.registerLazySingleton<AuthService>(() => AuthService(sl<SubscriptionService>(), sl<GoogleSignIn>(), sl<SharedPreferences>()));
   sl.registerLazySingleton(() => ShiftService());
   sl.registerLazySingleton(() => FiscalYearService());
 
   //! Backup Services
   sl.registerLazySingleton<LocalBackupService>(() => LocalBackupService(sl<SharedPreferences>()));
-  sl.registerLazySingleton<FirebaseBackupService>(
-    () => FirebaseBackupService(sl<SharedPreferences>(), sl<LocalBackupService>()),
+  sl.registerLazySingleton<GoogleDriveBackupService>(
+    () => GoogleDriveBackupService(sl<SharedPreferences>(), sl<LocalBackupService>(), sl<AuthService>()),
   );
 
   //! Store Services

@@ -1,6 +1,5 @@
 plugins {
     id("com.android.application")
-    id("com.google.gms.google-services") // Firebase
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
 }

@@ -28,9 +28,10 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() => _isLoading = true);
     try {
       if (_isLogin) {
-        await _authService.loginWithEmail(_emailController.text.trim(), _passwordController.text.trim());
+        final success = await _authService.login(_emailController.text.trim(), _passwordController.text.trim());
+        if (!success) throw Exception('invalid_credentials'.tr());
       } else {
-        await _authService.registerWithEmail(_emailController.text.trim(), _passwordController.text.trim());
+        throw Exception('Registration is disabled. Please contact the administrator.');
       }
       if (mounted) Navigator.pushReplacementNamed(context, Routes.home);
     } catch (e) {
