@@ -383,6 +383,8 @@
   "enable_whatsapp_notification_desc": "Enable sending receipts and reminders to customers via WhatsApp automatically",
   "enable_pdf_receipt_prompt": "Export Receipt (PDF)",
   "enable_pdf_receipt_prompt_desc": "Enable showing the PDF receipt export and print prompt after every sale",
+  "pdf_page_format": "PDF Report Paper Size",
+  "receipt_width": "Cashier Receipt Size (Thermal)",
   "near_expiry_alert": "Warning: Near Expiry Products",
   "near_expiry_desc": "You have {} products expiring in less than 30 days.",
   "near_expiry_products": "Near Expiry Products",

@@ -19,16 +19,16 @@ import '../../../../core/services/settings_service.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/barcode_scanner_view.dart';
 
-class AddEditProductDialog extends StatefulWidget {
+class AddEditProductScreen extends StatefulWidget {
   final Product? product;
 
-  const AddEditProductDialog({super.key, this.product});
+  const AddEditProductScreen({super.key, this.product});
 
   @override
-  State<AddEditProductDialog> createState() => _AddEditProductDialogState();
+  State<AddEditProductScreen> createState() => _AddEditProductScreenState();
 }
 
-class _AddEditProductDialogState extends State<AddEditProductDialog> {
+class _AddEditProductScreenState extends State<AddEditProductScreen> {
   final _formKey = GlobalKey<FormState>();
   final _productService = sl<ProductService>();
   final _categoryService = sl<CategoryService>();
@@ -429,28 +429,33 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
-    return Dialog(
-      insetPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 24.h),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
-      child: Container(
-        constraints: BoxConstraints(maxHeight: 1.sh * 0.9),
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Text(
+          widget.product == null ? 'add_product'.tr() : 'edit_product'.tr(),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: AppColors.textPrimary,
+      ),
+      body: Form(
+        key: _formKey,
         child: Column(
           children: [
-            _buildHeader(),
             Expanded(
-              child: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(horizontal: 20.w),
-                  child: Column(
-                    children: [
-                      _buildTier1Section(),
-                      _buildTier2Section(),
-                      SizedBox(height: 20.h),
-                    ],
-                  ),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+                child: Column(
+                  children: [
+                    _buildTier1Section(),
+                    _buildTier2Section(),
+                    SizedBox(height: 20.h),
+                  ],
                 ),
               ),
             ),
@@ -685,29 +690,6 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
               fontSize: 16.sp,
               color: isProfit ? Colors.green : Colors.red,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Padding(
-      padding: EdgeInsets.all(20.w),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            widget.product == null ? 'add_product'.tr() : 'edit_product'.tr(),
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.close),
           ),
         ],
       ),

@@ -9,27 +9,45 @@ import '../utils/currency_helper.dart';
 import '../services/settings_service.dart';
 import '../di/injection_container.dart';
 import '../models/app_settings.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 class ReceiptService {
+  pw.Font? _cachedFont;
+  pw.Font? _cachedBoldFont;
+
+  Future<pw.Font> _getFont() async {
+    if (_cachedFont != null) return _cachedFont!;
+    final fontData = await rootBundle.load('assets/fonts/Cairo-Regular.ttf');
+    _cachedFont = pw.Font.ttf(fontData);
+    return _cachedFont!;
+  }
+
+  Future<pw.Font> _getBoldFont() async {
+    if (_cachedBoldFont != null) return _cachedBoldFont!;
+    final boldFontData = await rootBundle.load('assets/fonts/Cairo-Bold.ttf');
+    _cachedBoldFont = pw.Font.ttf(boldFontData);
+    return _cachedBoldFont!;
+  }
+
   Future<void> printReceipt(AppTransaction transaction, {Customer? customer}) async {
     final settings = sl<SettingsService>().settings;
     final store = settings.storeProfile;
 
     final pdf = pw.Document();
-    final font = await PdfGoogleFonts.cairoRegular();
-    final boldFont = await PdfGoogleFonts.cairoBold();
+    final font = await _getFont();
+    final boldFont = await _getBoldFont();
 
     pw.MemoryImage? logoImage;
     if (store.logoPath != null && File(store.logoPath!).existsSync()) {
       logoImage = pw.MemoryImage(File(store.logoPath!).readAsBytesSync());
     }
 
-    // Receipt Size: 80mm width (approx 226 points)
-    const pageWidth = 80 * PdfPageFormat.mm;
+    // Receipt Size: 80mm or 58mm from settings
+    final double pageWidth = settings.receiptWidth * PdfPageFormat.mm;
 
     pdf.addPage(
       pw.Page(
-        pageFormat: const PdfPageFormat(pageWidth, double.infinity, marginAll: 5 * PdfPageFormat.mm),
+        pageFormat: PdfPageFormat(pageWidth, double.infinity, marginAll: 5 * PdfPageFormat.mm),
         textDirection: pw.TextDirection.rtl,
         theme: pw.ThemeData.withFont(base: font, bold: boldFont),
         build: (context) {

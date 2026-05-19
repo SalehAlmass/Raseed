@@ -384,6 +384,8 @@
   "enable_whatsapp_notification_desc": "تفعيل إرسال الإيصالات والرسائل التذكيرية للعملاء عبر واتساب تلقائياً",
   "enable_pdf_receipt_prompt": "تصدير الفاتورة (PDF)",
   "enable_pdf_receipt_prompt_desc": "تفعيل نافذة عرض تصدير وطباعة الفاتورة (PDF) بعد كل عملية بيع",
+  "pdf_page_format": "حجم ورق التقارير (PDF)",
+  "receipt_width": "حجم فواتير الكاشير (حراري)",
   "near_expiry_alert": "تنبيه: منتجات شارفت على الانتهاء",
   "near_expiry_desc": "لديك {} منتجات ستنتهي خلال أقل من 30 يوماً.",
   "near_expiry_products": "منتجات شارفت على الانتهاء",

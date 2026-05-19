@@ -15,15 +15,48 @@ import '../../../core/services/settings_service.dart';
 import '../../../core/di/injection_container.dart';
 import '../../../core/models/app_settings.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 class ExportService {
   StoreProfile get _store => sl<SettingsService>().settings.storeProfile;
+
+  pw.Font? _cachedFont;
+  pw.Font? _cachedBoldFont;
+
+  Future<pw.Font> _getFont() async {
+    if (_cachedFont != null) return _cachedFont!;
+    final fontData = await rootBundle.load('assets/fonts/Cairo-Regular.ttf');
+    _cachedFont = pw.Font.ttf(fontData);
+    return _cachedFont!;
+  }
+
+  Future<pw.Font> _getBoldFont() async {
+    if (_cachedBoldFont != null) return _cachedBoldFont!;
+    final boldFontData = await rootBundle.load('assets/fonts/Cairo-Bold.ttf');
+    _cachedBoldFont = pw.Font.ttf(boldFontData);
+    return _cachedBoldFont!;
+  }
 
   pw.MemoryImage? _getLogo() {
     if (_store.logoPath != null && File(_store.logoPath!).existsSync()) {
       return pw.MemoryImage(File(_store.logoPath!).readAsBytesSync());
     }
     return null;
+  }
+
+  PdfPageFormat _getPageFormat() {
+    final formatStr = sl<SettingsService>().settings.pdfPageFormat.toUpperCase();
+    switch (formatStr) {
+      case 'A5':
+        return PdfPageFormat.a5;
+      case 'LETTER':
+        return PdfPageFormat.letter;
+      case 'LEGAL':
+        return PdfPageFormat.legal;
+      case 'A4':
+      default:
+        return PdfPageFormat.a4;
+    }
   }
   Future<void> exportToExcel(DashboardReport report, ReportFilter filter) async {
     final excel = Excel.createExcel();
@@ -83,12 +116,12 @@ class ExportService {
 
   Future<void> exportToPdf(DashboardReport report, ReportFilter filter) async {
     final pdf = pw.Document();
-    final font = await PdfGoogleFonts.cairoRegular();
-    final boldFont = await PdfGoogleFonts.cairoBold();
+    final font = await _getFont();
+    final boldFont = await _getBoldFont();
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
+        pageFormat: _getPageFormat(),
         theme: pw.ThemeData.withFont(base: font, bold: boldFont),
         build: (context) => [
           _buildPdfHeader(filter),
@@ -158,12 +191,12 @@ class ExportService {
     List<AppTransaction> transactions,
   ) async {
     final pdf = pw.Document();
-    final font = await PdfGoogleFonts.cairoRegular();
-    final boldFont = await PdfGoogleFonts.cairoBold();
+    final font = await _getFont();
+    final boldFont = await _getBoldFont();
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
+        pageFormat: _getPageFormat(),
         textDirection: pw.TextDirection.rtl,
         theme: pw.ThemeData.withFont(base: font, bold: boldFont),
         build: (context) => [

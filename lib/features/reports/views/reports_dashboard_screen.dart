@@ -127,10 +127,59 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
   void _handleExport(BuildContext context, String type) async {
     final state = context.read<ReportsBloc>().state;
     if (state is ReportsLoaded) {
-      if (type == 'pdf') {
-        await sl<ExportService>().exportToPdf(state.report, state.filter);
-      } else {
-        await sl<ExportService>().exportToExcel(state.report, state.filter);
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return WillPopScope(
+            onWillPop: () async => false, // Prevent dismissing by back button
+            child: Dialog(
+              backgroundColor: AppColors.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.r),
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 24.w),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    ),
+                    SizedBox(width: 20.w),
+                    Text(
+                      'loading'.tr(),
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+
+      try {
+        if (type == 'pdf') {
+          await sl<ExportService>().exportToPdf(state.report, state.filter);
+        } else {
+          await sl<ExportService>().exportToExcel(state.report, state.filter);
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('error_occurred'.tr())),
+          );
+        }
+      } finally {
+        if (context.mounted) {
+          Navigator.of(context, rootNavigator: true).pop(); // Close loading dialog
+        }
       }
     }
   }

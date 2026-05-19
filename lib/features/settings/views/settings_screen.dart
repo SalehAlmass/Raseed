@@ -166,6 +166,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   SizedBox(height: 15.h),
                   _buildLanguageDropdown(context),
                   SizedBox(height: 30.h),
+                  _buildSectionHeader('pdf_page_format'.tr()),
+                  SizedBox(height: 15.h),
+                  _buildPdfPageFormatDropdown(context),
+                  SizedBox(height: 30.h),
+                  _buildSectionHeader('receipt_width'.tr()),
+                  SizedBox(height: 15.h),
+                  _buildReceiptWidthDropdown(context),
+                  SizedBox(height: 30.h),
                   _buildSectionHeader('about'.tr()),
                   SizedBox(height: 15.h),
                   _buildAboutTile(context),
@@ -902,6 +910,100 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // Update settings to sync language preference
               final newSettings = _settings.copyWith(languageCode: newLocale.languageCode);
               _settingsService.updateSettings(newSettings);
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPdfPageFormatDropdown(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 5.h),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(15.r),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _settings.pdfPageFormat,
+          isExpanded: true,
+          icon: Icon(Icons.picture_as_pdf, color: AppColors.primary, size: 20.sp),
+          items: [
+            DropdownMenuItem(
+              value: 'A4',
+              child: Text(
+                context.locale.languageCode == 'ar' ? 'A4 (حجم كبير افتراضي)' : 'A4 (Standard Large)',
+                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'A5',
+              child: Text(
+                context.locale.languageCode == 'ar' ? 'A5 (حجم متوسط للدفاتر)' : 'A5 (Medium Notebook)',
+                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'LETTER',
+              child: Text(
+                context.locale.languageCode == 'ar' ? 'Letter (خطاب)' : 'Letter (US)',
+                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'LEGAL',
+              child: Text(
+                context.locale.languageCode == 'ar' ? 'Legal (قانوني طويل)' : 'Legal (Long)',
+                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+          onChanged: (String? newValue) {
+            if (newValue != null) {
+              setState(() {
+                _settings = _settings.copyWith(pdfPageFormat: newValue);
+              });
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReceiptWidthDropdown(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 5.h),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(15.r),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          value: _settings.receiptWidth,
+          isExpanded: true,
+          icon: Icon(Icons.print, color: AppColors.primary, size: 20.sp),
+          items: [
+            DropdownMenuItem(
+              value: 80,
+              child: Text(
+                context.locale.languageCode == 'ar' ? '80 ملم (طابعات الكاشير الكبيرة المكتبية)' : '80 mm (Desktop POS Printer)',
+                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+              ),
+            ),
+            DropdownMenuItem(
+              value: 58,
+              child: Text(
+                context.locale.languageCode == 'ar' ? '58 ملم (طابعات البلوتوث والمحمولة الصغيرة)' : '58 mm (Portable Bluetooth Printer)',
+                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+          onChanged: (int? newValue) {
+            if (newValue != null) {
+              setState(() {
+                _settings = _settings.copyWith(receiptWidth: newValue);
+              });
             }
           },
         ),

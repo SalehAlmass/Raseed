@@ -195,6 +195,8 @@ class AppSettings {
   final StoreProfile storeProfile;
   final StaffConfig staffConfig;
   final String languageCode;
+  final String pdfPageFormat; // A4, A5, LETTER, LEGAL
+  final int receiptWidth; // 80 or 58
 
   AppSettings({
     this.maxDebt = 100000.0,
@@ -209,6 +211,8 @@ class AppSettings {
     this.enableWhatsapp = true,
     this.enablePdfReceipt = true,
     this.languageCode = 'ar',
+    this.pdfPageFormat = 'A4',
+    this.receiptWidth = 80,
     ProductFormConfig? productFormConfig,
     ModuleConfig? moduleConfig,
     StoreProfile? storeProfile,
@@ -236,6 +240,8 @@ class AppSettings {
       'store_profile': jsonEncode(storeProfile.toMap()),
       'staff_config': jsonEncode(staffConfig.toMap()),
       'language_code': languageCode,
+      'pdf_page_format': pdfPageFormat,
+      'receipt_width': receiptWidth,
     };
   }
 
@@ -267,6 +273,8 @@ class AppSettings {
           ? StaffConfig.fromMap(jsonDecode(map['staff_config']))
           : StaffConfig(),
       languageCode: map['language_code'] ?? 'ar',
+      pdfPageFormat: map['pdf_page_format'] ?? 'A4',
+      receiptWidth: map['receipt_width'] ?? 80,
     );
   }
 
@@ -287,6 +295,8 @@ class AppSettings {
     StoreProfile? storeProfile,
     StaffConfig? staffConfig,
     String? languageCode,
+    String? pdfPageFormat,
+    int? receiptWidth,
   }) {
     return AppSettings(
       maxDebt: maxDebt ?? this.maxDebt,
@@ -305,6 +315,8 @@ class AppSettings {
       storeProfile: storeProfile ?? this.storeProfile,
       staffConfig: staffConfig ?? this.staffConfig,
       languageCode: languageCode ?? this.languageCode,
+      pdfPageFormat: pdfPageFormat ?? this.pdfPageFormat,
+      receiptWidth: receiptWidth ?? this.receiptWidth,
     );
   }
 }

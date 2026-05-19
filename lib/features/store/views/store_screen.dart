@@ -11,11 +11,13 @@ import '../../../core/models/app_feature.dart';
 import '../../../core/widgets/subscription_dialog.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/utils/currency_helper.dart';
-import 'widgets/add_edit_product_dialog.dart';
+import 'widgets/add_edit_product_screen.dart';
 import 'widgets/quick_purchase_dialog.dart';
 import '../../../core/routes/routes.dart';
 import '../../../core/widgets/app_bottom_navigation_bar.dart';
 import 'widgets/sell_product_dialog.dart';
+import '../../../core/models/category.dart';
+import '../../../core/services/category_service.dart';
 
 class StoreScreen extends StatefulWidget {
   const StoreScreen({super.key});
@@ -26,8 +28,12 @@ class StoreScreen extends StatefulWidget {
 
 class _StoreScreenState extends State<StoreScreen> {
   final ProductService _productService = sl<ProductService>();
+  final CategoryService _categoryService = sl<CategoryService>();
   List<Product> _products = [];
   List<Product> _filteredProducts = [];
+  List<Category> _categories = [];
+  Category? _selectedCategory;
+  String _selectedStatus = 'all'; // 'all', 'outOfStock', 'expired', 'nearExpiry'
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
 
@@ -47,26 +53,154 @@ class _StoreScreenState extends State<StoreScreen> {
   Future<void> _loadProducts() async {
     setState(() => _isLoading = true);
     final products = await _productService.getAllProducts();
+    final categories = await _categoryService.getAllCategories();
     setState(() {
       _products = products;
-      _filteredProducts = products;
+      _categories = categories;
       _isLoading = false;
+      _applyFilters();
     });
   }
 
   void _onSearchChanged() {
+    _applyFilters();
+  }
+
+  void _applyFilters() {
     final query = _searchController.text.toLowerCase();
     setState(() {
       _filteredProducts = _products.where((p) {
-        return p.name.toLowerCase().contains(query);
+        // 1. Search Query Filter
+        final matchesQuery = p.name.toLowerCase().contains(query);
+
+        // 2. Category Filter
+        final matchesCategory = _selectedCategory == null || p.categoryId == _selectedCategory!.id;
+
+        // 3. Status Filter
+        bool matchesStatus = true;
+        if (_selectedStatus == 'outOfStock') {
+          matchesStatus = p.stockQuantity <= 0;
+        } else if (_selectedStatus == 'expired') {
+          matchesStatus = p.hasExpiredBatch;
+        } else if (_selectedStatus == 'nearExpiry') {
+          matchesStatus = p.hasNearExpiryBatch;
+        }
+
+        return matchesQuery && matchesCategory && matchesStatus;
       }).toList();
     });
   }
 
+  bool get _hasActiveFilters => _selectedCategory != null || _selectedStatus != 'all' || _searchController.text.isNotEmpty;
+
+  void _clearFilters() {
+    setState(() {
+      _selectedCategory = null;
+      _selectedStatus = 'all';
+      _searchController.clear();
+      _applyFilters();
+    });
+  }
+
+  Widget _buildCategoryFilterChip(BuildContext context) {
+    final isArabic = context.locale.languageCode == 'ar';
+    return PopupMenuButton<Category?>(
+      initialValue: _selectedCategory,
+      onSelected: (Category? category) {
+        setState(() {
+          _selectedCategory = category;
+          _applyFilters();
+        });
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem<Category?>(
+          value: null,
+          child: Text(isArabic ? 'كل الأصناف' : 'All Categories'),
+        ),
+        ..._categories.map((cat) => PopupMenuItem<Category?>(
+          value: cat,
+          child: Text(cat.name),
+        )),
+      ],
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: _selectedCategory != null 
+              ? AppColors.primary 
+              : AppColors.surface,
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(
+            color: _selectedCategory != null 
+                ? AppColors.primary 
+                : Colors.grey.withOpacity(0.2),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.category_outlined,
+              size: 16.sp,
+              color: _selectedCategory != null ? Colors.white : AppColors.textSecondary,
+            ),
+            SizedBox(width: 6.w),
+            Text(
+              _selectedCategory?.name ?? (isArabic ? 'الصنف' : 'Category'),
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.bold,
+                color: _selectedCategory != null ? Colors.white : AppColors.textSecondary,
+              ),
+            ),
+            SizedBox(width: 4.w),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 16.sp,
+              color: _selectedCategory != null ? Colors.white : AppColors.textSecondary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(String status, String label) {
+    final isSelected = _selectedStatus == status;
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _selectedStatus = status;
+          _applyFilters();
+        });
+      },
+      borderRadius: BorderRadius.circular(20.r),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : AppColors.surface,
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : Colors.grey.withOpacity(0.2),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.bold,
+            color: isSelected ? Colors.white : AppColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showAddEditDialog([Product? product]) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (_) => AddEditProductDialog(product: product),
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddEditProductScreen(product: product),
+      ),
     );
     if (result == true) {
       _loadProducts();
@@ -195,12 +329,18 @@ class _StoreScreenState extends State<StoreScreen> {
       body: Column(
         children: [
           Padding(
-            padding: EdgeInsets.all(20.w),
+            padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h, bottom: 10.h),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'search_hint'.tr(),
                 prefixIcon: const Icon(Icons.search),
+                suffixIcon: _hasActiveFilters
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_rounded, color: AppColors.error),
+                        onPressed: _clearFilters,
+                      )
+                    : null,
                 filled: true,
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
@@ -210,6 +350,27 @@ class _StoreScreenState extends State<StoreScreen> {
               ),
             ),
           ),
+          // Horizontal Category filter chips & Status chips
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildCategoryFilterChip(context),
+                  SizedBox(width: 8.w),
+                  _buildStatusChip('all', context.locale.languageCode == 'ar' ? 'الكل' : 'All'),
+                  SizedBox(width: 8.w),
+                  _buildStatusChip('outOfStock', context.locale.languageCode == 'ar' ? 'نفذ من المخزن' : 'Out of Stock'),
+                  SizedBox(width: 8.w),
+                  _buildStatusChip('expired', context.locale.languageCode == 'ar' ? 'منتهي الصلاحية' : 'Expired'),
+                  SizedBox(width: 8.w),
+                  _buildStatusChip('nearExpiry', context.locale.languageCode == 'ar' ? 'قريب الانتهاء' : 'Near Expiry'),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: 15.h),
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())

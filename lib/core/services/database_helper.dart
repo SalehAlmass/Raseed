@@ -37,7 +37,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 31,
+      version: 33,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -102,7 +102,9 @@ class DatabaseHelper {
         module_config TEXT,
         store_profile TEXT,
         staff_config TEXT,
-        language_code TEXT DEFAULT 'ar'
+        language_code TEXT DEFAULT 'ar',
+        pdf_page_format TEXT DEFAULT 'A4',
+        receipt_width INTEGER DEFAULT 80
       )
     ''');
 
@@ -115,7 +117,9 @@ class DatabaseHelper {
       'vip_threshold': 100000.0,
       'inactive_days': 30,
       'dead_days': 90,
-      'language_code': 'ar'
+      'language_code': 'ar',
+      'pdf_page_format': 'A4',
+      'receipt_width': 80
     });
 
     await db.execute('''
@@ -785,6 +789,22 @@ class DatabaseHelper {
         await db.execute("ALTER TABLE settings ADD COLUMN language_code TEXT DEFAULT 'ar'");
       } catch (e) {
         debugPrint("language_code already exists");
+      }
+    }
+
+    if (oldVersion < 32) {
+      try {
+        await db.execute("ALTER TABLE settings ADD COLUMN pdf_page_format TEXT DEFAULT 'A4'");
+      } catch (e) {
+        debugPrint("pdf_page_format already exists");
+      }
+    }
+
+    if (oldVersion < 33) {
+      try {
+        await db.execute("ALTER TABLE settings ADD COLUMN receipt_width INTEGER DEFAULT 80");
+      } catch (e) {
+        debugPrint("receipt_width already exists");
       }
     }
   }
