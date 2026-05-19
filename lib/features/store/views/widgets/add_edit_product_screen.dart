@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rseed/core/routes/routes.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/models/product.dart';
 import '../../../../core/models/batch.dart';
@@ -510,6 +511,10 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         if (_formConfig.showBarcode) ...[
           SizedBox(height: 12.h),
           _buildBarcodeField(),
+        ],
+        if (_formConfig.showPurchasePrice) ...[
+          SizedBox(height: 12.h),
+          _buildSarConverterCard(),
         ],
         SizedBox(height: 12.h),
         Row(
@@ -1107,6 +1112,120 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               'paid_amount'.tr(),
               Icons.payments_outlined,
               type: TextInputType.number,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSarConverterCard() {
+    final isArabic = context.locale.languageCode == 'ar';
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      margin: EdgeInsets.only(bottom: 12.h),
+      padding: EdgeInsets.all(14.w),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primary.withOpacity(0.08),
+            Colors.amber.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: AppColors.primary.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.currency_exchange_rounded, color: AppColors.primary, size: 20.sp),
+              SizedBox(width: 8.w),
+              Text(
+                isArabic ? 'حاسبة الشراء بالريال السعودي' : 'SAR Purchase Calculator',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13.sp,
+                  color: AppColors.primary,
+                ),
+              ),
+              const Spacer(),
+              Switch(
+                value: _useSarConversion,
+                activeColor: AppColors.primary,
+                onChanged: (val) {
+                  setState(() {
+                    _useSarConversion = val;
+                    if (!val) {
+                      _sarPurchasePriceController.clear();
+                    } else {
+                      // Trigger conversion immediately on activation
+                      _updateSarToYemeniConversion();
+                    }
+                  });
+                },
+              ),
+            ],
+          ),
+          if (_useSarConversion) ...[
+            SizedBox(height: 12.h),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildModernField(
+                    _sarPurchasePriceController,
+                    isArabic ? 'سعر الشراء (سعودي 🇸🇦)' : 'Purchase Cost (SAR 🇸🇦)',
+                    Icons.payments_outlined,
+                    type: TextInputType.number,
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: _buildModernField(
+                    _exchangeRateController,
+                    isArabic ? 'سعر الصرف اليوم' : 'Exchange Rate Today',
+                    Icons.trending_up_rounded,
+                    type: TextInputType.number,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(color: Colors.grey.withOpacity(0.15)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    isArabic ? 'القيمة المعادلة باليمني:' : 'Equivalent in YER:',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '${_purchasePriceController.text} ${isArabic ? "ريال يمني 🇾🇪" : "YER 🇾🇪"}',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: Colors.green[700],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ],
