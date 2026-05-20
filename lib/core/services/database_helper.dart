@@ -293,8 +293,16 @@ class DatabaseHelper {
     ''');
 
     await db.execute('''
-      FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL
-    )
+      CREATE TABLE IF NOT EXISTS purchase_order_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        purchase_order_id INTEGER NOT NULL,
+        product_id INTEGER NOT NULL,
+        product_name TEXT NOT NULL,
+        quantity INTEGER NOT NULL,
+        cost_price REAL NOT NULL,
+        FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders (id) ON DELETE CASCADE,
+        FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL
+      )
     ''');
 
     await db.execute('''

@@ -126,10 +126,10 @@ class _HomeScreenState extends State<HomeScreen> {
           //       '/store',
           //     ).then((_) => _loadData()),
           //   ),
-          // IconButton(
-          //   icon: const Icon(Icons.delete_forever),
-          //   onPressed: () => _showResetDataConfirmation(context),
-          // ),
+          IconButton(
+            icon: const Icon(Icons.delete_forever),
+            onPressed: () => _showResetDataConfirmation(context),
+          ),
           // IconButton(
           //   icon: const Icon(Icons.add),
           //   onPressed: () =>
@@ -822,7 +822,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Colors.white.withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.account_balance_rounded, color: Colors.white, size: 28.sp),
+                  child: Icon(
+                    Icons.account_balance_rounded,
+                    color: Colors.white,
+                    size: 28.sp,
+                  ),
                 ),
                 SizedBox(width: 20.w),
                 Expanded(
@@ -847,7 +851,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-                Icon(Icons.arrow_forward_ios_rounded, color: Colors.white.withOpacity(0.7), size: 18.sp),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Colors.white.withOpacity(0.7),
+                  size: 18.sp,
+                ),
               ],
             ),
           ),

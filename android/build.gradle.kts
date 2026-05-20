@@ -18,6 +18,13 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
     
+    tasks.configureEach {
+        if (name.contains("verifyReleaseResources") || 
+            name.contains("stripReleaseDebugSymbols")) {
+            doNotTrackState("Bypass Gradle 8.12 strict check bug in Windows environments")
+        }
+    }
+    
     afterEvaluate {
         if (project.hasProperty("android")) {
             val android = project.extensions.findByName("android")
