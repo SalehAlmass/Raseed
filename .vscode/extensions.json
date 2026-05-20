@@ -1,0 +1,19 @@
+{
+  "recommendations": [
+    "dart-code.dart-code",
+    "dart-code.flutter",
+    "Nash.awesome-flutter-snippets",
+    "felixangelov.bloc",
+    "usernamehw.errorlens",
+    "formulahendry.auto-rename-tag",
+    "aaron-bond.better-comments",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "github.copilot",
+    "github.copilot-chat",
+    "bmewburn.vscode-intelephense-client",
+    "onecentlin.laravel-blade",
+    "amiralizadeh9480.laravel-extra-intellisense",
+    "shufo.vscode-blade-formatter"
+  ]
+}

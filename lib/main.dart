@@ -13,8 +13,6 @@ import 'core/services/subscription_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await EasyLocalization.ensureInitialized();
-
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -29,15 +27,39 @@ void main() async {
     ),
   );
 
-  // Initialize dependency injection
-  await di.init();
+  Locale savedLocale = const Locale('ar');
 
-  // Initialize subscription trial & anti-tamper logic
-  await di.sl<SubscriptionService>().initTrial();
+  try {
+    await EasyLocalization.ensureInitialized();
+  } catch (e) {
+    debugPrint('EasyLocalization initialization failed: $e');
+  }
 
-  // Load saved locale from settings
-  final settings = await di.sl<SettingsService>().getSettings();
-  final savedLocale = Locale(settings.languageCode);
+  try {
+    // Initialize dependency injection
+    await di.init();
+  } catch (e) {
+    debugPrint('Dependency Injection failed: $e');
+  }
+
+  try {
+    // Initialize subscription trial & anti-tamper logic
+    if (di.sl.isRegistered<SubscriptionService>()) {
+      await di.sl<SubscriptionService>().initTrial();
+    }
+  } catch (e) {
+    debugPrint('SubscriptionService initialization failed: $e');
+  }
+
+  try {
+    // Load saved locale from settings
+    if (di.sl.isRegistered<SettingsService>()) {
+      final settings = await di.sl<SettingsService>().getSettings();
+      savedLocale = Locale(settings.languageCode);
+    }
+  } catch (e) {
+    debugPrint('SettingsService loading failed: $e');
+  }
 
   runApp(
     EasyLocalization(
