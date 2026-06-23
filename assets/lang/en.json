@@ -601,5 +601,15 @@
   "annual_closing": "Annual Closing",
   "perform_closing_desc": "This process will zero out expense and revenue accounts and carry forward balances to the new year. This action cannot be undone.",
   "confirm_closing": "Confirm Annual Closing",
-  "closing_success": "Annual closing completed successfully"
+  "closing_success": "Annual closing completed successfully",
+  "statement_of_account": "Statement of Account",
+  "customer_name": "Customer Name",
+  "type": "Type",
+  "transaction_debt_invoice": "Debt (Invoice)",
+  "transaction_payment_receipt": "Payment (Receipt)",
+  "total_due_balance": "Total Due Balance:",
+  "transaction_number": "Transaction No.",
+  "customer": "Customer",
+  "item": "Item",
+  "thank_you": "Thank you for your visit!"
 }

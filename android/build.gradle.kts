@@ -1,5 +1,4 @@
 import com.android.build.gradle.BaseExtension
-import java.io.File
 
 allprojects {
     repositories {
@@ -8,23 +7,12 @@ allprojects {
     }
 }
 
-val newBuildDir: Directory =
-    rootProject.layout.buildDirectory
-        .dir("../../build")
-        .get()
-rootProject.layout.buildDirectory.value(newBuildDir)
+rootProject.layout.buildDirectory.value(rootProject.layout.projectDirectory.dir("../build"))
+subprojects {
+    project.layout.buildDirectory.value(rootProject.layout.buildDirectory.dir(project.name))
+}
 
 subprojects {
-    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
-    project.layout.buildDirectory.value(newSubprojectBuildDir)
-    
-    tasks.configureEach {
-        if (name.contains("verifyReleaseResources") || 
-            name.contains("stripReleaseDebugSymbols")) {
-            doNotTrackState("Bypass Gradle 8.12 strict check bug in Windows environments")
-        }
-    }
-    
     afterEvaluate {
         if (project.hasProperty("android")) {
             val android = project.extensions.findByName("android")
@@ -32,10 +20,8 @@ subprojects {
                 if (android.namespace == null) {
                     android.namespace = "com.raseed.${project.name.replace("-", "_")}"
                 }
-                
+
                 // Fix for AGP 8.0+ regarding "package" attribute in AndroidManifest.xml
-                // This strips the package attribute from the manifest of subprojects (plugins)
-                // during the build process to avoid conflicts with the namespace property.
                 project.tasks.matching { it.name.contains("Manifest") }.configureEach {
                     doFirst {
                         val manifestFile = project.file("src/main/AndroidManifest.xml")

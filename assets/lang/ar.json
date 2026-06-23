@@ -365,7 +365,7 @@
   "could_not_launch_whatsapp": "تعذر فتح واتساب",
   "amount_required": "مطلوب إدخال المبلغ",
   "amount_invalid": "قيمة المبلغ غير صحيحة",
-  "currency_symbol_yer": "ر.ي",
+  "currency_symbol_yer": "ريال",
   "كرتون": "كرتون",
   "حبة": "حبة",
   "كيلو": "كيلو",
@@ -604,5 +604,15 @@
   "annual_closing": "الإقفال السنوي",
   "perform_closing_desc": "هذه العملية ستقوم بتصفير حسابات المصاريف والإيرادات وترحيل الأرصدة للسنة الجديدة. لا يمكن التراجع عن هذه الخطوة.",
   "confirm_closing": "تأكيد الإقفال السنوي",
-  "closing_success": "تم الإقفال السنوي بنجاح"
+  "closing_success": "تم الإقفال السنوي بنجاح",
+  "statement_of_account": "كشف حساب",
+  "customer_name": "اسم العميل",
+  "type": "النوع",
+  "transaction_debt_invoice": "دين (فاتورة)",
+  "transaction_payment_receipt": "تسديد (قبض)",
+  "total_due_balance": "إجمالي الرصيد المستحق:",
+  "transaction_number": "رقم العملية",
+  "customer": "العميل",
+  "item": "الصنف",
+  "thank_you": "شكراً لزيارتكم!"
 }

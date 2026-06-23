@@ -1,5 +1,6 @@
 
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -37,8 +38,17 @@ class ExportService {
     return _cachedBoldFont!;
   }
 
-  pw.MemoryImage? _getLogo() {
+  Future<pw.MemoryImage?> _getLogo() async {
     if (_store.logoPath != null && File(_store.logoPath!).existsSync()) {
+      try {
+        final bytes = await File(_store.logoPath!).readAsBytes();
+        final codec = await ui.instantiateImageCodec(bytes, targetWidth: 150);
+        final frame = await codec.getNextFrame();
+        final data = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+        if (data != null) {
+          return pw.MemoryImage(data.buffer.asUint8List());
+        }
+      } catch (_) {}
       return pw.MemoryImage(File(_store.logoPath!).readAsBytesSync());
     }
     return null;
@@ -118,13 +128,14 @@ class ExportService {
     final pdf = pw.Document();
     final font = await _getFont();
     final boldFont = await _getBoldFont();
+    final logo = await _getLogo();
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: _getPageFormat(),
         theme: pw.ThemeData.withFont(base: font, bold: boldFont),
         build: (context) => [
-          _buildPdfHeader(filter),
+          _buildPdfHeader(filter, logo),
           pw.SizedBox(height: 20),
           
           // Summary Grid
@@ -193,23 +204,27 @@ class ExportService {
     final pdf = pw.Document();
     final font = await _getFont();
     final boldFont = await _getBoldFont();
+    final logo = await _getLogo();
+
+    final settings = sl<SettingsService>().settings;
+    final isRtl = settings.languageCode == 'ar';
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: _getPageFormat(),
-        textDirection: pw.TextDirection.rtl,
+        textDirection: isRtl ? pw.TextDirection.rtl : pw.TextDirection.ltr,
         theme: pw.ThemeData.withFont(base: font, bold: boldFont),
         build: (context) => [
-          _buildCustomerPdfHeader(customer),
+          _buildCustomerPdfHeader(customer, logo),
           pw.SizedBox(height: 20),
           pw.TableHelper.fromTextArray(
-            headers: ['التاريخ', 'النوع', 'البيان', 'المبلغ'],
+            headers: ['date'.tr(), 'type'.tr(), 'description'.tr(), 'amount'.tr()],
             data: transactions.map((tx) {
               final isRefund = tx.type == TransactionType.refund;
               final isSale = tx.type == TransactionType.sale;
               final typeStr = isSale
-                  ? 'دين (فاتورة)'
-                  : (isRefund ? 'إرجاع' : 'تسديد (قبض)');
+                  ? 'transaction_debt_invoice'.tr()
+                  : (isRefund ? 'refund'.tr() : 'transaction_payment_receipt'.tr());
               return [
                 DateFormat('yyyy-MM-dd').format(tx.date),
                 typeStr,
@@ -223,7 +238,7 @@ class ExportService {
             ),
             headerDecoration:
                 const pw.BoxDecoration(color: PdfColors.blueGrey800),
-            cellAlignment: pw.Alignment.centerRight,
+            cellAlignment: isRtl ? pw.Alignment.centerRight : pw.Alignment.centerLeft,
             columnWidths: {
               0: const pw.FixedColumnWidth(100),
               1: const pw.FixedColumnWidth(100),
@@ -237,11 +252,11 @@ class ExportService {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Text(
-                'إجمالي الرصيد المستحق:',
+                'total_due_balance'.tr(),
                 style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
               ),
               pw.Text(
-                '${customer.totalDebt.toStringAsFixed(0)} YER',
+                '${customer.totalDebt.toStringAsFixed(0)} ${CurrencyHelper.getSymbol(transactions.isNotEmpty ? transactions.first.currency : 'YER')}',
                 style: pw.TextStyle(
                   fontSize: 18,
                   fontWeight: pw.FontWeight.bold,
@@ -261,8 +276,7 @@ class ExportService {
     );
   }
 
-  pw.Widget _buildCustomerPdfHeader(Customer customer) {
-    final logo = _getLogo();
+  pw.Widget _buildCustomerPdfHeader(Customer customer, pw.MemoryImage? logo) {
     return pw.Header(
       level: 0,
       child: pw.Row(
@@ -300,8 +314,7 @@ class ExportService {
     );
   }
 
-  pw.Widget _buildPdfHeader(ReportFilter filter) {
-    final logo = _getLogo();
+  pw.Widget _buildPdfHeader(ReportFilter filter, pw.MemoryImage? logo) {
     return pw.Header(
       level: 0,
       child: pw.Row(

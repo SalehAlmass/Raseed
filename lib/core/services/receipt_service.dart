@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -32,6 +33,7 @@ class ReceiptService {
   Future<void> printReceipt(AppTransaction transaction, {Customer? customer}) async {
     final settings = sl<SettingsService>().settings;
     final store = settings.storeProfile;
+    final isRtl = settings.languageCode == 'ar';
 
     final pdf = pw.Document();
     final font = await _getFont();
@@ -39,7 +41,16 @@ class ReceiptService {
 
     pw.MemoryImage? logoImage;
     if (store.logoPath != null && File(store.logoPath!).existsSync()) {
-      logoImage = pw.MemoryImage(File(store.logoPath!).readAsBytesSync());
+      try {
+        final bytes = await File(store.logoPath!).readAsBytes();
+        final codec = await ui.instantiateImageCodec(bytes, targetWidth: 150);
+        final frame = await codec.getNextFrame();
+        final data = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+        if (data != null) {
+          logoImage = pw.MemoryImage(data.buffer.asUint8List());
+        }
+      } catch (_) {}
+      logoImage ??= pw.MemoryImage(File(store.logoPath!).readAsBytesSync());
     }
 
     // Receipt Size: 80mm or 58mm from settings
@@ -48,7 +59,7 @@ class ReceiptService {
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat(pageWidth, double.infinity, marginAll: 5 * PdfPageFormat.mm),
-        textDirection: pw.TextDirection.rtl,
+        textDirection: isRtl ? pw.TextDirection.rtl : pw.TextDirection.ltr,
         theme: pw.ThemeData.withFont(base: font, bold: boldFont),
         build: (context) {
           return pw.Column(
@@ -73,13 +84,13 @@ class ReceiptService {
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text('التاريخ: ${DateFormat('yyyy-MM-dd HH:mm').format(transaction.date)}', style: const pw.TextStyle(fontSize: 8)),
-                  pw.Text('رقم العملية: #${transaction.id ?? "NEW"}', style: const pw.TextStyle(fontSize: 8)),
+                  pw.Text('${'date'.tr()}: ${DateFormat('yyyy-MM-dd HH:mm').format(transaction.date)}', style: const pw.TextStyle(fontSize: 8)),
+                  pw.Text('${'transaction_number'.tr()}: #${transaction.id ?? "NEW"}', style: const pw.TextStyle(fontSize: 8)),
                 ],
               ),
               if (customer != null) ...[
                 pw.SizedBox(height: 5),
-                pw.Text('العميل: ${customer.name}', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                pw.Text('${'customer'.tr()}: ${customer.name}', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
               ],
               pw.SizedBox(height: 10),
               pw.Divider(thickness: 1, borderStyle: pw.BorderStyle.dashed),
@@ -88,9 +99,9 @@ class ReceiptService {
               pw.SizedBox(height: 5),
               pw.Row(
                 children: [
-                  pw.Expanded(flex: 3, child: pw.Text('الصنف', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
-                  pw.Expanded(flex: 1, child: pw.Text('الكمية', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.center)),
-                  pw.Expanded(flex: 2, child: pw.Text('الإجمالي', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.right)),
+                  pw.Expanded(flex: 3, child: pw.Text('item'.tr(), style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                  pw.Expanded(flex: 1, child: pw.Text('quantity'.tr(), style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.center)),
+                  pw.Expanded(flex: 2, child: pw.Text('total'.tr(), style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold), textAlign: isRtl ? pw.TextAlign.right : pw.TextAlign.left)),
                 ],
               ),
               pw.SizedBox(height: 5),
@@ -101,7 +112,7 @@ class ReceiptService {
                     children: [
                       pw.Expanded(flex: 3, child: pw.Text(item.productName, style: const pw.TextStyle(fontSize: 8))),
                       pw.Expanded(flex: 1, child: pw.Text(item.quantity.toString(), style: const pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.center)),
-                      pw.Expanded(flex: 2, child: pw.Text(item.total.toStringAsFixed(0), style: const pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.right)),
+                      pw.Expanded(flex: 2, child: pw.Text(item.total.toStringAsFixed(0), style: const pw.TextStyle(fontSize: 8), textAlign: isRtl ? pw.TextAlign.right : pw.TextAlign.left)),
                     ],
                   ),
                 )),
@@ -111,14 +122,14 @@ class ReceiptService {
 
               // Totals
               pw.SizedBox(height: 5),
-              _buildTotalRow('الإجمالي الكلي:', transaction.amount),
+              _buildTotalRow('${'total_amount'.tr()}:', transaction.amount),
               if (transaction.paidAmount > 0)
-                _buildTotalRow('المبلغ المدفوع:', transaction.paidAmount),
+                _buildTotalRow('${'paid_amount'.tr()}:', transaction.paidAmount),
               if (transaction.amount - transaction.paidAmount > 0)
-                _buildTotalRow('المبلغ المتبقي (دين):', transaction.amount - transaction.paidAmount, isBold: true),
+                _buildTotalRow('${'remaining_amount'.tr()}:', transaction.amount - transaction.paidAmount, isBold: true),
               
               pw.SizedBox(height: 20),
-              pw.Text('شكراً لزيارتكم!', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+              pw.Text('thank_you'.tr(), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
               pw.Text('www.raseed.com', style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey)),
               pw.SizedBox(height: 10),
             ],
