@@ -222,9 +222,12 @@ class ExportService {
             data: transactions.map((tx) {
               final isRefund = tx.type == TransactionType.refund;
               final isSale = tx.type == TransactionType.sale;
-              final typeStr = isSale
-                  ? 'transaction_debt_invoice'.tr()
-                  : (isRefund ? 'refund'.tr() : 'transaction_payment_receipt'.tr());
+              final isFullyPaid = isSale && (tx.amount - tx.paidAmount <= 0);
+              final typeStr = isFullyPaid
+                  ? 'cash_sale'.tr()
+                  : (isSale
+                      ? 'transaction_debt_invoice'.tr()
+                      : (isRefund ? 'refund'.tr() : 'transaction_payment_receipt'.tr()));
               return [
                 DateFormat('yyyy-MM-dd').format(tx.date),
                 typeStr,
