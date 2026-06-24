@@ -130,29 +130,33 @@ class ExportService {
     final boldFont = await _getBoldFont();
     final logo = await _getLogo();
 
+    final settings = sl<SettingsService>().settings;
+    final isRtl = settings.languageCode == 'ar';
+
     pdf.addPage(
       pw.MultiPage(
         pageFormat: _getPageFormat(),
+        textDirection: isRtl ? pw.TextDirection.rtl : pw.TextDirection.ltr,
         theme: pw.ThemeData.withFont(base: font, bold: boldFont),
         build: (context) => [
-          _buildPdfHeader(filter, logo),
+          _buildPdfHeader(filter, logo, isRtl),
           pw.SizedBox(height: 20),
           
           // Summary Grid
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              _buildPdfMetricCard('Total Sales', report.totalSales, filter.currency ?? 'YER'),
-              _buildPdfMetricCard('Total Profit', report.totalProfit, filter.currency ?? 'YER'),
-              _buildPdfMetricCard('Inventory Value', report.inventoryValue, filter.currency ?? 'YER'),
+              _buildPdfMetricCard('total_sales'.tr(), report.totalSales, CurrencyHelper.getSymbol(filter.currency ?? 'YER')),
+              _buildPdfMetricCard('total_profit'.tr(), report.totalProfit, CurrencyHelper.getSymbol(filter.currency ?? 'YER')),
+              _buildPdfMetricCard('inventory_value'.tr(), report.inventoryValue, CurrencyHelper.getSymbol(filter.currency ?? 'YER')),
             ],
           ),
           pw.SizedBox(height: 30),
 
-          pw.Text('Product Performance', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+          pw.Text('product_performance'.tr(), style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
           pw.SizedBox(height: 10),
           pw.TableHelper.fromTextArray(
-            headers: ['Product', 'Sold', 'Revenue', 'Cost', 'Profit'],
+            headers: ['product_name'.tr(), 'sold_qty'.tr(), 'revenue'.tr(), 'cost'.tr(), 'profit'.tr()],
             data: report.productPerformance.map((p) => [
               p.productName, 
               p.soldCount.toString(),
@@ -162,33 +166,35 @@ class ExportService {
             ]).toList(),
             headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
             headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
-            cellAlignment: pw.Alignment.centerLeft,
+            cellAlignment: isRtl ? pw.Alignment.centerRight : pw.Alignment.centerLeft,
           ),
           
           pw.SizedBox(height: 30),
-          pw.Text('Dead Stock Analysis', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.red900)),
+          pw.Text('dead_stock_analysis'.tr(), style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.red900)),
           pw.SizedBox(height: 10),
           pw.TableHelper.fromTextArray(
-            headers: ['Product', 'Stock', 'Days Inactive'],
+            headers: ['product_name'.tr(), 'stock'.tr(), 'days_inactive'.tr()],
             data: report.deadStock.map((d) => [
               d.name,
               d.remainingStock.toString(),
-              '${d.daysSinceLastSale} days'
+              'days_count'.tr(args: [d.daysSinceLastSale.toString()])
             ]).toList(),
             headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
             headerDecoration: const pw.BoxDecoration(color: PdfColors.red700),
+            cellAlignment: isRtl ? pw.Alignment.centerRight : pw.Alignment.centerLeft,
           ),
 
           pw.SizedBox(height: 30),
-          pw.Text('Debt Movement', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+          pw.Text('debt_movement'.tr(), style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 10),
           pw.TableHelper.fromTextArray(
-            headers: ['Category', 'Amount'],
+            headers: ['category'.tr(), 'amount'.tr()],
             data: [
-              ['Total Current Debt', report.debtMovement.totalCurrent.toStringAsFixed(0)],
-              ['New Debt (Period)', report.debtMovement.newDebt.toStringAsFixed(0)],
-              ['Collected Debt (Period)', report.debtMovement.collectedDebt.toStringAsFixed(0)],
+              ['total_current_debt'.tr(), report.debtMovement.totalCurrent.toStringAsFixed(0)],
+              ['new_debt_period'.tr(), report.debtMovement.newDebt.toStringAsFixed(0)],
+              ['collected_debt_period'.tr(), report.debtMovement.collectedDebt.toStringAsFixed(0)],
             ],
+            cellAlignment: isRtl ? pw.Alignment.centerRight : pw.Alignment.centerLeft,
           ),
         ],
       ),
@@ -197,7 +203,7 @@ class ExportService {
     await Printing.sharePdf(bytes: await pdf.save(), filename: 'bi_report_${DateTime.now().millisecondsSinceEpoch}.pdf');
   }
 
-  Future<void> exportCustomerTransactionsToPdf(
+  Future<pw.Document> generateCustomerTransactionsPdf(
     Customer customer,
     List<AppTransaction> transactions,
   ) async {
@@ -208,70 +214,286 @@ class ExportService {
 
     final settings = sl<SettingsService>().settings;
     final isRtl = settings.languageCode == 'ar';
+    final currencySymbol = CurrencyHelper.getSymbol(
+      transactions.isNotEmpty ? transactions.first.currency : 'YER',
+    );
+
+    final totalInvoiced = transactions
+        .where((t) => t.type == TransactionType.sale)
+        .fold<double>(0, (sum, t) => sum + t.amount);
+    final totalPaid = transactions
+        .where((t) => t.type == TransactionType.payment)
+        .fold<double>(0, (sum, t) => sum + t.amount);
+    final netDebt = customer.totalDebt;
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: _getPageFormat(),
+        margin: const pw.EdgeInsets.symmetric(horizontal: 30, vertical: 25),
         textDirection: isRtl ? pw.TextDirection.rtl : pw.TextDirection.ltr,
         theme: pw.ThemeData.withFont(base: font, bold: boldFont),
         build: (context) => [
-          _buildCustomerPdfHeader(customer, logo),
+          _buildStatementHeader(customer, logo, isRtl),
+          pw.SizedBox(height: 16),
+          _buildSummaryCards(totalInvoiced, totalPaid, netDebt, currencySymbol, isRtl),
+          pw.SizedBox(height: 24),
+          _buildModernTable(transactions, isRtl, currencySymbol),
           pw.SizedBox(height: 20),
-          pw.TableHelper.fromTextArray(
-            headers: ['date'.tr(), 'type'.tr(), 'description'.tr(), 'amount'.tr()],
-            data: transactions.map((tx) {
-              final isRefund = tx.type == TransactionType.refund;
-              final isSale = tx.type == TransactionType.sale;
-              final isFullyPaid = isSale && (tx.amount - tx.paidAmount <= 0);
-              final typeStr = isFullyPaid
-                  ? 'cash_sale'.tr()
-                  : (isSale
-                      ? 'transaction_debt_invoice'.tr()
-                      : (isRefund ? 'refund'.tr() : 'transaction_payment_receipt'.tr()));
-              return [
-                DateFormat('yyyy-MM-dd').format(tx.date),
-                typeStr,
-                tx.note ?? '',
-                '${tx.amount.toStringAsFixed(0)} ${CurrencyHelper.getSymbol(tx.currency)}',
-              ];
-            }).toList(),
-            headerStyle: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold,
-              color: PdfColors.white,
-            ),
-            headerDecoration:
-                const pw.BoxDecoration(color: PdfColors.blueGrey800),
-            cellAlignment: isRtl ? pw.Alignment.centerRight : pw.Alignment.centerLeft,
-            columnWidths: {
-              0: const pw.FixedColumnWidth(100),
-              1: const pw.FixedColumnWidth(100),
-              2: const pw.FlexColumnWidth(),
-              3: const pw.FixedColumnWidth(120),
-            },
-          ),
-          pw.SizedBox(height: 20),
-          pw.Divider(),
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Text(
-                'total_due_balance'.tr(),
-                style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
-              ),
-              pw.Text(
-                '${customer.totalDebt.toStringAsFixed(0)} ${CurrencyHelper.getSymbol(transactions.isNotEmpty ? transactions.first.currency : 'YER')}',
-                style: pw.TextStyle(
-                  fontSize: 18,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.red900,
-                ),
-              ),
-            ],
-          ),
+          _buildBalanceFooter(netDebt, currencySymbol, isRtl),
         ],
       ),
     );
 
+    return pdf;
+  }
+
+  pw.Widget _buildStatementHeader(Customer customer, pw.MemoryImage? logo, bool isRtl) {
+    return pw.Column(
+      crossAxisAlignment: isRtl ? pw.CrossAxisAlignment.end : pw.CrossAxisAlignment.start,
+      children: [
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                if (_store.storeName != null)
+                  pw.Text(
+                    _store.storeName!,
+                    style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
+                  ),
+                if (_store.phone != null)
+                  pw.Text(_store.phone!, style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+                pw.SizedBox(height: 8),
+                pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.blue50,
+                    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+                  ),
+                  child: pw.Text(
+                    'statement_of_account'.tr(),
+                    style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800),
+                  ),
+                ),
+              ],
+            ),
+            if (logo != null)
+              pw.Image(logo, width: 50, height: 50),
+          ],
+        ),
+        pw.SizedBox(height: 12),
+        pw.Container(
+          padding: const pw.EdgeInsets.all(12),
+          decoration: pw.BoxDecoration(
+            color: PdfColors.grey50,
+            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+            border: pw.Border.all(color: PdfColors.grey200),
+          ),
+          child: isRtl
+              ? pw.Row(
+                  children: [
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.end,
+                        children: [
+                          pw.Text(customer.name, style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold)),
+                          if (customer.phone.isNotEmpty)
+                            pw.Text(customer.phone, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+                        ],
+                      ),
+                    ),
+                    pw.Container(width: 1, height: 30, color: PdfColors.grey300),
+                    pw.SizedBox(width: 12),
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children: [
+                        pw.Text('date'.tr(), style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
+                        pw.Text(DateFormat('yyyy/MM/dd').format(DateTime.now()), style: const pw.TextStyle(fontSize: 10)),
+                      ],
+                    ),
+                  ],
+                )
+              : pw.Row(
+                  children: [
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(customer.name, style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold)),
+                        if (customer.phone.isNotEmpty)
+                          pw.Text(customer.phone, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+                      ],
+                    ),
+                    pw.SizedBox(width: 12),
+                    pw.Container(width: 1, height: 30, color: PdfColors.grey300),
+                    pw.SizedBox(width: 12),
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('date'.tr(), style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
+                        pw.Text(DateFormat('yyyy/MM/dd').format(DateTime.now()), style: const pw.TextStyle(fontSize: 10)),
+                      ],
+                    ),
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildSummaryCards(double totalInvoiced, double totalPaid, double netDebt, String currency, bool isRtl) {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildSummaryCard('total_invoiced'.tr(), totalInvoiced, currency, PdfColors.blue700, PdfColors.blue50),
+        _buildSummaryCard('total_paid'.tr(), totalPaid, currency, PdfColors.green700, PdfColors.green50),
+        _buildSummaryCard('remaining_debt'.tr(), netDebt, currency, PdfColors.orange700, PdfColors.orange50),
+      ],
+    );
+  }
+
+  pw.Widget _buildSummaryCard(String label, double value, String currency, PdfColor textColor, PdfColor bgColor) {
+    return pw.Container(
+      width: 150,
+      padding: const pw.EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      decoration: pw.BoxDecoration(
+        color: bgColor,
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+      ),
+      child: pw.Column(
+        children: [
+          pw.Text(label, style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            value.toStringAsFixed(0),
+            style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: textColor),
+          ),
+          pw.Text(currency, style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey500)),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildModernTable(List<AppTransaction> transactions, bool isRtl, String currencySymbol) {
+    return pw.TableHelper.fromTextArray(
+      headers: ['date'.tr(), 'type'.tr(), 'description'.tr(), 'invoice_total'.tr(), 'remaining_debt'.tr()],
+      data: transactions.map((tx) {
+        final isRefund = tx.type == TransactionType.refund;
+        final isSale = tx.type == TransactionType.sale;
+        final isPayment = tx.type == TransactionType.payment;
+        final isFullyPaid = isSale && (tx.amount - tx.paidAmount <= 0);
+        final typeStr = isFullyPaid
+            ? 'cash_sale'.tr()
+            : (isSale
+                ? 'transaction_debt_invoice'.tr()
+                : (isRefund ? 'refund'.tr() : 'transaction_payment_receipt'.tr()));
+
+        String descriptionStr = '';
+        if (tx.note.isNotEmpty) {
+          descriptionStr = tx.note;
+        } else {
+          if (isSale) {
+            if (tx.items.isNotEmpty) {
+              descriptionStr = tx.items.map((item) => '${item.productName} (${item.quantity})').join('، ');
+              if (tx.paidAmount > 0) {
+                descriptionStr += '  [المدفوع: ${tx.paidAmount.toStringAsFixed(0)} $currencySymbol]';
+              }
+            } else {
+              descriptionStr = typeStr;
+            }
+          } else if (isPayment) {
+            descriptionStr = 'transaction_payment_receipt'.tr();
+          } else if (isRefund) {
+            if (tx.items.isNotEmpty) {
+              descriptionStr = '${'refund'.tr()}: ${tx.items.map((item) => '${item.productName} (${item.quantity})').join('، ')}';
+            } else {
+              descriptionStr = typeStr;
+            }
+          }
+        }
+
+        String totalStr;
+        String remainingStr;
+
+        if (isSale) {
+          totalStr = '${tx.amount.toStringAsFixed(0)} $currencySymbol';
+          remainingStr = '${(tx.amount - tx.paidAmount).toStringAsFixed(0)} $currencySymbol';
+        } else if (isPayment) {
+          totalStr = '${tx.amount.toStringAsFixed(0)} $currencySymbol';
+          remainingStr = '-${tx.amount.toStringAsFixed(0)} $currencySymbol';
+        } else {
+          totalStr = '${tx.amount.toStringAsFixed(0)} $currencySymbol';
+          remainingStr = '${tx.amount.toStringAsFixed(0)} $currencySymbol';
+        }
+
+        return [
+          DateFormat('yyyy/MM/dd').format(tx.date),
+          typeStr,
+          descriptionStr,
+          totalStr,
+          remainingStr,
+        ];
+      }).toList(),
+      headerStyle: pw.TextStyle(
+        fontWeight: pw.FontWeight.bold,
+        color: PdfColors.white,
+        fontSize: 9,
+      ),
+      headerDecoration: const pw.BoxDecoration(
+        color: PdfColors.blueGrey800,
+        borderRadius: pw.BorderRadius.only(
+          topLeft: pw.Radius.circular(6),
+          topRight: pw.Radius.circular(6),
+        ),
+      ),
+      cellStyle: const pw.TextStyle(fontSize: 9),
+      cellAlignment: isRtl ? pw.Alignment.centerRight : pw.Alignment.centerLeft,
+      columnWidths: {
+        0: const pw.FixedColumnWidth(75),
+        1: const pw.FixedColumnWidth(90),
+        2: const pw.FlexColumnWidth(),
+        3: const pw.FixedColumnWidth(85),
+        4: const pw.FixedColumnWidth(100),
+      },
+      headerPadding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 6),
+      cellPadding: const pw.EdgeInsets.symmetric(vertical: 5, horizontal: 6),
+    );
+  }
+
+  pw.Widget _buildBalanceFooter(double netDebt, String currencySymbol, bool isRtl) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(14),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.blueGrey50,
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+        border: pw.Border.all(color: PdfColors.blueGrey100),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(
+            'total_due_balance'.tr(),
+            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
+          ),
+          pw.Text(
+            '$netDebt $currencySymbol',
+            style: pw.TextStyle(
+              fontSize: 18,
+              fontWeight: pw.FontWeight.bold,
+              color: netDebt > 0 ? PdfColors.red800 : PdfColors.green800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> exportCustomerTransactionsToPdf(
+    Customer customer,
+    List<AppTransaction> transactions,
+  ) async {
+    final pdf = await generateCustomerTransactionsPdf(customer, transactions);
     await Printing.sharePdf(
       bytes: await pdf.save(),
       filename:
@@ -279,7 +501,7 @@ class ExportService {
     );
   }
 
-  pw.Widget _buildCustomerPdfHeader(Customer customer, pw.MemoryImage? logo) {
+  pw.Widget _buildPdfHeader(ReportFilter filter, pw.MemoryImage? logo, bool isRtl) {
     return pw.Header(
       level: 0,
       child: pw.Row(
@@ -288,12 +510,8 @@ class ExportService {
           pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Text(
-                'statement_of_account'.tr(),
-                style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
-              ),
-              pw.Text('${'customer_name'.tr()}: ${customer.name}'),
-              if (customer.phone.isNotEmpty) pw.Text('${'phone_number'.tr()}: ${customer.phone}'),
+              pw.Text('business_performance_report'.tr(), style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+              pw.Text('${'report_period'.tr()}: ${DateFormat('yyyy-MM-dd').format(filter.startDate)} - ${DateFormat('yyyy-MM-dd').format(filter.endDate)}'),
             ],
           ),
           pw.Column(
@@ -309,36 +527,6 @@ class ExportService {
                 style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
               ),
               if (_store.phone != null) pw.Text(_store.phone!, style: const pw.TextStyle(fontSize: 8)),
-              pw.Text(DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  pw.Widget _buildPdfHeader(ReportFilter filter, pw.MemoryImage? logo) {
-    return pw.Header(
-      level: 0,
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        children: [
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text('Business Performance Report', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
-              pw.Text('Period: ${DateFormat('yyyy-MM-dd').format(filter.startDate)} - ${DateFormat('yyyy-MM-dd').format(filter.endDate)}'),
-            ],
-          ),
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.end,
-            children: [
-              if (logo != null)
-                pw.Padding(
-                  padding: const pw.EdgeInsets.only(bottom: 5),
-                  child: pw.Image(logo, width: 40, height: 40),
-                ),
-              pw.Text(_store.storeName ?? 'RASEED App', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
               pw.Text(DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())),
             ],
           ),

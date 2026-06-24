@@ -4,6 +4,7 @@ import '../models/product.dart';
 import '../models/app_transaction.dart';
 import '../models/transaction_item.dart';
 import '../models/batch.dart';
+import '../models/purchase_price_record.dart';
 import 'database_helper.dart';
 import 'transaction_service.dart';
 
@@ -178,6 +179,47 @@ class ProductService {
       final batches = await _getBatches(product.id!);
       return product.copyWith(batches: batches);
     }));
+  }
+
+  Future<Map<String, dynamic>?> getLastPurchaseInfo(int productId, int supplierId) async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'purchase_price_history',
+      where: 'product_id = ? AND supplier_id = ?',
+      whereArgs: [productId, supplierId],
+      orderBy: 'date DESC',
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return maps.first;
+  }
+
+  Future<List<PurchasePriceRecord>> getPurchasePriceHistory(int productId, {int? supplierId}) async {
+    final db = await _dbHelper.database;
+    String where = 'product_id = ?';
+    List<dynamic> args = [productId];
+    if (supplierId != null) {
+      where += ' AND supplier_id = ?';
+      args.add(supplierId);
+    }
+    final List<Map<String, dynamic>> maps = await db.query(
+      'purchase_price_history',
+      where: where,
+      whereArgs: args,
+      orderBy: 'date DESC',
+    );
+    return maps.map((m) => PurchasePriceRecord.fromMap(m)).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getAllPurchaseHistoryWithProduct() async {
+    final db = await _dbHelper.database;
+    return await db.rawQuery('''
+      SELECT pph.*, p.name as product_name, s.name as supplier_name
+      FROM purchase_price_history pph
+      LEFT JOIN products p ON p.id = pph.product_id
+      LEFT JOIN suppliers s ON s.id = pph.supplier_id
+      ORDER BY pph.date DESC
+    ''');
   }
 
   Future<List<Product>> getProductsBySupplier(int supplierId) async {

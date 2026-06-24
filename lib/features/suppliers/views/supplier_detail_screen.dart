@@ -12,8 +12,7 @@ import '../../../core/services/supplier_transaction_service.dart';
 import '../../reports/services/report_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/utils/currency_helper.dart';
-import 'purchase_screen.dart';
-import 'create_purchase_order_screen.dart';
+import 'supplier_purchase_history_screen.dart';
 
 class SupplierDetailScreen extends StatefulWidget {
   final Supplier supplier;
@@ -26,11 +25,13 @@ class SupplierDetailScreen extends StatefulWidget {
 class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
   final SupplierService _supplierService = sl<SupplierService>();
   final SupplierTransactionService _transactionService = sl<SupplierTransactionService>();
+  final ProductService _productService = sl<ProductService>();
   
   late Supplier _supplier;
   List<SupplierTransaction> _transactions = [];
   List<Product> _products = [];
   List<Map<String, dynamic>> _lowStockItems = [];
+  Map<int, Map<String, dynamic>?> _lastPurchaseInfo = {};
   bool _isLoading = true;
 
   @override
@@ -47,11 +48,17 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
     final lowStock = await sl<ReportService>().getLowStockBySupplier(_supplier.id!);
     final products = await sl<ProductService>().getProductsBySupplier(_supplier.id!);
     
+    Map<int, Map<String, dynamic>?> lastPurchaseInfo = {};
+    for (var p in products) {
+      lastPurchaseInfo[p.id!] = await _productService.getLastPurchaseInfo(p.id!, _supplier.id!);
+    }
+    
     setState(() {
       if (updatedSupplier != null) _supplier = updatedSupplier;
       _transactions = transactions;
       _lowStockItems = lowStock;
       _products = products;
+      _lastPurchaseInfo = lastPurchaseInfo;
       _isLoading = false;
     });
   }
@@ -213,7 +220,41 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
               _supplier.company!,
               style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13.sp, fontWeight: FontWeight.w500),
             ),
-          ]
+          ],
+          SizedBox(height: 12.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Text(
+                '${_transactions.where((t) => t.type == SupplierTransactionType.purchase).length} ${'purchases'.tr()}',
+                style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 11.sp),
+              ),
+              if (_supplier.phone.isNotEmpty)
+                GestureDetector(
+                  onTap: () {
+                    final phone = _supplier.phone.replaceAll(RegExp(r'\D'), '');
+                    launchUrl(Uri.parse('https://wa.me/$phone'));
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.chat_rounded, color: Colors.white, size: 14),
+                        SizedBox(width: 4.w),
+                        Text(
+                          'whatsapp'.tr(),
+                          style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 10.sp),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
     );
@@ -258,46 +299,29 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
   }
 
   Widget _buildActionButtons() {
-    return Column(
+    return Row(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _ActionButton(
-                label: 'purchase'.tr(),
-                icon: Icons.add_shopping_cart,
-                color: AppColors.primary,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PurchaseScreen(initialSupplier: _supplier),
-                  ),
-                ).then((_) => _loadData()),
-              ),
-            ),
-            SizedBox(width: 15.w),
-            Expanded(
-              child: _ActionButton(
-                label: 'pay_supplier'.tr(),
-                icon: Icons.payment,
-                color: AppColors.success,
-                onTap: () => _showPaymentDialog(),
-              ),
-            ),
-          ],
+        Expanded(
+          child: _ActionButton(
+            label: 'pay_supplier'.tr(),
+            icon: Icons.payment,
+            color: AppColors.success,
+            onTap: () => _showPaymentDialog(),
+          ),
         ),
-        SizedBox(height: 15.h),
-        _ActionButton(
-          label: 'create_po'.tr(),
-          icon: Icons.assignment_outlined,
-          color: Colors.orange,
-          isFullWidth: true,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => CreatePurchaseOrderScreen(initialSupplier: _supplier),
-            ),
-          ).then((_) => _loadData()),
+        SizedBox(width: 15.w),
+        Expanded(
+          child: _ActionButton(
+            label: 'purchase_history'.tr(),
+            icon: Icons.history,
+            color: AppColors.primary,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => SupplierPurchaseHistoryScreen(initialSupplier: _supplier),
+              ),
+            ).then((_) => _loadData()),
+          ),
         ),
       ],
     );
@@ -342,59 +366,150 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
   }
 
   void _showPaymentDialog() {
+    if (_supplier.totalDebt <= 0) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.check_circle_outline, color: Colors.green),
+              SizedBox(width: 8.w),
+              Text('pay_supplier'.tr()),
+            ],
+          ),
+          content: Text('no_debt_to_pay_desc'.tr()),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('ok'.tr()),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     final amountController = TextEditingController();
     final noteController = TextEditingController();
     final formKey = GlobalKey<FormState>();
+    String? warningMessage;
+    double adjustedAmount = 0;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('pay_supplier'.tr()),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: amountController,
-                decoration: InputDecoration(labelText: 'amount'.tr()),
-                keyboardType: TextInputType.number,
-                validator: (val) {
-                  if (val == null || val.isEmpty) return 'required_field'.tr();
-                  if (double.tryParse(val) == null) return 'invalid_number'.tr();
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: noteController,
-                decoration: InputDecoration(labelText: 'note'.tr()),
-              ),
-            ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('pay_supplier'.tr()),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: amountController,
+                  decoration: InputDecoration(labelText: 'amount'.tr()),
+                  keyboardType: TextInputType.number,
+                  onChanged: (val) {
+                    final entered = double.tryParse(val) ?? 0;
+                    final currentDebt = _supplier.totalDebt;
+                    if (entered > currentDebt && currentDebt > 0) {
+                      setDialogState(() {
+                        warningMessage = 'payment_exceeds_debt_warning'.tr(args: [currentDebt.toStringAsFixed(0)]);
+                        adjustedAmount = currentDebt;
+                      });
+                    } else {
+                      setDialogState(() {
+                        warningMessage = null;
+                        adjustedAmount = 0;
+                      });
+                    }
+                  },
+                  validator: (val) {
+                    if (val == null || val.isEmpty) return 'required_field'.tr();
+                    if (double.tryParse(val) == null) return 'invalid_number'.tr();
+                    return null;
+                  },
+                ),
+                if (warningMessage != null) ...[
+                  SizedBox(height: 10.h),
+                  Container(
+                    padding: EdgeInsets.all(10.w),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8.r),
+                      border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 18),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: Text(
+                            warningMessage!,
+                            style: TextStyle(fontSize: 11.sp, color: Colors.orange[900]),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 6.h),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: () {
+                        amountController.text = adjustedAmount.toStringAsFixed(0);
+                        setDialogState(() => warningMessage = null);
+                      },
+                      child: Text(
+                        'apply_suggested_amount'.tr(args: [adjustedAmount.toStringAsFixed(0)]),
+                        style: TextStyle(fontSize: 12.sp, color: Colors.orange),
+                      ),
+                    ),
+                  ),
+                ],
+                SizedBox(height: 8.h),
+                TextFormField(
+                  controller: noteController,
+                  decoration: InputDecoration(labelText: 'note'.tr()),
+                ),
+              ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('cancel'.tr())),
-          ElevatedButton(
-            onPressed: () async {
-              if (formKey.currentState!.validate()) {
-                final amount = double.parse(amountController.text);
-                final tx = SupplierTransaction(
-                  supplierId: _supplier.id!,
-                  type: SupplierTransactionType.payment,
-                  amount: amount,
-                  date: DateTime.now(),
-                  note: noteController.text,
-                );
-                await _transactionService.addTransaction(tx);
-                if (mounted) {
-                  Navigator.pop(context);
-                  _loadData();
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text('cancel'.tr())),
+            ElevatedButton(
+              onPressed: () async {
+                if (formKey.currentState!.validate()) {
+                  double amount = double.parse(amountController.text);
+                  if (amount > _supplier.totalDebt && _supplier.totalDebt > 0) {
+                    amount = _supplier.totalDebt;
+                  }
+                  final tx = SupplierTransaction(
+                    supplierId: _supplier.id!,
+                    type: SupplierTransactionType.payment,
+                    amount: amount,
+                    date: DateTime.now(),
+                    note: noteController.text,
+                  );
+                  try {
+                    await _transactionService.addTransaction(tx);
+                    if (mounted) {
+                      Navigator.pop(context);
+                      _loadData();
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('no_debt_to_pay'.tr())),
+                      );
+                    }
+                  }
                 }
-              }
-            },
-            child: Text('save'.tr()),
-          ),
-        ],
+              },
+              child: Text('save'.tr()),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -613,6 +728,10 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
       separatorBuilder: (context, index) => const Divider(),
       itemBuilder: (context, index) {
         final product = _products[index];
+        final lastPurchase = _lastPurchaseInfo[product.id];
+        final hasPurchaseInfo = lastPurchase != null;
+        final lastPrice = hasPurchaseInfo ? (lastPurchase!['cost_price'] as num).toDouble() : 0.0;
+        
         return ListTile(
           contentPadding: EdgeInsets.zero,
           leading: Container(
@@ -624,9 +743,28 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
             child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary),
           ),
           title: Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Text(
-            sl<ProductService>().formatStock(product.stockQuantity, product.conversionFactor),
-            style: TextStyle(fontSize: 12.sp),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                sl<ProductService>().formatStock(product.stockQuantity, product.conversionFactor),
+                style: TextStyle(fontSize: 12.sp),
+              ),
+              if (hasPurchaseInfo)
+                Row(
+                  children: [
+                    Text(
+                      '${'last_purchase'.tr()}: ${CurrencyHelper.getFormatter('YER').format(lastPrice)}',
+                      style: TextStyle(fontSize: 10.sp, color: Colors.grey[600]),
+                    ),
+                    SizedBox(width: 4.w),
+                    Text(
+                      DateFormat('yyyy/MM/dd').format(DateTime.parse(lastPurchase!['date'])),
+                      style: TextStyle(fontSize: 9.sp, color: Colors.grey[400]),
+                    ),
+                  ],
+                ),
+            ],
           ),
           trailing: Text(
             CurrencyHelper.getFormatter(product.currency).format(product.price),

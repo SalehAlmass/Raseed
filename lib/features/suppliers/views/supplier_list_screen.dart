@@ -152,7 +152,20 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
                   children: [
                     TextFormField(
                       controller: nameController,
-                      decoration: InputDecoration(labelText: 'supplier_name'.tr()),
+                      decoration: InputDecoration(
+                        label: RichText(
+                          text: TextSpan(
+                            text: 'supplier_name'.tr(),
+                            style: TextStyle(color: Colors.grey[700], fontSize: 14.sp),
+                            children: [
+                              TextSpan(
+                                text: ' *',
+                                style: TextStyle(color: Colors.red[700], fontSize: 14.sp, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                       validator: (val) => (val == null || val.isEmpty) ? 'name_required'.tr() : null,
                     ),
                     TextFormField(

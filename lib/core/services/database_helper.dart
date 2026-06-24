@@ -37,7 +37,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 33,
+      version: 34,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -302,6 +302,21 @@ class DatabaseHelper {
         cost_price REAL NOT NULL,
         FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders (id) ON DELETE CASCADE,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS purchase_price_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER NOT NULL,
+        supplier_id INTEGER NOT NULL,
+        cost_price REAL NOT NULL,
+        quantity INTEGER NOT NULL,
+        transaction_id INTEGER,
+        date TEXT NOT NULL,
+        FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
+        FOREIGN KEY (supplier_id) REFERENCES suppliers (id) ON DELETE CASCADE,
+        FOREIGN KEY (transaction_id) REFERENCES supplier_transactions (id) ON DELETE SET NULL
       )
     ''');
 
@@ -813,6 +828,27 @@ class DatabaseHelper {
         await db.execute("ALTER TABLE settings ADD COLUMN receipt_width INTEGER DEFAULT 80");
       } catch (e) {
         debugPrint("receipt_width already exists");
+      }
+    }
+
+    if (oldVersion < 34) {
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS purchase_price_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id INTEGER NOT NULL,
+            supplier_id INTEGER NOT NULL,
+            cost_price REAL NOT NULL,
+            quantity INTEGER NOT NULL,
+            transaction_id INTEGER,
+            date TEXT NOT NULL,
+            FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
+            FOREIGN KEY (supplier_id) REFERENCES suppliers (id) ON DELETE CASCADE,
+            FOREIGN KEY (transaction_id) REFERENCES supplier_transactions (id) ON DELETE SET NULL
+          )
+        ''');
+      } catch (e) {
+        debugPrint("purchase_price_history already exists");
       }
     }
   }

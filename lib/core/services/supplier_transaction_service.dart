@@ -15,6 +15,20 @@ class SupplierTransactionService {
 
   Future<int> addTransaction(SupplierTransaction tx) async {
     final db = await _dbHelper.database;
+
+    // For payments: prevent overpayment
+    if (tx.type == SupplierTransactionType.payment && !tx.isVoid) {
+      final supplierMaps = await db.query('suppliers', where: 'id = ?', whereArgs: [tx.supplierId]);
+      if (supplierMaps.isNotEmpty) {
+        final currentDebt = (supplierMaps.first['total_debt'] as num?)?.toDouble() ?? 0;
+        if (currentDebt <= 0) {
+          throw Exception('no_debt_to_pay');
+        }
+        if (tx.amount > currentDebt) {
+          tx = tx.copyWith(amount: currentDebt);
+        }
+      }
+    }
     
     return await db.transaction((txn) async {
       // 1. Insert transaction
@@ -51,7 +65,21 @@ class SupplierTransactionService {
         );
       }
 
-      // 4. Generate Journal Entry
+      // 4. Record purchase price history
+      if (tx.type == SupplierTransactionType.purchase && !tx.isVoid) {
+        for (var item in tx.items) {
+          await txn.insert('purchase_price_history', {
+            'product_id': item.productId,
+            'supplier_id': tx.supplierId,
+            'cost_price': item.costPrice,
+            'quantity': item.quantity,
+            'transaction_id': txId,
+            'date': tx.date.toIso8601String(),
+          });
+        }
+      }
+
+      // 5. Generate Journal Entry
       await _generateJournalEntry(txId, tx, txn);
 
       return txId;

@@ -60,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
       settings.maxDebt,
     );
 
+    if (!mounted) return;
     setState(() {
       _summary = summary;
       _recentTransactions = recent;

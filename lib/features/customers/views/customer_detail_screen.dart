@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:printing/printing.dart';
 import '../../../core/di/injection_container.dart';
 import '../../../core/services/customer_service.dart';
 import '../../../core/services/transaction_service.dart';
@@ -10,7 +11,6 @@ import '../../../core/theme/colors.dart';
 import '../../../core/models/customer.dart';
 import '../../../core/models/app_transaction.dart';
 import '../../../core/utils/currency_helper.dart';
-import 'package:intl/intl.dart';
 
 class CustomerDetailScreen extends StatefulWidget {
   final Customer customer;
@@ -83,7 +83,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     }
   }
 
-  Future<void> _exportPdf() async {
+  Future<void> _exportPdf({bool directShare = true}) async {
     // Show loading dialog
     showDialog(
       context: context,
@@ -122,10 +122,21 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     );
 
     try {
-      await _exportService.exportCustomerTransactionsToPdf(
+      final pdf = await _exportService.generateCustomerTransactionsPdf(
         _currentCustomer,
         _transactions,
       );
+      if (directShare) {
+        await Printing.sharePdf(
+          bytes: await pdf.save(),
+          filename: 'customer_${_currentCustomer.id}_${DateTime.now().millisecondsSinceEpoch}.pdf',
+        );
+      } else {
+        await Printing.layoutPdf(
+          onLayout: (format) async => pdf.save(),
+          name: 'customer_${_currentCustomer.id}_${DateTime.now().millisecondsSinceEpoch}.pdf',
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -137,6 +148,117 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
         Navigator.of(context, rootNavigator: true).pop(); // Close loading dialog
       }
     }
+  }
+
+  Future<void> _showExportOptionsDialog() async {
+    final theme = Theme.of(context);
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          backgroundColor: theme.colorScheme.surface,
+          title: Text(
+            'export_statement_title'.tr(),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16.sp,
+              color: theme.colorScheme.onSurface,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDialogOption(
+                icon: Icons.share_rounded,
+                color: const Color(0xFF00B894),
+                title: 'send_to_customer'.tr(),
+                subtitle: 'send_to_customer_desc'.tr(),
+                onTap: () {
+                  Navigator.pop(context);
+                  _exportPdf(directShare: true);
+                },
+              ),
+              SizedBox(height: 12.h),
+              _buildDialogOption(
+                icon: Icons.picture_as_pdf_rounded,
+                color: const Color(0xFFE74C3C),
+                title: 'preview_statement_option'.tr(),
+                subtitle: 'preview_statement_desc'.tr(),
+                onTap: () {
+                  Navigator.pop(context);
+                  _exportPdf(directShare: false);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDialogOption({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15.r),
+      child: Container(
+        padding: EdgeInsets.all(12.w),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: isDark ? Colors.white.withOpacity(0.08) : Colors.grey.withOpacity(0.15),
+          ),
+          borderRadius: BorderRadius.circular(15.r),
+          color: isDark ? theme.colorScheme.background : Colors.grey[50],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(8.w),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 24.sp),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.sp,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -270,7 +392,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
           label: 'export_pdf'.tr(),
           icon: Icons.picture_as_pdf_outlined,
           color: Colors.redAccent,
-          onTap: _exportPdf,
+          onTap: _showExportOptionsDialog,
         ),
         SizedBox(width: 20.w),
         _ActionButton(

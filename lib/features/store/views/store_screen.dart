@@ -309,11 +309,11 @@ class _StoreScreenState extends State<StoreScreen> {
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
         actions: [
-          // IconButton(
-          //   icon: const Icon(Icons.business_rounded),
-          //   onPressed: () => Navigator.pushNamed(context, Routes.suppliers),
-          //   tooltip: 'suppliers'.tr(),
-          // ),
+          IconButton(
+            icon: const Icon(Icons.business_rounded),
+            onPressed: () => Navigator.pushNamed(context, Routes.suppliers),
+            tooltip: 'suppliers'.tr(),
+          ),
           IconButton(
             icon: const Icon(Icons.category),
             onPressed: () => Navigator.pushNamed(context, Routes.categories).then((_) => _loadProducts()),

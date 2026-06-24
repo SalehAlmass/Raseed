@@ -19,6 +19,7 @@ import '../../../../core/models/supplier_transaction_item.dart';
 import '../../../../core/models/app_settings.dart';
 import '../../../../core/services/settings_service.dart';
 import '../../../../core/theme/colors.dart';
+import '../../../../core/utils/currency_helper.dart';
 import '../../../../core/widgets/barcode_scanner_view.dart';
 
 class AddEditProductScreen extends StatefulWidget {
@@ -38,7 +39,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
 
   final _nameController = TextEditingController();
   final _barcodeController = TextEditingController();
-  final _conversionController = TextEditingController(text: '1');
+  final _conversionController = TextEditingController();
   final _purchasePriceController = TextEditingController();
   final _salePriceController = TextEditingController();
   final _wholesalePriceController = TextEditingController();
@@ -56,6 +57,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   final _sarPurchasePriceController = TextEditingController();
   final _exchangeRateController = TextEditingController();
   bool _useSarConversion = false;
+  String _converterCurrency = 'SAR';
 
   List<Category> _categories = [];
   List<Unit> _units = [];
@@ -78,6 +80,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   
   late AppSettings _settings;
   ProductFormConfig _formConfig = ProductFormConfig();
+  double? _lastPurchasePrice;
 
   @override
   void initState() {
@@ -129,15 +132,20 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   void _updateSarToYemeniConversion() {
     if (!_useSarConversion) return;
 
-    final sarCost = double.tryParse(_sarPurchasePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final foreignCost = double.tryParse(_sarPurchasePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
     final rate = double.tryParse(_exchangeRateController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
 
-    if (sarCost > 0 && rate > 0) {
-      final yemeniCost = (sarCost * rate).round();
+    if (foreignCost > 0 && rate > 0) {
+      final yemeniCost = (foreignCost * rate).round();
       if (_purchasePriceController.text != yemeniCost.toString()) {
         _purchasePriceController.text = yemeniCost.toString();
         // Save the rate to prefs so it persists for the next products
-        sl<SharedPreferences>().setDouble('last_sar_exchange_rate', rate);
+        final prefs = sl<SharedPreferences>();
+        if (_converterCurrency == 'SAR') {
+          prefs.setDouble('last_sar_exchange_rate', rate);
+        } else {
+          prefs.setDouble('last_usd_exchange_rate', rate);
+        }
       }
     }
   }
@@ -270,7 +278,9 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     final units = await _unitService.getAllUnits();
     final suppliers = await sl<SupplierService>().getAllSuppliers();
     final settings = await sl<SettingsService>().getSettings();
-    final lastRate = sl<SharedPreferences>().getDouble('last_sar_exchange_rate') ?? 400.0;
+    final prefs = sl<SharedPreferences>();
+    final lastSarRate = prefs.getDouble('last_sar_exchange_rate') ?? 400.0;
+    final lastUsdRate = prefs.getDouble('last_usd_exchange_rate') ?? 1500.0;
 
     if (mounted) {
       setState(() {
@@ -279,7 +289,9 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         _suppliers = suppliers;
         _settings = settings;
         _formConfig = settings.productFormConfig;
-        _exchangeRateController.text = lastRate.toStringAsFixed(0);
+        _exchangeRateController.text = _converterCurrency == 'SAR' 
+            ? lastSarRate.toStringAsFixed(0) 
+            : lastUsdRate.toStringAsFixed(0);
         _isLoading = false;
 
         if (widget.product != null) {
@@ -300,6 +312,14 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           _selectedSupplier = _suppliers
               .where((s) => s.id == p.supplierId)
               .firstOrNull;
+
+          if (_selectedSupplier != null) {
+            sl<ProductService>().getLastPurchaseInfo(p.id!, _selectedSupplier!.id!).then((info) {
+              if (mounted) setState(() {
+                _lastPurchasePrice = info != null ? (info['cost_price'] as num).toDouble() : null;
+              });
+            });
+          }
 
           _totalStockController.text = p.stockQuantity.toString();
           _initialStock = p.stockQuantity;
@@ -505,6 +525,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           'product_name'.tr(),
           Icons.inventory_2_outlined,
           hint: 'product_name'.tr(),
+          required: true,
           validator: (v) =>
               v == null || v.isEmpty ? 'required_field'.tr() : null,
         ),
@@ -683,7 +704,19 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             items: _suppliers
                 .map((s) => DropdownMenuItem(value: s, child: Text(s.name)))
                 .toList(),
-            onChanged: (val) => setState(() => _selectedSupplier = val),
+            onChanged: (val) {
+              setState(() {
+                _selectedSupplier = val;
+                _lastPurchasePrice = null;
+              });
+              if (val != null && widget.product != null) {
+                sl<ProductService>().getLastPurchaseInfo(widget.product!.id!, val.id!).then((info) {
+                  if (mounted) setState(() {
+                    _lastPurchasePrice = info != null ? (info['cost_price'] as num).toDouble() : null;
+                  });
+                });
+              }
+            },
           ),
         ),
         SizedBox(width: 8.w),
@@ -767,19 +800,33 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     String? hint,
     FocusNode? focusNode,
     String? Function(String?)? validator,
+    bool required = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: EdgeInsets.only(bottom: 8.h, right: 4.w),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[700],
-            ),
+          child: Row(
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[700],
+                ),
+              ),
+              if (required)
+                Text(
+                  ' *',
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red[700],
+                  ),
+                ),
+            ],
           ),
         ),
         TextFormField(
@@ -1074,6 +1121,11 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     // Show purchase section if adding new product OR increasing stock of existing product
     if (!hasNewStock && widget.product != null) return const SizedBox.shrink();
 
+    final currentPurchasePrice = double.tryParse(_purchasePriceController.text) ?? 0;
+    final hasPriceDiff = _lastPurchasePrice != null && _lastPurchasePrice! > 0 && currentPurchasePrice > 0;
+    final priceDiff = hasPriceDiff ? currentPurchasePrice - _lastPurchasePrice! : 0.0;
+    final diffPercent = hasPriceDiff ? ((priceDiff / _lastPurchasePrice!) * 100).abs() : 0.0;
+
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -1101,6 +1153,36 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             ],
           ),
           if (_recordAsPurchase) ...[
+            SizedBox(height: 10.h),
+            if (_lastPurchasePrice != null && _lastPurchasePrice! > 0)
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+                decoration: BoxDecoration(
+                  color: hasPriceDiff && priceDiff > 0 ? Colors.red.withOpacity(0.05) : Colors.green.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(
+                    color: hasPriceDiff && priceDiff > 0 ? Colors.red.withOpacity(0.2) : Colors.green.withOpacity(0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      hasPriceDiff && priceDiff > 0 ? Icons.trending_up : Icons.trending_down,
+                      size: 16.sp,
+                      color: hasPriceDiff && priceDiff > 0 ? Colors.red : Colors.green,
+                    ),
+                    SizedBox(width: 6.w),
+                    Expanded(
+                      child: Text(
+                        '${'last_purchase'.tr()}: ${CurrencyHelper.getFormatter('YER').format(_lastPurchasePrice!)}  '
+                        '(${hasPriceDiff ? '${priceDiff > 0 ? "+" : ""}${CurrencyHelper.getFormatter('YER').format(priceDiff)}' : "0"} '
+                        '| ${diffPercent.toStringAsFixed(1)}%)',
+                        style: TextStyle(fontSize: 10.sp, color: Colors.grey[700]),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             SizedBox(height: 10.h),
             Text(
               'record_as_purchase_desc'.tr(),
@@ -1149,7 +1231,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               Icon(Icons.currency_exchange_rounded, color: AppColors.primary, size: 20.sp),
               SizedBox(width: 8.w),
               Text(
-                isArabic ? 'حاسبة الشراء بالريال السعودي' : 'SAR Purchase Calculator',
+                isArabic ? 'حاسبة الشراء بالعملات الأجنبية' : 'Foreign Currency Calculator',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 13.sp,
@@ -1166,7 +1248,6 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                     if (!val) {
                       _sarPurchasePriceController.clear();
                     } else {
-                      // Trigger conversion immediately on activation
                       _updateSarToYemeniConversion();
                     }
                   });
@@ -1177,11 +1258,22 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           if (_useSarConversion) ...[
             SizedBox(height: 12.h),
             Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                _buildCurrencyChoiceChip('SAR', isArabic ? 'ريال سعودي 🇸🇦' : 'SAR 🇸🇦'),
+                SizedBox(width: 8.w),
+                _buildCurrencyChoiceChip('USD', isArabic ? 'دولار أمريكي 🇺🇸' : 'USD 🇺🇸'),
+              ],
+            ),
+            SizedBox(height: 12.h),
+            Row(
               children: [
                 Expanded(
                   child: _buildModernField(
                     _sarPurchasePriceController,
-                    isArabic ? 'سعر الشراء (سعودي 🇸🇦)' : 'Purchase Cost (SAR 🇸🇦)',
+                    _converterCurrency == 'SAR'
+                        ? (isArabic ? 'سعر الشراء (سعودي 🇸🇦)' : 'Purchase Cost (SAR 🇸🇦)')
+                        : (isArabic ? 'سعر الشراء (دولار 🇺🇸)' : 'Purchase Cost (USD 🇺🇸)'),
                     Icons.payments_outlined,
                     type: TextInputType.number,
                   ),
@@ -1230,6 +1322,32 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildCurrencyChoiceChip(String value, String label) {
+    final isSelected = _converterCurrency == value;
+    return ChoiceChip(
+      label: Text(label, style: TextStyle(fontSize: 11.sp, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() {
+            _converterCurrency = value;
+            final prefs = sl<SharedPreferences>();
+            if (value == 'SAR') {
+              final lastRate = prefs.getDouble('last_sar_exchange_rate') ?? 400.0;
+              _exchangeRateController.text = lastRate.toStringAsFixed(0);
+            } else {
+              final lastRate = prefs.getDouble('last_usd_exchange_rate') ?? 1500.0;
+              _exchangeRateController.text = lastRate.toStringAsFixed(0);
+            }
+            _updateSarToYemeniConversion();
+          });
+        }
+      },
+      selectedColor: AppColors.primary.withOpacity(0.2),
+      checkmarkColor: AppColors.primary,
     );
   }
 
