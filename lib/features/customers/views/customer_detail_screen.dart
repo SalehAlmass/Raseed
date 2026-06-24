@@ -11,6 +11,7 @@ import '../../../core/theme/colors.dart';
 import '../../../core/models/customer.dart';
 import '../../../core/models/app_transaction.dart';
 import '../../../core/utils/currency_helper.dart';
+import '../../../core/widgets/transaction_detail_sheet.dart';
 
 class CustomerDetailScreen extends StatefulWidget {
   final Customer customer;
@@ -424,82 +425,91 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
         final isRefund = tx.type == TransactionType.refund;
         final isSale = tx.type == TransactionType.sale;
 
-        return Container(
-          margin: EdgeInsets.only(bottom: 15.h),
-          padding: EdgeInsets.all(15.w),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(15.r),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(10.w),
-                decoration: BoxDecoration(
-                  color: (isRefund ? AppColors.error : AppColors.success)
-                      .withOpacity(0.1),
-                  shape: BoxShape.circle,
+        return InkWell(
+          onTap: () async {
+            final refresh = await TransactionDetailSheet.show(context, tx);
+            if (refresh == true) {
+              _loadData();
+            }
+          },
+          borderRadius: BorderRadius.circular(15.r),
+          child: Container(
+            margin: EdgeInsets.only(bottom: 15.h),
+            padding: EdgeInsets.all(15.w),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(15.r),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(10.w),
+                  decoration: BoxDecoration(
+                    color: (isRefund ? AppColors.error : AppColors.success)
+                        .withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isRefund
+                        ? Icons.keyboard_return
+                        : (isSale ? Icons.shopping_cart : Icons.payment),
+                    color: isRefund ? AppColors.error : AppColors.success,
+                    size: 20,
+                  ),
                 ),
-                child: Icon(
-                  isRefund
-                      ? Icons.keyboard_return
-                      : (isSale ? Icons.shopping_cart : Icons.payment),
-                  color: isRefund ? AppColors.error : AppColors.success,
-                  size: 20,
-                ),
-              ),
-              SizedBox(width: 15.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          tx.type.name.tr(),
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14.sp,
-                            decoration: tx.isVoid ? TextDecoration.lineThrough : null,
-                          ),
-                        ),
-                        if (tx.isVoid) ...[
-                          SizedBox(width: 8.w),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                            decoration: BoxDecoration(
-                              color: AppColors.error.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4.r),
+                SizedBox(width: 15.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            tx.type.name.tr(),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14.sp,
+                              decoration: tx.isVoid ? TextDecoration.lineThrough : null,
                             ),
-                            child: Text(
-                              'voided'.tr(),
-                              style: TextStyle(
-                                color: AppColors.error,
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.bold,
+                          ),
+                          if (tx.isVoid) ...[
+                            SizedBox(width: 8.w),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                              decoration: BoxDecoration(
+                                color: AppColors.error.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4.r),
+                              ),
+                              child: Text(
+                                'voided'.tr(),
+                                style: TextStyle(
+                                  color: AppColors.error,
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ],
-                      ],
-                    ),
-                    Text(
-                      DateFormat('MMM dd, yyyy').format(tx.date),
-                      style: TextStyle(color: Colors.grey, fontSize: 12.sp),
-                    ),
-                  ],
+                      ),
+                      Text(
+                        DateFormat('MMM dd, yyyy').format(tx.date),
+                        style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Text(
-                '${isRefund ? '+' : '-'}${CurrencyHelper.getSymbol(tx.currency)} ${tx.amount.toStringAsFixed(0)}',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16.sp,
-                  color: tx.isVoid ? Colors.grey : (isRefund ? AppColors.error : AppColors.success),
-                  decoration: tx.isVoid ? TextDecoration.lineThrough : null,
+                Text(
+                  '${isRefund ? '+' : '-'}${CurrencyHelper.getSymbol(tx.currency)} ${tx.amount.toStringAsFixed(0)}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16.sp,
+                    color: tx.isVoid ? Colors.grey : (isRefund ? AppColors.error : AppColors.success),
+                    decoration: tx.isVoid ? TextDecoration.lineThrough : null,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

@@ -21,7 +21,9 @@ import '../../../core/widgets/subscription_dialog.dart';
 import '../../../core/widgets/barcode_scanner_view.dart';
 import '../../../core/utils/currency_helper.dart';
 import '../../../core/routes/routes.dart';
+import '../../../core/routes/app_router.dart';
 import '../../../core/widgets/app_bottom_navigation_bar.dart';
+import '../../../core/widgets/transaction_detail_sheet.dart';
 import '../../marketing/views/whatsapp_marketing_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -531,14 +533,27 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _navigateWithoutAnimation(String routeName) {
+    final route = AppRouter.generateRoute(RouteSettings(name: routeName));
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (route as PageRouteBuilder<dynamic>).pageBuilder,
+        settings: route.settings,
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+      ),
+    );
+  }
+
   void _onNavTap(int index) {
     setState(() => _bottomNavIndex = index);
     switch (index) {
       case 0:
-        Navigator.pushReplacementNamed(context, Routes.home);
+        _navigateWithoutAnimation(Routes.home);
         break;
       case 1:
-        Navigator.pushReplacementNamed(context, Routes.customers);
+        _navigateWithoutAnimation(Routes.customers);
         break;
       case 2:
         if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
@@ -555,13 +570,13 @@ class _HomeScreenState extends State<HomeScreen> {
         break;
       case 3:
         if (sl<SubscriptionService>().canUseFeature(AppFeature.viewReports)) {
-          Navigator.pushReplacementNamed(context, Routes.reports);
+          _navigateWithoutAnimation(Routes.reports);
         } else {
           SubscriptionDialog.show(context);
         }
         break;
       case 4:
-        Navigator.pushReplacementNamed(context, Routes.store);
+        _navigateWithoutAnimation(Routes.store);
         break;
     }
   }
@@ -1014,6 +1029,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         return _TransactionTile(
                           tx: transactions[index],
                           onVoid: _confirmVoidTransaction,
+                          onRefresh: () {
+                            Navigator.pop(context); // Close transactions sheet
+                            _loadData();
+                          },
                         );
                       },
                     ),
@@ -1073,6 +1092,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 return _TransactionTile(
                   tx: _recentTransactions[index],
                   onVoid: _confirmVoidTransaction,
+                  onRefresh: _loadData,
                 );
               },
             ),
@@ -1711,7 +1731,8 @@ class _ActionCard extends StatelessWidget {
 class _TransactionTile extends StatelessWidget {
   final AppTransaction tx;
   final Function(AppTransaction) onVoid;
-  const _TransactionTile({required this.tx, required this.onVoid});
+  final VoidCallback? onRefresh;
+  const _TransactionTile({required this.tx, required this.onVoid, this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
@@ -1751,6 +1772,12 @@ class _TransactionTile extends StatelessWidget {
     final hasDebt = tx.type == TransactionType.sale && remaining > 0;
 
     return InkWell(
+      onTap: () async {
+        final refresh = await TransactionDetailSheet.show(context, tx);
+        if (refresh == true && onRefresh != null) {
+          onRefresh!();
+        }
+      },
       onLongPress: () => onVoid(tx),
       child: ListTile(
         contentPadding: EdgeInsets.zero,

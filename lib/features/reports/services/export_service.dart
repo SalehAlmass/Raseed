@@ -15,6 +15,7 @@ import 'package:intl/intl.dart';
 import '../../../core/services/settings_service.dart';
 import '../../../core/di/injection_container.dart';
 import '../../../core/models/app_settings.dart';
+import '../../../core/utils/number_to_words_helper.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
@@ -555,4 +556,353 @@ class ExportService {
       ),
     );
   }
+
+  Future<pw.Document> generateSingleTransactionInvoicePdf(
+    AppTransaction transaction, {
+    Customer? customer,
+  }) async {
+    final pdf = pw.Document();
+    final font = await _getFont();
+    final boldFont = await _getBoldFont();
+    final logo = await _getLogo();
+
+    final settings = sl<SettingsService>().settings;
+    final isRtl = settings.languageCode == 'ar';
+
+    final double netTotal = transaction.amount;
+    final String amountInWords = NumberToWordsArabic.convertToWords(netTotal, transaction.currency);
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        textDirection: isRtl ? pw.TextDirection.rtl : pw.TextDirection.ltr,
+        theme: pw.ThemeData.withFont(base: font, bold: boldFont),
+        build: (context) => [
+          // 1. Header Box (with thick black border and rounded corners)
+          pw.Container(
+            padding: const pw.EdgeInsets.all(10),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.black, width: 1.5),
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(15)),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // Left English Store Info Column
+                pw.Expanded(
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text("١", style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                      pw.Text(
+                        "SPECIALST IN NETWORK SYSTEMS",
+                        style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                      ),
+                      pw.Text(
+                        "Shabwa Ataq",
+                        style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                      ),
+                      pw.Text(
+                        "specialst in network system",
+                        style: const pw.TextStyle(fontSize: 8),
+                      ),
+                      pw.Text(
+                        "٧٧٥٢٧٦٦٩٩-٧٧٠٩٨٠٠٠٣",
+                        style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                      ),
+                      pw.Text(
+                        "٠٥٢٠٤٦١٥",
+                        style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+                // Center Logo & Title Column
+                pw.Column(
+                  children: [
+                    if (logo != null)
+                      pw.Image(logo, width: 45, height: 45)
+                    else
+                      pw.Container(
+                        width: 40,
+                        height: 40,
+                        decoration: const pw.BoxDecoration(
+                          color: PdfColors.grey300,
+                          shape: pw.BoxShape.circle,
+                        ),
+                        alignment: pw.Alignment.center,
+                        child: pw.Text("R", style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+                      ),
+                    pw.SizedBox(height: 4),
+                    pw.Text("أمان تك", style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                    pw.Text("تواصل للحلول المتكاملة", style: const pw.TextStyle(fontSize: 7)),
+                    pw.SizedBox(height: 8),
+                    pw.Text(
+                      "فاتورة المبيعات",
+                      style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+                    ),
+                  ],
+                ),
+                // Right Arabic Store Info Column
+                pw.Expanded(
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Text(
+                        _store.storeName ?? "امان تكنولوجي",
+                        style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
+                      ),
+                      pw.Text(
+                        "متخصصون في انظمة الشبكات",
+                        style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+                      ),
+                      pw.Text(
+                        "شبوة عتق جولة الثقافة - جوار التميز للصرافة",
+                        style: const pw.TextStyle(fontSize: 8),
+                      ),
+                      pw.Text(
+                        "شبكات-انظمة مراقبةوتحكم والطاقة المتجددة",
+                        style: const pw.TextStyle(fontSize: 7),
+                      ),
+                      pw.Text(
+                        "كمبيوترات طابعات احبار",
+                        style: const pw.TextStyle(fontSize: 8),
+                      ),
+                      pw.Text(
+                        "٧٧٠٩٨٠٠٠٣ - ٧٧٥٢٧٦٦٩٩",
+                        style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 12),
+
+          // 2. Main Box (containing Metadata, Table, and Summary with rounded corners & black border)
+          pw.Container(
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.black, width: 1.5),
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(15)),
+            ),
+            child: pw.Column(
+              children: [
+                // Metadata Row 1
+                pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                        "العملة : ${transaction.currency}",
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+                      ),
+                      pw.Text(
+                        "رقم المرجع : ${transaction.id != null ? (transaction.id! * 1000 + 492) : '١٤٩٢'}",
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+                      ),
+                      pw.Text(
+                        "التاريخ : ${DateFormat('yyyy/MM/dd').format(transaction.date)}",
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+                      ),
+                      pw.Text(
+                        "نوع الفاتورة : ${transaction.paidAmount >= transaction.amount ? 'نقداً' : 'آجل'}",
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+                      ),
+                      pw.Text(
+                        "رقم الفاتورة : ${transaction.id ?? '١٣٣٦'}",
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+                      ),
+                    ],
+                  ),
+                ),
+                // Metadata Row 2
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(left: 10, right: 10, bottom: 8),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.SizedBox(width: 80),
+                      pw.Text(
+                        "اسم العميل : ${customer?.name ?? 'المهندس احمد العجي'}",
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+                      ),
+                      pw.Text(
+                        "المخزن : ${_store.address ?? 'مخزن الثقافة'}",
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+                      ),
+                    ],
+                  ),
+                ),
+                // Items Table
+                pw.TableHelper.fromTextArray(
+                  headers: [
+                    'رقم الصنف',
+                    'اسم الصنف',
+                    'الوحدة',
+                    'الكمية',
+                    'ك.المجانية',
+                    'السعر',
+                    'الإجمالي'
+                  ],
+                  data: transaction.items.map((item) {
+                    final codeStr = '005-001-${item.productId.toString().padLeft(4, '0')}';
+                    return [
+                      codeStr,
+                      item.productName,
+                      'حبة',
+                      item.quantity.toString(),
+                      '',
+                      item.price.toStringAsFixed(2),
+                      item.total.toStringAsFixed(2),
+                    ];
+                  }).toList(),
+                  border: pw.TableBorder.all(color: PdfColors.black, width: 1),
+                  headerStyle: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.black,
+                    fontSize: 9,
+                  ),
+                  headerDecoration: const pw.BoxDecoration(
+                    color: PdfColor.fromInt(0xffa0c0e0),
+                  ),
+                  cellStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+                  cellAlignment: pw.Alignment.center,
+                  cellAlignments: {
+                    1: pw.Alignment.centerRight, // Item name right-aligned in Arabic
+                  },
+                  columnWidths: {
+                    0: const pw.FixedColumnWidth(80),
+                    1: const pw.FlexColumnWidth(),
+                    2: const pw.FixedColumnWidth(40),
+                    3: const pw.FixedColumnWidth(40),
+                    4: const pw.FixedColumnWidth(50),
+                    5: const pw.FixedColumnWidth(60),
+                    6: const pw.FixedColumnWidth(70),
+                  },
+                  headerPadding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                  cellPadding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                ),
+                pw.SizedBox(height: 8),
+
+                // Summary Row (Subtotal & Discount)
+                pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 10),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.end,
+                    children: [
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.end,
+                        children: [
+                          pw.Row(
+                            children: [
+                              pw.Text("الإجمالي :", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                              pw.SizedBox(width: 8),
+                              pw.Container(
+                                width: 70,
+                                alignment: pw.Alignment.centerLeft,
+                                child: pw.Text(
+                                  transaction.amount.toStringAsFixed(2),
+                                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.red800),
+                                ),
+                              ),
+                            ],
+                          ),
+                          pw.SizedBox(height: 2),
+                          pw.Row(
+                            children: [
+                              pw.Text("الخصم :", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                              pw.SizedBox(width: 8),
+                              pw.Container(
+                                width: 70,
+                                alignment: pw.Alignment.centerLeft,
+                                child: pw.Text(
+                                  "0.00",
+                                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.red800),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                pw.SizedBox(height: 8),
+
+                // Spelled-out words and total numeric (split container)
+                pw.Container(
+                  decoration: const pw.BoxDecoration(
+                    border: pw.Border(
+                      top: pw.BorderSide(color: PdfColors.black, width: 1.5),
+                    ),
+                  ),
+                  child: pw.Row(
+                    children: [
+                      // Right Side: Amount in Words (occupies full width except total numeric)
+                      pw.Expanded(
+                        child: pw.Padding(
+                          padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          child: pw.Text(
+                            amountInWords,
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.red800),
+                            textAlign: pw.TextAlign.right,
+                          ),
+                        ),
+                      ),
+                      // Split vertical line
+                      pw.Container(width: 1.5, height: 25, color: PdfColors.black),
+                      // Left Side: Total Numeric Amount (aligned left)
+                      pw.Container(
+                        width: 70,
+                        alignment: pw.Alignment.center,
+                        child: pw.Text(
+                          transaction.amount.toStringAsFixed(2),
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.red800),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 35),
+
+          // 3. Signatures row (outside the main details box at the bottom)
+          pw.Padding(
+            padding: const pw.EdgeInsets.symmetric(horizontal: 10),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text("مدير المبيعات", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                pw.Text("مدير الحسابات", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                pw.Text("المخازن", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                pw.Text("مندوب المبيعات", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                pw.Text("المحاسب", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                pw.Text("العميل", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return pdf;
+  }
+
+  Future<void> exportSingleTransactionInvoiceToPdf(
+    AppTransaction transaction, {
+    Customer? customer,
+  }) async {
+    final pdf = await generateSingleTransactionInvoicePdf(transaction, customer: customer);
+    await Printing.sharePdf(
+      bytes: await pdf.save(),
+      filename: 'invoice_${transaction.id ?? "new"}_${DateTime.now().millisecondsSinceEpoch}.pdf',
+    );
+  }
 }
+
