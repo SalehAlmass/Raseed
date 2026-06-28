@@ -29,8 +29,8 @@ android {
     buildTypes {
         release {
             // تقليل حجم التطبيق (إيقاف الضغط العنيف لتجنب مشاكل المكونات الإضافية)
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
 
             // توقيع مؤقت (للاختبار فقط)
             signingConfig = signingConfigs.getByName("debug")
