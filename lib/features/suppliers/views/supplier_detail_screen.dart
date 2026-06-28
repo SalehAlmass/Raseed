@@ -12,6 +12,7 @@ import '../../../core/services/supplier_transaction_service.dart';
 import '../../reports/services/report_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/utils/currency_helper.dart';
+import '../../../core/routes/routes.dart';
 import 'supplier_purchase_history_screen.dart';
 
 class SupplierDetailScreen extends StatefulWidget {
@@ -72,6 +73,13 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.replay, color: Colors.orange),
+            tooltip: 'supplier_return'.tr(),
+            onPressed: () => Navigator.pushNamed(context, Routes.supplierReturn),
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

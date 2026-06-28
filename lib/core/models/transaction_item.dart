@@ -7,6 +7,7 @@ class TransactionItem {
   final double price;
   final double costPrice;
   final String currency;
+  final double lineDiscount;
 
   TransactionItem({
     this.id,
@@ -17,6 +18,7 @@ class TransactionItem {
     required this.price,
     this.costPrice = 0.0,
     this.currency = 'YER',
+    this.lineDiscount = 0.0,
   });
 
   Map<String, dynamic> toMap() {
@@ -29,6 +31,7 @@ class TransactionItem {
       'price': price,
       'cost_price': costPrice,
       'currency': currency,
+      'line_discount': lineDiscount > 0 ? lineDiscount : 0,
     };
   }
 
@@ -42,11 +45,12 @@ class TransactionItem {
       price: (map['price'] as num?)?.toDouble() ?? 0.0,
       costPrice: (map['cost_price'] as num?)?.toDouble() ?? 0.0,
       currency: map['currency'] ?? 'YER',
+      lineDiscount: (map['line_discount'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
-  double get total => price * quantity;
-  double get profit => (price - costPrice) * quantity;
+  double get total => (price * quantity) - lineDiscount;
+  double get profit => ((price - costPrice) * quantity) - lineDiscount;
 
   TransactionItem copyWith({
     int? id,
@@ -57,6 +61,7 @@ class TransactionItem {
     double? price,
     double? costPrice,
     String? currency,
+    double? lineDiscount,
   }) {
     return TransactionItem(
       id: id ?? this.id,
@@ -67,6 +72,7 @@ class TransactionItem {
       price: price ?? this.price,
       costPrice: costPrice ?? this.costPrice,
       currency: currency ?? this.currency,
+      lineDiscount: lineDiscount ?? this.lineDiscount,
     );
   }
 }

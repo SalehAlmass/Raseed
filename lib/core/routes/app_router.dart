@@ -30,6 +30,10 @@ import '../../features/reports/views/accounting_insights_screen.dart';
 import '../../features/accounting/views/accounting_hub_screen.dart';
 import '../../features/auth/views/employee_management_screen.dart';
 import '../../features/auth/views/shift_management_screen.dart';
+import '../../features/returns/views/sales_return_screen.dart';
+import '../../features/returns/views/supplier_return_screen.dart';
+import '../../features/discount/views/discount_codes_screen.dart';
+import '../../features/receivables/views/receivables_dashboard_screen.dart';
 
 /// Application Router
 class AppRouter {
@@ -95,6 +99,14 @@ class AppRouter {
         return _buildRoute(const ShiftManagementScreen(), settings);
       case Routes.masterPassword:
         return _buildRoute(const MasterPasswordScreen(), settings);
+      case Routes.salesReturn:
+        return _buildRoute(const SalesReturnScreen(), settings);
+      case Routes.supplierReturn:
+        return _buildRoute(const SupplierReturnScreen(), settings);
+      case Routes.discountCodes:
+        return _buildRoute(const DiscountCodesScreen(), settings);
+      case Routes.receivables:
+        return _buildRoute(const ReceivablesDashboardScreen(), settings);
       default:
         return _buildRoute(
           Scaffold(

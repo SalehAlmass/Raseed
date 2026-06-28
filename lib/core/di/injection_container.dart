@@ -30,6 +30,8 @@ import '../../features/reports/services/export_service.dart';
 import '../../features/reports/bloc/reports_bloc.dart';
 import '../services/printer_service.dart';
 import '../services/fiscal_year_service.dart';
+import '../services/discount_code_service.dart';
+import '../services/receivable_service.dart';
 
 final sl = GetIt.instance;
 
@@ -115,4 +117,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ReportService());
   sl.registerLazySingleton(() => ExportService());
   sl.registerFactory(() => ReportsBloc(sl<ReportService>()));
+
+  //! Discount & Receivables (v36)
+  sl.registerLazySingleton(() => DiscountCodeService());
+  sl.registerLazySingleton(() => ReceivableService());
 }

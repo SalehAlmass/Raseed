@@ -34,16 +34,24 @@ class SupplierTransactionService {
       // 1. Insert transaction
       final txId = await txn.insert('supplier_transactions', tx.toMap());
 
-      // 2. Insert items and update stock if it's a purchase
+      // 2. Insert items and update stock
       for (var item in tx.items) {
         await txn.insert('supplier_transaction_items', item.toMap(txId));
         
-        if (tx.type == SupplierTransactionType.purchase && !tx.isVoid) {
-          // Increment stock
-          await txn.execute(
-            'UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?',
-            [item.quantity, item.productId],
-          );
+        if (!tx.isVoid) {
+          if (tx.type == SupplierTransactionType.purchase) {
+            // Increment stock on purchase
+            await txn.execute(
+              'UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?',
+              [item.quantity, item.productId],
+            );
+          } else if (tx.type == SupplierTransactionType.return_) {
+            // Decrement stock on return to supplier
+            await txn.execute(
+              'UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
+              [item.quantity, item.productId],
+            );
+          }
         }
       }
 
@@ -56,6 +64,9 @@ class SupplierTransactionService {
       } else if (tx.type == SupplierTransactionType.payment) {
         debtChange = -tx.amount;
         paidChange = tx.amount;
+      } else if (tx.type == SupplierTransactionType.return_) {
+        // Return reduces supplier debt
+        debtChange = -tx.amount;
       }
 
       if ((debtChange != 0 || paidChange != 0) && !tx.isVoid) {
@@ -65,7 +76,7 @@ class SupplierTransactionService {
         );
       }
 
-      // 4. Record purchase price history
+      // 4. Record purchase price history (only for purchases)
       if (tx.type == SupplierTransactionType.purchase && !tx.isVoid) {
         for (var item in tx.items) {
           await txn.insert('purchase_price_history', {
@@ -143,6 +154,28 @@ class SupplierTransactionService {
           await txn.insert('journal_entry_lines', line.toMap());
           await _updateAccountBalance(txn, line.accountId, line.debit, line.credit);
         }
+      } else if (tx.type == SupplierTransactionType.return_) {
+        // Reverse purchase entry:
+        // Credit: Inventory (1200) -> 3
+        // Debit: Accounts Payable (2100) -> 6
+
+        final entryId = await txn.insert('journal_entries', {
+          'date': tx.date.toIso8601String(),
+          'description': 'supplier_return_entry_desc'.tr(args: [txId.toString()]),
+          'reference_type': 'supplier_return',
+          'reference_id': txId,
+          'created_at': now.toIso8601String(),
+        });
+
+        final lines = [
+          JournalEntryLine(entryId: entryId, accountId: 6, debit: tx.amount),
+          JournalEntryLine(entryId: entryId, accountId: 3, credit: tx.amount),
+        ];
+
+        for (var line in lines) {
+          await txn.insert('journal_entry_lines', line.toMap());
+          await _updateAccountBalance(txn, line.accountId, line.debit, line.credit);
+        }
       }
     } catch (e) {
       print('Supplier Accounting error: $e');
@@ -201,13 +234,20 @@ class SupplierTransactionService {
       // 1. Mark as void
       await txn.update('supplier_transactions', {'is_void': 1}, where: 'id = ?', whereArgs: [txId]);
 
-      // 2. Reverse stock if purchase
-      if (tx.type == SupplierTransactionType.purchase) {
-        final itemsMap = await txn.query('supplier_transaction_items', where: 'transaction_id = ?', whereArgs: [txId]);
-        for (var itemMap in itemsMap) {
-          final item = SupplierTransactionItem.fromMap(itemMap);
+      // 2. Reverse stock
+      final itemsMap = await txn.query('supplier_transaction_items', where: 'transaction_id = ?', whereArgs: [txId]);
+      for (var itemMap in itemsMap) {
+        final item = SupplierTransactionItem.fromMap(itemMap);
+        if (tx.type == SupplierTransactionType.purchase) {
+          // Reverse purchase: decrement stock
           await txn.execute(
             'UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
+            [item.quantity, item.productId],
+          );
+        } else if (tx.type == SupplierTransactionType.return_) {
+          // Reverse return: restore stock
+          await txn.execute(
+            'UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?',
             [item.quantity, item.productId],
           );
         }
@@ -222,6 +262,9 @@ class SupplierTransactionService {
       } else if (tx.type == SupplierTransactionType.payment) {
         debtReverse = tx.amount;
         paidReverse = -tx.amount;
+      } else if (tx.type == SupplierTransactionType.return_) {
+        // Reverse return: add debt back
+        debtReverse = tx.amount;
       }
 
       if (debtReverse != 0 || paidReverse != 0) {
@@ -236,11 +279,36 @@ class SupplierTransactionService {
     });
   }
 
+  /// Process a return to supplier
+  Future<int> processSupplierReturn({
+    required int supplierId,
+    required List<SupplierTransactionItem> itemsToReturn,
+    String note = '',
+    String returnReason = '',
+  }) async {
+    final returnAmount = itemsToReturn.fold(0.0, (sum, item) => sum + (item.costPrice * item.quantity));
+    if (returnAmount <= 0) {
+      throw Exception('Return amount must be greater than 0');
+    }
+
+    final returnTx = SupplierTransaction(
+      supplierId: supplierId,
+      type: SupplierTransactionType.return_,
+      amount: returnAmount,
+      date: DateTime.now(),
+      note: note.isEmpty ? 'Return to supplier' : 'Return: $note',
+      items: itemsToReturn,
+      returnReason: returnReason,
+    );
+
+    return await addTransaction(returnTx);
+  }
+
   Future<void> _reverseJournalEntries(int txId, Transaction txn) async {
     // 1. Find all journal entries related to this transaction
     final entries = await txn.query('journal_entries', 
-      where: 'reference_id = ? AND (reference_type = ? OR reference_type = ?)', 
-      whereArgs: [txId, 'purchase', 'payment']
+      where: 'reference_id = ? AND (reference_type = ? OR reference_type = ? OR reference_type = ?)', 
+      whereArgs: [txId, 'purchase', 'payment', 'supplier_return']
     );
 
     for (var entry in entries) {

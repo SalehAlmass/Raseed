@@ -129,10 +129,10 @@ class _HomeScreenState extends State<HomeScreen> {
           //       '/store',
           //     ).then((_) => _loadData()),
           //   ),
-          IconButton(
-            icon: const Icon(Icons.delete_forever),
-            onPressed: () => _showResetDataConfirmation(context),
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.delete_forever),
+          //   onPressed: () => _showResetDataConfirmation(context),
+          // ),
           // IconButton(
           //   icon: const Icon(Icons.add),
           //   onPressed: () =>

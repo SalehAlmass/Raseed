@@ -30,4 +30,8 @@ class Routes {
   static const String employees = '/employees';
   static const String shifts = '/shifts';
   static const String masterPassword = '/master_password';
+  static const String salesReturn = '/sales_return';
+  static const String supplierReturn = '/supplier_return';
+  static const String discountCodes = '/discount_codes';
+  static const String receivables = '/receivables';
 }

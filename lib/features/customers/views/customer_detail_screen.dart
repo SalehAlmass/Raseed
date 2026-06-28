@@ -12,6 +12,7 @@ import '../../../core/models/customer.dart';
 import '../../../core/models/app_transaction.dart';
 import '../../../core/utils/currency_helper.dart';
 import '../../../core/widgets/transaction_detail_sheet.dart';
+import '../../../core/routes/routes.dart';
 
 class CustomerDetailScreen extends StatefulWidget {
   final Customer customer;
@@ -275,6 +276,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             onPressed: () {}, // Implementation later
+          ),
+          IconButton(
+            icon: const Icon(Icons.replay, color: Colors.orange),
+            tooltip: 'sales_return'.tr(),
+            onPressed: () => Navigator.pushNamed(context, Routes.salesReturn),
           ),
         ],
       ),

@@ -296,6 +296,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       SizedBox(height: 16.h),
                       _buildBackupTile(context),
                       SizedBox(height: 12.h),
+                      _buildDiscountCodesTile(context),
+                      SizedBox(height: 12.h),
+                      _buildReceivablesTile(context),
+                      SizedBox(height: 12.h),
                       _buildAboutTile(context),
                       if (_isDeveloperMode) ...[
                         SizedBox(height: 12.h),
@@ -1178,6 +1182,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
         onTap: () {
           Navigator.of(context).pushNamed(Routes.subscription).then((_) => setState(() {}));
         },
+      ),
+    );
+  }
+
+  Widget _buildDiscountCodesTile(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(15.r),
+      ),
+      child: ListTile(
+        leading: const Icon(Icons.discount, color: Colors.blue),
+        title: Text('discount_codes'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600)),
+        trailing: Icon(Icons.arrow_forward_ios, color: AppColors.textSecondary, size: 16.sp),
+        onTap: () => Navigator.of(context).pushNamed(Routes.discountCodes),
+      ),
+    );
+  }
+
+  Widget _buildReceivablesTile(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(15.r),
+      ),
+      child: ListTile(
+        leading: const Icon(Icons.account_balance_wallet, color: Colors.orange),
+        title: Text('receivables'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600)),
+        trailing: Icon(Icons.arrow_forward_ios, color: AppColors.textSecondary, size: 16.sp),
+        onTap: () => Navigator.of(context).pushNamed(Routes.receivables),
       ),
     );
   }

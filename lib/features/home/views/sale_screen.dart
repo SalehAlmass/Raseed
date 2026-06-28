@@ -8,10 +8,13 @@ import '../../../core/models/app_transaction.dart';
 import '../../../core/models/customer.dart';
 import '../../../core/models/product.dart';
 import '../../../core/models/transaction_item.dart';
+import '../../../core/models/installment_plan.dart';
 import '../../../core/services/customer_service.dart';
 import '../../../core/services/product_service.dart';
 import '../../../core/services/transaction_service.dart';
 import '../../../core/services/settings_service.dart';
+import '../../../core/services/discount_code_service.dart';
+import '../../../core/services/receivable_service.dart';
 import '../../../core/services/printer_service.dart';
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
@@ -36,12 +39,21 @@ class _SaleScreenState extends State<SaleScreen> {
 
   final List<TransactionItem> _cart = [];
   final _paidAmountController = TextEditingController();
+  final _promoCodeController = TextEditingController();
 
   int _searchKey = 0;
   Customer? _selectedCustomer;
   List<Product> _products = [];
   List<Customer> _customers = [];
   bool _isLoading = false;
+
+  DiscountType _discountType = DiscountType.none;
+  double _discountValue = 0;
+  double _promoDiscount = 0;
+  bool _promoValid = false;
+  bool _enableInstallments = false;
+  int _installmentCount = 2;
+  int _installmentPeriod = 30;
 
   @override
   void initState() {
@@ -53,6 +65,7 @@ class _SaleScreenState extends State<SaleScreen> {
   @override
   void dispose() {
     _paidAmountController.dispose();
+    _promoCodeController.dispose();
     super.dispose();
   }
 
@@ -63,7 +76,13 @@ class _SaleScreenState extends State<SaleScreen> {
     setState(() => _isLoading = false);
   }
 
-  double get _totalAmount => _cart.fold(0, (sum, item) => sum + item.total);
+  double get _subtotal => _cart.fold(0.0, (sum, item) => sum + item.total);
+  double get _invoiceDiscount {
+    if (_discountType == DiscountType.percentage) return _subtotal * _discountValue / 100;
+    if (_discountType == DiscountType.fixed) return _discountValue.clamp(0, _subtotal);
+    return 0;
+  }
+  double get _totalAmount => _subtotal - _invoiceDiscount - _promoDiscount;
   double get _paidAmount => double.tryParse(_paidAmountController.text) ?? 0.0;
 
   void _addToCart(Product product) {
@@ -174,19 +193,45 @@ class _SaleScreenState extends State<SaleScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final transactionAmount = _totalAmount;
+      final netAmount = _totalAmount;
 
       final transaction = AppTransaction(
         customerId: _selectedCustomer?.id,
         type: TransactionType.sale,
-        amount: transactionAmount,
+        amount: netAmount,
         paidAmount: paid,
         date: DateTime.now(),
         items: _cart,
+        discountType: _discountType,
+        discountValue: _discountValue,
+        promoCode: _promoValid ? _promoCodeController.text.trim().toUpperCase() : '',
       );
 
-      await _transactionService.addTransaction(transaction);
+      final txId = await _transactionService.addTransaction(transaction);
       
+      if (_enableInstallments && _selectedCustomer != null && paid < netAmount) {
+        final remaining = netAmount - paid;
+        final installAmount = remaining / _installmentCount;
+        await sl<ReceivableService>().createPlan(InstallmentPlan(
+          transactionId: txId,
+          customerId: _selectedCustomer!.id!,
+          totalAmount: netAmount,
+          downPayment: paid,
+          remaining: remaining,
+          installmentAmount: installAmount,
+          installmentCount: _installmentCount,
+          periodDays: _installmentPeriod,
+          startDate: DateTime.now(),
+        ));
+      }
+
+      if (_promoValid) {
+        try {
+          final code = await sl<DiscountCodeService>().getByCode(_promoCodeController.text.trim());
+          if (code?.id != null) await sl<DiscountCodeService>().incrementUses(code!.id!);
+        } catch (_) {}
+      }
+
       final settings = await sl<SettingsService>().getSettings();
 
       if (settings.enableWhatsapp &&
@@ -194,7 +239,7 @@ class _SaleScreenState extends State<SaleScreen> {
           _selectedCustomer != null &&
           _selectedCustomer!.phone.isNotEmpty) {
         double newDebt = _selectedCustomer!.totalDebt;
-        newDebt += (_totalAmount - paid);
+        newDebt += (netAmount - paid);
 
         final bool? sendWa = await showDialog<bool>(
           context: context,
@@ -474,6 +519,237 @@ class _SaleScreenState extends State<SaleScreen> {
     );
   }
 
+  Widget _buildDiscountSection() {
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: Colors.blue.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: Colors.blue.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.discount, size: 18, color: Colors.blue),
+              SizedBox(width: 8.w),
+              Text('discount'.tr(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp)),
+              const Spacer(),
+              if (_discountType != DiscountType.none)
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _discountType = DiscountType.none;
+                      _discountValue = 0;
+                    });
+                  },
+                  child: const Icon(Icons.close, size: 18, color: Colors.red),
+                ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          Row(
+            children: [
+              _buildDiscountChip(DiscountType.percentage, '%', context.locale.languageCode == 'ar' ? 'نسبة' : 'Percent'),
+              SizedBox(width: 8.w),
+              _buildDiscountChip(DiscountType.fixed, 'fixed', context.locale.languageCode == 'ar' ? 'قيمة' : 'Fixed'),
+              SizedBox(width: 8.w),
+              if (_discountType != DiscountType.none && _discountType == DiscountType.percentage)
+                SizedBox(
+                  width: 80.w,
+                  child: TextField(
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: '10',
+                      suffixText: '%',
+                      contentPadding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                    ),
+                    onChanged: (v) => setState(() => _discountValue = double.tryParse(v) ?? 0),
+                  ),
+                ),
+              if (_discountType != DiscountType.none && _discountType == DiscountType.fixed)
+                SizedBox(
+                  width: 100.w,
+                  child: TextField(
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: '1000',
+                      prefixText: '${CurrencyHelper.getSymbol('YER')} ',
+                      contentPadding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                    ),
+                    onChanged: (v) => setState(() => _discountValue = double.tryParse(v) ?? 0),
+                  ),
+                ),
+            ],
+          ),
+          if (_invoiceDiscount > 0 || _promoDiscount > 0) ...[
+            SizedBox(height: 6.h),
+            Row(
+              children: [
+                Text('subtotal'.tr(), style: TextStyle(fontSize: 11.sp, color: Colors.grey[600])),
+                const Spacer(),
+                Text(CurrencyHelper.getFormatter('YER').format(_subtotal), style: TextStyle(fontSize: 11.sp, color: Colors.grey[600])),
+              ],
+            ),
+            if (_invoiceDiscount > 0)
+              Row(
+                children: [
+                  Text('discount'.tr(), style: TextStyle(fontSize: 11.sp, color: Colors.green[700])),
+                  const Spacer(),
+                  Text('-${CurrencyHelper.getFormatter('YER').format(_invoiceDiscount)}', style: TextStyle(fontSize: 11.sp, color: Colors.green[700])),
+                ],
+              ),
+            if (_promoDiscount > 0)
+              Row(
+                children: [
+                  Text('promo'.tr(), style: TextStyle(fontSize: 11.sp, color: Colors.blue[700])),
+                  const Spacer(),
+                  Text('-${CurrencyHelper.getFormatter('YER').format(_promoDiscount)}', style: TextStyle(fontSize: 11.sp, color: Colors.blue[700])),
+                ],
+              ),
+          ],
+          SizedBox(height: 8.h),
+          Row(
+            children: [
+              Icon(Icons.redeem, size: 16, color: Colors.grey[600]),
+              SizedBox(width: 6.w),
+              Expanded(
+                child: TextField(
+                  controller: _promoCodeController,
+                  decoration: InputDecoration(
+                    hintText: context.locale.languageCode == 'ar' ? 'كود خصم' : 'Promo code',
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                    suffixIcon: _promoCodeController.text.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(_promoValid ? Icons.check_circle : Icons.search, size: 18, color: _promoValid ? Colors.green : Colors.grey),
+                            onPressed: _validatePromoCode,
+                          )
+                        : null,
+                  ),
+                  onChanged: (_) => setState(() => _promoValid = false),
+                ),
+              ),
+            ],
+          ),
+          if (_selectedCustomer != null)
+            SizedBox(height: 8.h),
+          if (_selectedCustomer != null)
+            Row(
+              children: [
+                Icon(Icons.calendar_month, size: 16, color: Colors.grey[600]),
+                SizedBox(width: 6.w),
+                Text(context.locale.languageCode == 'ar' ? 'تقسيط' : 'Installments', style: TextStyle(fontSize: 12.sp)),
+                const Spacer(),
+                Switch(
+                  value: _enableInstallments,
+                  onChanged: _paidAmount >= _totalAmount ? null : (v) => setState(() => _enableInstallments = v),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ],
+            ),
+          if (_enableInstallments) ...[
+            SizedBox(height: 6.h),
+            Row(
+              children: [
+                Text('${context.locale.languageCode == 'ar' ? 'عدد الأقساط' : 'Installments'}: ', style: TextStyle(fontSize: 12.sp)),
+                _buildStepper(_installmentCount, (v) => setState(() => _installmentCount = v.clamp(2, 24))),
+                SizedBox(width: 12.w),
+                Text('${context.locale.languageCode == 'ar' ? 'كل' : 'Every'}: ', style: TextStyle(fontSize: 12.sp)),
+                _buildStepper(_installmentPeriod, (v) => setState(() => _installmentPeriod = v.clamp(7, 90))),
+                Text(context.locale.languageCode == 'ar' ? ' يوم' : ' days', style: TextStyle(fontSize: 12.sp)),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDiscountChip(DiscountType type, String key, String label) {
+    final isSelected = _discountType == type;
+    return GestureDetector(
+      onTap: () => setState(() {
+        _discountType = isSelected ? DiscountType.none : type;
+        if (!isSelected) _discountValue = 0;
+      }),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue.withOpacity(0.15) : Colors.grey.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: isSelected ? Colors.blue : Colors.grey.withOpacity(0.3)),
+        ),
+        child: Text(label, style: TextStyle(fontSize: 12.sp, color: isSelected ? Colors.blue : Colors.grey[700])),
+      ),
+    );
+  }
+
+  Widget _buildStepper(int value, ValueChanged<int> onChanged) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GestureDetector(
+          onTap: () => onChanged(value - 1),
+          child: Container(
+            padding: EdgeInsets.all(2.w),
+            decoration: BoxDecoration(
+              color: Colors.grey.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(4.r),
+            ),
+            child: const Icon(Icons.remove, size: 16),
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8.w),
+          child: Text('$value', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp)),
+        ),
+        GestureDetector(
+          onTap: () => onChanged(value + 1),
+          child: Container(
+            padding: EdgeInsets.all(2.w),
+            decoration: BoxDecoration(
+              color: Colors.grey.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(4.r),
+            ),
+            child: const Icon(Icons.add, size: 16),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _validatePromoCode() async {
+    final code = _promoCodeController.text.trim();
+    if (code.isEmpty) return;
+    try {
+      final discount = await sl<DiscountCodeService>().validateAndApply(code, _subtotal - _invoiceDiscount);
+      setState(() {
+        _promoDiscount = discount;
+        _promoValid = true;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('promo_applied'.tr())));
+      }
+    } catch (e) {
+      setState(() {
+        _promoDiscount = 0;
+        _promoValid = false;
+      });
+      String msg = 'promo_invalid'.tr();
+      final err = e.toString();
+      if (err.contains('promo_expired')) msg = 'promo_expired'.tr();
+      if (err.contains('promo_min_purchase')) msg = 'promo_min_purchase'.tr();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: AppColors.error));
+      }
+    }
+  }
+
   Widget _buildCheckoutSection() {
     final isOverpaid = _paidAmount > _totalAmount;
 
@@ -527,7 +803,9 @@ class _SaleScreenState extends State<SaleScreen> {
                 );
               },
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 12.h),
+            _buildDiscountSection(),
+            SizedBox(height: 12.h),
             Row(
               children: [
                 Expanded(

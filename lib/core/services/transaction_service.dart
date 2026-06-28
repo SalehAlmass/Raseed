@@ -526,6 +526,8 @@ class TransactionService {
     required List<TransactionItem> itemsToRefund,
     int? customerId,
     String note = '',
+    String returnReason = '',
+    String returnCondition = 'good',
   }) async {
     if (originalTransaction.type != TransactionType.sale) {
       throw Exception('Can only refund sale transactions');
@@ -546,6 +548,8 @@ class TransactionService {
       date: DateTime.now(),
       note: note.isEmpty ? 'Refund for transaction #${originalTransaction.id}' : 'Refund: $note',
       items: itemsToRefund,
+      returnReason: returnReason,
+      returnCondition: returnCondition,
     );
 
     return await addTransaction(refundTransaction);

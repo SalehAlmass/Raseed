@@ -1,6 +1,6 @@
 import 'supplier_transaction_item.dart';
 
-enum SupplierTransactionType { purchase, payment }
+enum SupplierTransactionType { purchase, payment, return_ }
 
 class SupplierTransaction {
   final int? id;
@@ -13,6 +13,7 @@ class SupplierTransaction {
   final String note;
   final List<SupplierTransactionItem> items;
   final bool isVoid;
+  final String returnReason;
 
   SupplierTransaction({
     this.id,
@@ -25,6 +26,7 @@ class SupplierTransaction {
     this.note = '',
     this.items = const [],
     this.isVoid = false,
+    this.returnReason = '',
   });
 
   Map<String, dynamic> toMap() {
@@ -38,6 +40,7 @@ class SupplierTransaction {
       'date': date.toIso8601String(),
       'note': note,
       'is_void': isVoid ? 1 : 0,
+      'return_reason': returnReason.isEmpty ? null : returnReason,
     };
   }
 
@@ -54,6 +57,7 @@ class SupplierTransaction {
       note: map['note'] ?? '',
       items: items,
       isVoid: (map['is_void'] as num?)?.toInt() == 1,
+      returnReason: map['return_reason'] ?? '',
     );
   }
 
@@ -68,6 +72,7 @@ class SupplierTransaction {
     String? note,
     List<SupplierTransactionItem>? items,
     bool? isVoid,
+    String? returnReason,
   }) {
     return SupplierTransaction(
       id: id ?? this.id,
@@ -80,6 +85,7 @@ class SupplierTransaction {
       note: note ?? this.note,
       items: items ?? this.items,
       isVoid: isVoid ?? this.isVoid,
+      returnReason: returnReason ?? this.returnReason,
     );
   }
 }

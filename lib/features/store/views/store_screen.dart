@@ -319,10 +319,15 @@ class _StoreScreenState extends State<StoreScreen> {
             onPressed: () => Navigator.pushNamed(context, Routes.categories).then((_) => _loadProducts()),
             tooltip: 'manage_categories'.tr(),
           ),
-          IconButton(
+           IconButton(
             icon: const Icon(Icons.straighten),
             onPressed: () => Navigator.pushNamed(context, Routes.units).then((_) => _loadProducts()),
             tooltip: 'manage_units'.tr(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.replay, color: Colors.orange),
+            tooltip: 'returns_management'.tr(),
+            onPressed: () => Navigator.pushNamed(context, Routes.salesReturn).then((_) => _loadProducts()),
           ),
         ],
       ),
