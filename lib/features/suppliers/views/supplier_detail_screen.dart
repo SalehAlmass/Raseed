@@ -67,12 +67,12 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: Text(_supplier.name),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: AppColors.textPrimary,
+        foregroundColor: AppColors.of(context).textPrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.replay, color: Colors.orange),
@@ -103,7 +103,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
                           SizedBox(height: 30.h),
                           Container(
                             decoration: BoxDecoration(
-                              color: AppColors.surface,
+                              color: AppColors.of(context).surface,
                               borderRadius: BorderRadius.circular(15.r),
                             ),
                             child: TabBar(

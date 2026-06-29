@@ -85,12 +85,12 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
   Widget build(BuildContext context) {
     final user = _authService.currentUser;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: Text('backup_management'.tr()),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: AppColors.textPrimary,
+        foregroundColor: AppColors.of(context).textPrimary,
       ),
       body: _isLoading
           ? Center(child: Column(
@@ -306,7 +306,7 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
   Widget _buildSaveLocationCard(String? customPath) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(14.r),
         border: Border.all(
           color: customPath != null
@@ -407,7 +407,7 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
           return Container(
             margin: EdgeInsets.only(bottom: 6.h),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: AppColors.of(context).surface,
               borderRadius: BorderRadius.circular(10.r),
             ),
             child: ListTile(
@@ -510,7 +510,7 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
             return Container(
               margin: EdgeInsets.only(bottom: 6.h),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: AppColors.of(context).surface,
                 borderRadius: BorderRadius.circular(10.r),
               ),
               child: ListTile(
@@ -791,7 +791,7 @@ class _ActionCard extends StatelessWidget {
       opacity: onTap == null ? 0.45 : 1,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.of(context).surface,
           borderRadius: BorderRadius.circular(15.r),
           boxShadow: [
             BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 4)),

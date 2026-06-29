@@ -2,7 +2,7 @@
 class AppConfig {
   AppConfig._();
 
-  static const String appName = 'Flutter Raseed App';
+  static const String appName = 'تاجر ماس';
   static const String appVersion = '1.0.0';
   static const String buildNumber = '1';
 

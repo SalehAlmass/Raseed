@@ -67,12 +67,12 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: Text('suppliers'.tr()),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: AppColors.textPrimary,
+        foregroundColor: AppColors.of(context).textPrimary,
       ),
       body: Column(
         children: [
@@ -84,7 +84,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
                 hintText: 'search_supplier'.tr(),
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
-                fillColor: AppColors.surface,
+                fillColor: AppColors.of(context).surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15.r),
                   borderSide: BorderSide.none,
@@ -284,7 +284,7 @@ class _SupplierTile extends StatelessWidget {
     return Container(
       margin: EdgeInsets.only(bottom: 15.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
         boxShadow: [
           BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5)),

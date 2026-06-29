@@ -66,7 +66,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.all(24.w),
@@ -80,12 +80,12 @@ class _AuthScreenState extends State<AuthScreen> {
                 SizedBox(height: 20.h),
                 Text(
                   _isLogin ? 'login'.tr() : 'register'.tr(),
-                  style: TextStyle(fontSize: 28.sp, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  style: TextStyle(fontSize: 28.sp, fontWeight: FontWeight.bold, color: AppColors.of(context).textPrimary),
                   textAlign: TextAlign.center,
                 ),
                 Text(
                   'auth_subtitle'.tr(),
-                  style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
+                  style: TextStyle(fontSize: 14.sp, color: AppColors.of(context).textSecondary),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 40.h),
@@ -138,7 +138,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 OutlinedButton.icon(
                   onPressed: _isLoading ? null : _handleGoogleSignIn,
                   icon: Icon(Icons.g_mobiledata, color: Colors.blue, size: 30.sp),
-                  label: Text('google_signin'.tr(), style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                  label: Text('google_signin'.tr(), style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: AppColors.of(context).textPrimary)),
                   style: OutlinedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 12.h),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),

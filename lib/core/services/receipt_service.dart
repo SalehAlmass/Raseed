@@ -130,7 +130,7 @@ class ReceiptService {
               
               pw.SizedBox(height: 20),
               pw.Text('thank_you'.tr(), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
-              pw.Text('www.raseed.com', style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey)),
+              pw.Text('www.tajermas.com', style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey)),
               pw.SizedBox(height: 10),
             ],
           );

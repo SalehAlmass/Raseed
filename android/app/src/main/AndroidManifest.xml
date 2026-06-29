@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     
     <application
-        android:label="رصيدك"
+        android:label="تاجر ماس"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:requestLegacyExternalStorage="true">

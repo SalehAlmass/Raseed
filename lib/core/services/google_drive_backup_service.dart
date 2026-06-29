@@ -23,7 +23,7 @@ class GoogleAuthClient extends http.BaseClient {
 
 class GoogleDriveBackupService {
   static const String _lastDriveBackupKey = 'last_drive_backup_time';
-  static const String _backupFolderName = 'Raseed Backups';
+  static const String _backupFolderName = 'تاجر ماس Backups';
   static const int _keepLast = 7;
 
   final SharedPreferences _prefs;

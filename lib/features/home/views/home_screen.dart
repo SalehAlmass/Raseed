@@ -79,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: Text(
           'app_name'.tr(),
@@ -87,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: AppColors.textPrimary,
+        foregroundColor: AppColors.of(context).textPrimary,
         leading: CircleAvatar(
           radius: 40,
           backgroundImage: AssetImage('assets/images/logo.png'),
@@ -171,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: AppColors.of(context).textPrimary,
                     ),
                   ),
                   _ActionCard(
@@ -347,7 +347,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.of(context).surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
         ),
         child: Column(
@@ -467,7 +467,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.of(context).surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
         ),
         padding: EdgeInsets.all(20.w),
@@ -806,7 +806,7 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: AppColors.of(context).textPrimary,
           ),
         ),
         SizedBox(height: 15.h),
@@ -990,7 +990,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.of(context).surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
         ),
         padding: EdgeInsets.all(20.w),
@@ -1047,15 +1047,15 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          'recent_activity'.tr(),
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        TextButton(onPressed: () {}, child: Text('see_all'.tr())),
+            Text(
+              'recent_activity'.tr(),
+              style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.bold,
+                color: AppColors.of(context).textPrimary,
+              ),
+            ),
+            TextButton(onPressed: () {}, child: Text('see_all'.tr())),
       ],
     );
   }
@@ -1064,7 +1064,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: EdgeInsets.all(15.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
         boxShadow: [
           BoxShadow(
@@ -1616,7 +1616,7 @@ class _SummaryCard extends StatelessWidget {
         width: double.infinity,
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.of(context).surface,
           borderRadius: BorderRadius.circular(16.r),
           border: Border.all(color: Colors.grey.withOpacity(0.1), width: 1),
           boxShadow: [
@@ -1646,7 +1646,7 @@ class _SummaryCard extends StatelessWidget {
                     title,
                     style: TextStyle(
                       fontSize: 12.sp,
-                      color: AppColors.textSecondary,
+                      color: AppColors.of(context).textSecondary,
                       fontWeight: FontWeight.w500,
                     ),
                     maxLines: 1,
@@ -1669,7 +1669,7 @@ class _SummaryCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: AppColors.of(context).textPrimary,
                     letterSpacing: -0.3,
                   ),
                 );
@@ -1847,7 +1847,7 @@ class _QuickActionCard extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.all(15.w),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.of(context).surface,
           borderRadius: BorderRadius.circular(15.r),
           boxShadow: [
             BoxShadow(
@@ -1873,7 +1873,7 @@ class _QuickActionCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.sp,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: AppColors.of(context).textPrimary,
               ),
               textAlign: TextAlign.center,
             ),

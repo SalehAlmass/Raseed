@@ -483,7 +483,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: Text(
           widget.product == null ? 'add_product'.tr() : 'edit_product'.tr(),
@@ -492,7 +492,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
-        foregroundColor: AppColors.textPrimary,
+        foregroundColor: AppColors.of(context).textPrimary,
       ),
       body: Form(
         key: _formKey,

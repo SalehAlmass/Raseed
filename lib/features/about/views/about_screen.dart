@@ -12,7 +12,7 @@ class AboutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       body: CustomScrollView(
         slivers: [
           _buildAppBar(context),
@@ -33,11 +33,11 @@ class AboutScreen extends StatelessWidget {
                   SizedBox(height: 32.h),
                   FadeInUp(
                     delay: const Duration(milliseconds: 200),
-                    child: _buildDescriptionCard(),
+                    child: _buildDescriptionCard(context),
                   ),
                   SizedBox(height: 32.h),
                   FadeInUp(
-                    delay: const Duration(milliseconds: 400),
+                    delay: const Duration(milliseconds: 200),
                     child: _buildContactSection(context),
                   ),
                   SizedBox(height: 40.h),
@@ -59,13 +59,13 @@ class AboutScreen extends StatelessWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
+        icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.of(context).textPrimary),
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
         'about'.tr(),
         style: TextStyle(
-          color: AppColors.textPrimary,
+          color: AppColors.of(context).textPrimary,
           fontWeight: FontWeight.bold,
           fontSize: 20.sp,
         ),
@@ -107,11 +107,11 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDescriptionCard() {
+  Widget _buildDescriptionCard(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(24.r),
         boxShadow: [
           BoxShadow(
@@ -127,7 +127,7 @@ class AboutScreen extends StatelessWidget {
             'about_description'.tr(),
             style: TextStyle(
               fontSize: 16.sp,
-              color: AppColors.textPrimary,
+              color: AppColors.of(context).textPrimary,
               height: 1.8,
             ),
             textAlign: TextAlign.center,
@@ -135,17 +135,17 @@ class AboutScreen extends StatelessWidget {
           SizedBox(height: 24.h),
           const Divider(),
           SizedBox(height: 24.h),
-          _buildFeatureRow(Icons.security_rounded, 'onboarding_feature_3'.tr()),
+          _buildFeatureRow(context, Icons.security_rounded, 'onboarding_feature_3'.tr()),
           SizedBox(height: 16.h),
-          _buildFeatureRow(Icons.analytics_rounded, 'onboarding_feature_2'.tr()),
+          _buildFeatureRow(context, Icons.analytics_rounded, 'onboarding_feature_2'.tr()),
           SizedBox(height: 16.h),
-          _buildFeatureRow(Icons.people_alt_rounded, 'onboarding_feature_1'.tr()),
+          _buildFeatureRow(context, Icons.people_alt_rounded, 'onboarding_feature_1'.tr()),
         ],
       ),
     );
   }
 
-  Widget _buildFeatureRow(IconData icon, String text) {
+  Widget _buildFeatureRow(BuildContext context, IconData icon, String text) {
     return Row(
       children: [
         Container(
@@ -162,7 +162,7 @@ class AboutScreen extends StatelessWidget {
             text,
             style: TextStyle(
               fontSize: 14.sp,
-              color: AppColors.textPrimary,
+              color: AppColors.of(context).textPrimary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -188,28 +188,28 @@ class AboutScreen extends StatelessWidget {
           style: TextStyle(
             fontSize: 20.sp,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: AppColors.of(context).textPrimary,
           ),
         ),
         SizedBox(height: 24.h),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildSocialButton(Icons.language_rounded, 'Website', () async {
+            _buildSocialButton(context, Icons.language_rounded, 'Website', () async {
               final url = Uri.parse(AppConfig.developerGithub);
               if (await canLaunchUrl(url)) {
                 await launchUrl(url, mode: LaunchMode.externalApplication);
               }
             }),
             SizedBox(width: 20.w),
-            _buildSocialButton(Icons.email_rounded, 'Email', () async {
+            _buildSocialButton(context, Icons.email_rounded, 'Email', () async {
               final url = Uri.parse('mailto:${AppConfig.developerEmail}');
               if (await canLaunchUrl(url)) {
                 await launchUrl(url);
               }
             }),
             SizedBox(width: 20.w),
-            _buildSocialButton(Icons.message_rounded, 'WhatsApp', () async {
+            _buildSocialButton(context, Icons.message_rounded, 'WhatsApp', () async {
               final url = Uri.parse(AppConfig.developerWhatsApp);
               if (await canLaunchUrl(url)) {
                 await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -221,7 +221,7 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSocialButton(IconData icon, String tooltip, VoidCallback onTap) {
+  Widget _buildSocialButton(BuildContext context, IconData icon, String tooltip, VoidCallback onTap) {
     return Tooltip(
       message: tooltip,
       child: GestureDetector(
@@ -229,7 +229,7 @@ class AboutScreen extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.all(12.w),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: AppColors.of(context).surface,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
@@ -249,7 +249,7 @@ class AboutScreen extends StatelessWidget {
     return Column(
       children: [
         Text(
-          '© ${DateTime.now().year} Raseed Inc.',
+          '© ${DateTime.now().year} تاجر ماس',
           style: TextStyle(
             fontSize: 12.sp,
             color: Colors.grey,

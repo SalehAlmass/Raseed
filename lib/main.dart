@@ -5,27 +5,20 @@ import 'package:rseed/core/services/settings_service.dart';
 import 'core/routes/app_router.dart';
 import 'core/routes/routes.dart';
 import 'core/theme/app_theme.dart';
+import 'core/services/theme_service.dart';
 import 'core/di/injection_container.dart' as di;
 import 'core/localization/localization_manager.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/services/subscription_service.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-
-  // Set system UI overlay style
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-    ),
-  );
 
   Locale savedLocale = const Locale('ar');
 
@@ -36,14 +29,12 @@ void main() async {
   }
 
   try {
-    // Initialize dependency injection
     await di.init();
   } catch (e) {
     debugPrint('Dependency Injection failed: $e');
   }
 
   try {
-    // Initialize subscription trial & anti-tamper logic
     if (di.sl.isRegistered<SubscriptionService>()) {
       await di.sl<SubscriptionService>().initTrial();
     }
@@ -52,7 +43,6 @@ void main() async {
   }
 
   try {
-    // Load saved locale from settings
     if (di.sl.isRegistered<SettingsService>()) {
       final settings = await di.sl<SettingsService>().getSettings();
       savedLocale = Locale(settings.languageCode);
@@ -60,6 +50,8 @@ void main() async {
   } catch (e) {
     debugPrint('SettingsService loading failed: $e');
   }
+
+  timeago.setLocaleMessages('ar', timeago.ArMessages());
 
   runApp(
     EasyLocalization(
@@ -77,22 +69,29 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ScreenUtilInit(
-      designSize: const Size(375, 812),
-      minTextAdapt: true,
-      splitScreenMode: true,
+    final themeService = di.sl<ThemeService>();
+
+    return ListenableBuilder(
+      listenable: themeService,
       builder: (context, child) {
-        return MaterialApp(
-          title: 'Flutter Forge App',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: ThemeMode.system,
-          initialRoute: Routes.splash,
-          onGenerateRoute: AppRouter.generateRoute,
-          localizationsDelegates: context.localizationDelegates,
-          supportedLocales: context.supportedLocales,
-          locale: context.locale,
+        return ScreenUtilInit(
+          designSize: const Size(375, 812),
+          minTextAdapt: true,
+          splitScreenMode: true,
+          builder: (context, child) {
+            return MaterialApp(
+              title: 'تاجر ماس',
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.lightTheme,
+              darkTheme: AppTheme.darkTheme,
+              themeMode: themeService.themeMode,
+              initialRoute: Routes.splash,
+              onGenerateRoute: AppRouter.generateRoute,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+              locale: context.locale,
+            );
+          },
         );
       },
     );

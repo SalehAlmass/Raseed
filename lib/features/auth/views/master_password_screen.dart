@@ -60,7 +60,7 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 50.h),
@@ -89,7 +89,7 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
                   style: TextStyle(
                     fontSize: 24.sp,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: AppColors.of(context).textPrimary,
                   ),
                 ),
               ),
@@ -100,7 +100,7 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
                   'access_restricted'.tr(),
                   style: TextStyle(
                     fontSize: 14.sp,
-                    color: AppColors.textSecondary,
+                    color: AppColors.of(context).textSecondary,
                   ),
                 ),
               ),
@@ -132,7 +132,7 @@ class _MasterPasswordScreenState extends State<MasterPasswordScreen> {
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureText ? Icons.visibility_off : Icons.visibility,
-                        color: AppColors.textSecondary,
+                        color: AppColors.of(context).textSecondary,
                       ),
                       onPressed: () => setState(() => _obscureText = !_obscureText),
                     ),

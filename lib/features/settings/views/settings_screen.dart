@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/di/injection_container.dart';
 import '../../../core/services/settings_service.dart';
+import '../../../core/services/theme_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/models/app_settings.dart';
 import '../../../core/routes/routes.dart';
@@ -90,7 +91,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: GestureDetector(
           onTap: _handleDevModeTap,
@@ -98,7 +99,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: AppColors.textPrimary,
+        foregroundColor: AppColors.of(context).textPrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.check),
@@ -141,7 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 5.h),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: AppColors.of(context).surface,
                           borderRadius: BorderRadius.circular(15.r),
                           border: Border.all(color: Colors.grey.withOpacity(0.15)),
                         ),
@@ -294,6 +295,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       SizedBox(height: 6.h),
                       _buildLanguageDropdown(context),
                       SizedBox(height: 16.h),
+                      _buildThemeDropdown(context),
+                      SizedBox(height: 16.h),
                       _buildBackupTile(context),
                       SizedBox(height: 12.h),
                       _buildDiscountCodesTile(context),
@@ -341,7 +344,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: 16.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
@@ -370,11 +373,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: TextStyle(
               fontSize: 14.sp,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: AppColors.of(context).textPrimary,
             ),
           ),
           iconColor: AppColors.primary,
-          collapsedIconColor: AppColors.textSecondary,
+          collapsedIconColor: AppColors.of(context).textSecondary,
           childrenPadding: EdgeInsets.only(left: 16.w, right: 16.w, bottom: 20.h),
           expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
           children: children,
@@ -393,7 +396,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 width: 100.w,
                 height: 100.w,
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: AppColors.of(context).surface,
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.primary.withOpacity(0.2), width: 2),
                   image: _settings.storeProfile.logoPath != null
@@ -458,7 +461,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       padding: EdgeInsets.all(15.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: Column(
@@ -619,12 +622,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       padding: EdgeInsets.all(15.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.textSecondary),
+          Icon(icon, color: AppColors.of(context).textSecondary),
           SizedBox(width: 15.w),
           Expanded(
             child: Column(
@@ -997,7 +1000,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 5.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: DropdownButtonHideUnderline(
@@ -1032,7 +1035,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 5.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: DropdownButtonHideUnderline(
@@ -1086,7 +1089,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 5.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: DropdownButtonHideUnderline(
@@ -1122,16 +1125,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildThemeDropdown(BuildContext context) {
+    final themeService = sl<ThemeService>();
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 5.h),
+      decoration: BoxDecoration(
+        color: AppColors.of(context).surface,
+        borderRadius: BorderRadius.circular(15.r),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          value: themeService.themeModeIndex,
+          isExpanded: true,
+          icon: Icon(
+            themeService.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+            color: AppColors.of(context).primary,
+            size: 20.sp,
+          ),
+          items: [
+            DropdownMenuItem(
+              value: 0,
+              child: Text('theme_light'.tr(), style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600)),
+            ),
+            DropdownMenuItem(
+              value: 1,
+              child: Text('theme_dark'.tr(), style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600)),
+            ),
+            DropdownMenuItem(
+              value: 2,
+              child: Text('theme_system'.tr(), style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600)),
+            ),
+          ],
+          onChanged: (int? newValue) {
+            if (newValue != null) {
+              themeService.setThemeModeByIndex(newValue);
+            }
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _buildAboutTile(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: ListTile(
         leading: Icon(Icons.info_outline, color: AppColors.primary),
         title: Text('about'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600)),
-        trailing: Icon(Icons.arrow_forward_ios, color: AppColors.textSecondary, size: 16.sp),
+        trailing: Icon(Icons.arrow_forward_ios, color: AppColors.of(context).textSecondary, size: 16.sp),
         onTap: () {
           Navigator.of(context).pushNamed(Routes.about);
         },
@@ -1142,13 +1186,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildBackupTile(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: ListTile(
         leading: Icon(Icons.cloud_sync_outlined, color: AppColors.primary),
         title: Text('account_backup'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600)),
-        trailing: Icon(Icons.arrow_forward_ios, color: AppColors.textSecondary, size: 16.sp),
+        trailing: Icon(Icons.arrow_forward_ios, color: AppColors.of(context).textSecondary, size: 16.sp),
         onTap: () {
           Navigator.of(context).pushNamed(Routes.backup);
         },
@@ -1163,7 +1207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: ListTile(
@@ -1178,7 +1222,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             : 'trial_remaining'.tr(namedArgs: {'days': remaining.toString()}),
           style: TextStyle(fontSize: 12.sp, color: isPremium ? Colors.amber : Colors.grey),
         ),
-        trailing: Icon(Icons.arrow_forward_ios, color: AppColors.textSecondary, size: 16.sp),
+        trailing: Icon(Icons.arrow_forward_ios, color: AppColors.of(context).textSecondary, size: 16.sp),
         onTap: () {
           Navigator.of(context).pushNamed(Routes.subscription).then((_) => setState(() {}));
         },
@@ -1189,13 +1233,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildDiscountCodesTile(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: ListTile(
         leading: const Icon(Icons.discount, color: Colors.blue),
         title: Text('discount_codes'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600)),
-        trailing: Icon(Icons.arrow_forward_ios, color: AppColors.textSecondary, size: 16.sp),
+        trailing: Icon(Icons.arrow_forward_ios, color: AppColors.of(context).textSecondary, size: 16.sp),
         onTap: () => Navigator.of(context).pushNamed(Routes.discountCodes),
       ),
     );
@@ -1204,13 +1248,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildReceivablesTile(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: ListTile(
         leading: const Icon(Icons.account_balance_wallet, color: Colors.orange),
         title: Text('receivables'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600)),
-        trailing: Icon(Icons.arrow_forward_ios, color: AppColors.textSecondary, size: 16.sp),
+        trailing: Icon(Icons.arrow_forward_ios, color: AppColors.of(context).textSecondary, size: 16.sp),
         onTap: () => Navigator.of(context).pushNamed(Routes.receivables),
       ),
     );
@@ -1222,7 +1266,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: ListTile(

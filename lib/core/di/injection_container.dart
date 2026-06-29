@@ -32,6 +32,7 @@ import '../services/printer_service.dart';
 import '../services/fiscal_year_service.dart';
 import '../services/discount_code_service.dart';
 import '../services/receivable_service.dart';
+import '../services/theme_service.dart';
 
 final sl = GetIt.instance;
 
@@ -74,6 +75,9 @@ Future<void> init() async {
   //! SharedPreferences (must be initialized before services that depend on it)
   final sharedPrefs = await SharedPreferences.getInstance();
   sl.registerLazySingleton<SharedPreferences>(() => sharedPrefs);
+
+  //! Theme Service
+  sl.registerLazySingleton<ThemeService>(() => ThemeService(sl<SharedPreferences>()));
 
   //! Services
   sl.registerLazySingleton(() => DatabaseHelper.instance);

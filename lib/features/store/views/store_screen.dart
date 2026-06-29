@@ -127,7 +127,7 @@ class _StoreScreenState extends State<StoreScreen> {
         decoration: BoxDecoration(
           color: _selectedCategory != null 
               ? AppColors.primary 
-              : AppColors.surface,
+              : AppColors.of(context).surface,
           borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
             color: _selectedCategory != null 
@@ -141,7 +141,7 @@ class _StoreScreenState extends State<StoreScreen> {
             Icon(
               Icons.category_outlined,
               size: 16.sp,
-              color: _selectedCategory != null ? Colors.white : AppColors.textSecondary,
+              color: _selectedCategory != null ? Colors.white : AppColors.of(context).textSecondary,
             ),
             SizedBox(width: 6.w),
             Text(
@@ -149,14 +149,14 @@ class _StoreScreenState extends State<StoreScreen> {
               style: TextStyle(
                 fontSize: 12.sp,
                 fontWeight: FontWeight.bold,
-                color: _selectedCategory != null ? Colors.white : AppColors.textSecondary,
+                color: _selectedCategory != null ? Colors.white : AppColors.of(context).textSecondary,
               ),
             ),
             SizedBox(width: 4.w),
             Icon(
               Icons.arrow_drop_down,
               size: 16.sp,
-              color: _selectedCategory != null ? Colors.white : AppColors.textSecondary,
+              color: _selectedCategory != null ? Colors.white : AppColors.of(context).textSecondary,
             ),
           ],
         ),
@@ -302,12 +302,12 @@ class _StoreScreenState extends State<StoreScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: Text('store'.tr()),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: AppColors.textPrimary,
+        foregroundColor: AppColors.of(context).textPrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.business_rounded),
@@ -347,7 +347,7 @@ class _StoreScreenState extends State<StoreScreen> {
                       )
                     : null,
                 filled: true,
-                fillColor: AppColors.surface,
+                fillColor: AppColors.of(context).surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15.r),
                   borderSide: BorderSide.none,
@@ -471,7 +471,7 @@ class _ProductTile extends StatelessWidget {
     return Container(
       margin: EdgeInsets.only(bottom: 15.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
         boxShadow: [
           BoxShadow(

@@ -91,7 +91,7 @@ class LocalBackupService {
     final file = await createLocalBackup();
     await Share.shareXFiles(
       [XFile(file.path)],
-      subject: 'Raseed Backup - ${_formatTimestamp(DateTime.now())}',
+      subject: 'تاجر ماس Backup - ${_formatTimestamp(DateTime.now())}',
     );
   }
 

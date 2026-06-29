@@ -94,7 +94,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
         return WillPopScope(
           onWillPop: () async => false, // Prevent dismissing by back button
           child: Dialog(
-            backgroundColor: AppColors.surface,
+            backgroundColor: AppColors.of(context).surface,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15.r),
             ),
@@ -112,7 +112,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                     style: TextStyle(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: AppColors.of(context).textPrimary,
                     ),
                   ),
                 ],
@@ -266,12 +266,12 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: Text(_currentCustomer.name),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: AppColors.textPrimary,
+        foregroundColor: AppColors.of(context).textPrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
@@ -300,7 +300,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: AppColors.of(context).textPrimary,
                     ),
                   ),
                   SizedBox(height: 15.h),
@@ -443,7 +443,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
             margin: EdgeInsets.only(bottom: 15.h),
             padding: EdgeInsets.all(15.w),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: AppColors.of(context).surface,
               borderRadius: BorderRadius.circular(15.r),
             ),
             child: Row(
@@ -544,7 +544,7 @@ class _ActionButton extends StatelessWidget {
         width: 120.w,
         padding: EdgeInsets.symmetric(vertical: 15.h),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.of(context).surface,
           borderRadius: BorderRadius.circular(15.r),
           boxShadow: [
             BoxShadow(
@@ -563,7 +563,7 @@ class _ActionButton extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.sp,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: AppColors.of(context).textPrimary,
               ),
             ),
           ],

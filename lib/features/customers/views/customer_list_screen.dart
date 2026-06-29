@@ -115,12 +115,12 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: Text('customers'.tr()),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: AppColors.textPrimary,
+        foregroundColor: AppColors.of(context).textPrimary,
       ),
       body: Column(
         children: [
@@ -133,7 +133,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                 hintText: 'search_hint'.tr(),
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
-                fillColor: AppColors.surface,
+                fillColor: AppColors.of(context).surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15.r),
                   borderSide: BorderSide.none,
@@ -371,10 +371,10 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                   });
                 }
               },
-              backgroundColor: AppColors.surface,
+              backgroundColor: AppColors.of(context).surface,
               selectedColor: AppColors.primary,
               labelStyle: TextStyle(
-                color: isSelected ? Colors.white : AppColors.textPrimary,
+                color: isSelected ? Colors.white : AppColors.of(context).textPrimary,
                 fontSize: 12.sp,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
@@ -426,7 +426,7 @@ class _CustomerTile extends StatelessWidget {
     return Container(
       margin: EdgeInsets.only(bottom: 15.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
         boxShadow: [
           BoxShadow(
