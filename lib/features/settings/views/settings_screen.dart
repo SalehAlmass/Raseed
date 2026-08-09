@@ -6,12 +6,16 @@ import '../../../core/services/settings_service.dart';
 import '../../../core/services/theme_service.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/models/app_settings.dart';
+import '../../../core/models/app_feature.dart';
 import '../../../core/routes/routes.dart';
 import '../../../core/services/subscription_service.dart';
 import '../../../core/services/auth_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import '../../../core/theme/desktop_tokens.dart';
+import '../../../core/widgets/desktop/desktop_scaffold.dart';
 import '../../../core/widgets/pin_auth_dialog.dart';
+import '../../../core/widgets/subscription_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -90,31 +94,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.of(context).background,
-      appBar: AppBar(
-        title: GestureDetector(
-          onTap: _handleDevModeTap,
-          child: Text('settings'.tr()),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: AppColors.of(context).textPrimary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: _saveSettings,
-          ),
-        ],
+    return DesktopScaffold(
+      activeNavIndex: -1,
+      title: 'settings'.tr(),
+      mobileTitle: GestureDetector(
+        onTap: _handleDevModeTap,
+        child: Text('settings'.tr()),
       ),
-      body: _isLoading 
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.check),
+          onPressed: _saveSettings,
+        ),
+      ],
+      onNavigate: _onNavTap,
+      body: _buildMobileBody(),
+      desktopBody: _buildDesktopBody(),
+    );
+  }
+
+  Widget _buildMobileBody() {
+    return _isLoading
         ? const Center(child: CircularProgressIndicator())
         : Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+                children: _buildSettingsSections(),
+              ),
+            ),
+          );
+  }
+
+  List<Widget> _buildSettingsSections() {
+    return [
                   // 1. Merchant Config Section
                   _buildAccordionSection(
                     title: 'merchant_config'.tr(),
@@ -329,11 +343,73 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: Text('save_changes'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ),
+    ];
+  }
+
+  Widget _buildDesktopBody() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpace.xl),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: _handleDevModeTap,
+                    child: Text(
+                      'settings'.tr(),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.of(context).textPrimary,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  ElevatedButton.icon(
+                    onPressed: _saveSettings,
+                    icon: const Icon(Icons.check, size: 18),
+                    label: Text('save_changes'.tr()),
+                  ),
                 ],
               ),
-            ),
+              const SizedBox(height: AppSpace.xl),
+              ..._buildSettingsSections(),
+            ],
           ),
+        ),
+      ),
     );
+  }
+
+  void _onNavTap(int index) {
+    switch (index) {
+      case 0:
+        Navigator.pushReplacementNamed(context, Routes.home);
+        break;
+      case 1:
+        break;
+      case 2:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
+          Navigator.pushNamed(context, Routes.sale).then((_) {});
+        } else {
+          SubscriptionDialog.show(context);
+        }
+        break;
+      case 3:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.viewReports)) {
+          Navigator.pushReplacementNamed(context, Routes.reports);
+        } else {
+          SubscriptionDialog.show(context);
+        }
+        break;
+      case 4:
+        Navigator.pushReplacementNamed(context, Routes.store);
+        break;
+    }
   }
 
   Widget _buildAccordionSection({

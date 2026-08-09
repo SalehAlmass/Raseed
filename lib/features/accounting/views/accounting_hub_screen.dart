@@ -6,45 +6,179 @@ import '../../../core/theme/colors.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/fiscal_year_service.dart';
 import '../../../core/di/injection_container.dart';
+import '../../../core/models/app_feature.dart';
+import '../../../core/services/subscription_service.dart';
+import '../../../core/widgets/subscription_dialog.dart';
+import '../../../core/theme/desktop_tokens.dart';
+import '../../../core/widgets/desktop/desktop_scaffold.dart';
+import '../../../core/widgets/desktop/page_header.dart';
+import '../../../core/widgets/desktop/responsive.dart';
 
-class AccountingHubScreen extends StatelessWidget {
+class AccountingHubScreen extends StatefulWidget {
   const AccountingHubScreen({super.key});
 
   @override
+  State<AccountingHubScreen> createState() => _AccountingHubScreenState();
+}
+
+class _AccountingHubScreenState extends State<AccountingHubScreen> {
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(
-          'accounting_hub'.tr(),
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        foregroundColor: AppColors.textPrimary,
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(20.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildMainStats(context),
-            SizedBox(height: 30.h),
-            Text(
-              'financial_management'.tr(),
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
+    return DesktopScaffold(
+      activeNavIndex: -1,
+      title: 'accounting_hub'.tr(),
+      extendBody: false,
+      onNavigate: _onNavTap,
+      body: _buildMobileBody(context),
+      desktopBody: _buildDesktopBody(context),
+    );
+  }
+
+  Widget _buildMobileBody(BuildContext context) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(20.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildMainStats(context),
+          SizedBox(height: 30.h),
+          Text(
+            'financial_management'.tr(),
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
             ),
-            SizedBox(height: 15.h),
-            _buildGrid(context),
-          ],
+          ),
+          SizedBox(height: 15.h),
+          _buildGrid(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopBody(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpace.xl),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: DesktopMetrics.contentMaxWidth,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              PageHeader(title: 'accounting_hub'.tr()),
+              const SizedBox(height: AppSpace.lg),
+              _buildDesktopHubGrid(context),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  Widget _buildDesktopHubGrid(BuildContext context) {
+    return ResponsiveGrid(
+      columns: 3,
+      spacing: AppSpace.lg,
+      runSpacing: AppSpace.lg,
+      children: [
+        _DesktopHubCard(
+          title: 'daily_journal'.tr(),
+          desc: 'track_entries'.tr(),
+          icon: Icons.assignment_rounded,
+          color: Colors.blue,
+          onTap: () => Navigator.pushNamed(context, Routes.journal),
+        ),
+        _DesktopHubCard(
+          title: 'expenses'.tr(),
+          desc: 'manage_spending'.tr(),
+          icon: Icons.receipt_long_rounded,
+          color: Colors.red,
+          onTap: () => Navigator.pushNamed(context, Routes.expenses),
+        ),
+        _DesktopHubCard(
+          title: 'purchase_orders'.tr(),
+          desc: 'procurement_cycle'.tr(),
+          icon: Icons.shopping_cart_checkout_rounded,
+          color: Colors.green,
+          onTap: () => Navigator.pushNamed(context, Routes.purchaseOrders),
+        ),
+        _DesktopHubCard(
+          title: 'accounting_insights'.tr(),
+          desc: 'profit_analysis'.tr(),
+          icon: Icons.analytics_rounded,
+          color: Colors.purple,
+          onTap: () => Navigator.pushNamed(context, Routes.accountingInsights),
+        ),
+        _DesktopHubCard(
+          title: 'chart_of_accounts'.tr(),
+          desc: 'accounts_structure'.tr(),
+          icon: Icons.account_tree_rounded,
+          color: Colors.orange,
+          onTap: () => Navigator.pushNamed(context, Routes.chartOfAccounts),
+        ),
+        _DesktopHubCard(
+          title: 'financial_reports'.tr(),
+          desc: 'export_data'.tr(),
+          icon: Icons.picture_as_pdf_rounded,
+          color: Colors.teal,
+          onTap: () => Navigator.pushNamed(context, Routes.reports),
+        ),
+        _DesktopHubCard(
+          title: 'shift_management'.tr(),
+          desc: 'manage_cash_drawer'.tr(),
+          icon: Icons.lock_clock_rounded,
+          color: Colors.indigo,
+          onTap: () => Navigator.pushNamed(context, Routes.shifts),
+        ),
+        if (sl<AuthService>().isAdmin)
+          _DesktopHubCard(
+            title: 'employee_management'.tr(),
+            desc: 'manage_staff_permissions'.tr(),
+            icon: Icons.people_alt_rounded,
+            color: Colors.brown,
+            onTap: () => Navigator.pushNamed(context, Routes.employees),
+          ),
+        if (sl<AuthService>().isAdmin)
+          _DesktopHubCard(
+            title: 'annual_closing'.tr(),
+            desc: 'perform_closing_desc'.tr(),
+            icon: Icons.event_repeat_rounded,
+            color: Colors.red.shade900,
+            onTap: () => _showClosingDialog(context),
+          ),
+      ],
+    );
+  }
+
+  void _onNavTap(int index) {
+    switch (index) {
+      case 0:
+        Navigator.pushReplacementNamed(context, Routes.home);
+        break;
+      case 1:
+        Navigator.pushReplacementNamed(context, Routes.customers);
+        break;
+      case 2:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
+          Navigator.pushNamed(context, Routes.sale);
+        } else {
+          SubscriptionDialog.show(context);
+        }
+        break;
+      case 3:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.viewReports)) {
+          Navigator.pushReplacementNamed(context, Routes.reports);
+        } else {
+          SubscriptionDialog.show(context);
+        }
+        break;
+      case 4:
+        Navigator.pushReplacementNamed(context, Routes.store);
+        break;
+    }
   }
 
   Widget _buildMainStats(BuildContext context) {
@@ -277,6 +411,77 @@ class _HubCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DesktopHubCard extends StatelessWidget {
+  final String title;
+  final String desc;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _DesktopHubCard({
+    required this.title,
+    required this.desc,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpace.lg),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: color.withValues(alpha: 0.15)),
+            boxShadow: AppShadow.soft(Colors.black),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSpace.sm),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 26),
+              ),
+              const SizedBox(height: AppSpace.md),
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: colors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: AppSpace.xs),
+              Text(
+                desc,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colors.textSecondary,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );

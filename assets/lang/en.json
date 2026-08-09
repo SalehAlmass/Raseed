@@ -689,5 +689,9 @@
   "theme": "Theme",
   "theme_light": "Light",
   "theme_dark": "Dark",
-  "theme_system": "System"
+  "theme_system": "System",
+  "more": "More",
+  "recent_transactions": "Recent Transactions",
+  "refresh": "Refresh",
+  "premium_active": "Subscription Active"
 }

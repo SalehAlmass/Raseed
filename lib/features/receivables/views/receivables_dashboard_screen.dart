@@ -2,11 +2,21 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/di/injection_container.dart';
+import '../../../core/models/app_feature.dart';
 import '../../../core/models/installment_plan.dart';
-import '../../../core/services/receivable_service.dart';
+import '../../../core/routes/routes.dart';
 import '../../../core/services/customer_service.dart';
+import '../../../core/services/receivable_service.dart';
+import '../../../core/services/subscription_service.dart';
 import '../../../core/theme/colors.dart';
+import '../../../core/theme/desktop_tokens.dart';
 import '../../../core/utils/currency_helper.dart';
+import '../../../core/widgets/desktop/desktop_scaffold.dart';
+import '../../../core/widgets/desktop/desktop_table.dart';
+import '../../../core/widgets/desktop/page_header.dart';
+import '../../../core/widgets/desktop/responsive.dart';
+import '../../../core/widgets/desktop/stat_card.dart';
+import '../../../core/widgets/subscription_dialog.dart';
 
 class ReceivablesDashboardScreen extends StatefulWidget {
   const ReceivablesDashboardScreen({super.key});
@@ -45,54 +55,219 @@ class _ReceivablesDashboardScreenState extends State<ReceivablesDashboardScreen>
     final totalDue = _plans.fold(0.0, (s, p) => s + p.remaining);
     final overdueCount = _plans.where((p) => p.status == 'defaulted' || p.isOverdue).length;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('receivables'.tr()),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: AppColors.textPrimary,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Padding(
-                  padding: EdgeInsets.all(20.w),
-                  child: Row(
-                    children: [
-                      _buildStatCard(Icons.account_balance_wallet, totalDue, AppColors.primary),
-                      SizedBox(width: 12.w),
-                      _buildStatCard(Icons.warning_amber, overdueCount.toDouble(), AppColors.error),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.w),
-                  child: Row(
-                    children: [
-                      _buildFilterChip('all', context.locale.languageCode == 'ar' ? 'الكل' : 'All'),
-                      SizedBox(width: 8.w),
-                      _buildFilterChip('active', context.locale.languageCode == 'ar' ? 'نشط' : 'Active'),
-                      SizedBox(width: 8.w),
-                      _buildFilterChip('completed', context.locale.languageCode == 'ar' ? 'مكتمل' : 'Completed'),
-                      SizedBox(width: 8.w),
-                      _buildFilterChip('defaulted', context.locale.languageCode == 'ar' ? 'متأخر' : 'Overdue'),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                Expanded(
-                  child: _filteredPlans.isEmpty
-                      ? Center(child: Text('no_installment_plans'.tr()))
-                      : ListView.builder(
-                          padding: EdgeInsets.symmetric(horizontal: 20.w),
-                          itemCount: _filteredPlans.length,
-                          itemBuilder: (context, index) => _buildPlanCard(_filteredPlans[index]),
-                        ),
-                ),
-              ],
-            ),
+    return DesktopScaffold(
+      activeNavIndex: -1,
+      title: 'receivables'.tr(),
+      onNavigate: _onNavTap,
+      body: _buildMobileBody(totalDue, overdueCount),
+      desktopBody: _buildDesktopBody(totalDue, overdueCount),
     );
+  }
+
+  Widget _buildMobileBody(double totalDue, int overdueCount) {
+    return _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.all(20.w),
+                child: Row(
+                  children: [
+                    _buildStatCard(Icons.account_balance_wallet, totalDue, AppColors.primary),
+                    SizedBox(width: 12.w),
+                    _buildStatCard(Icons.warning_amber, overdueCount.toDouble(), AppColors.error),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                child: Row(
+                  children: [
+                    _buildFilterChip('all', context.locale.languageCode == 'ar' ? 'الكل' : 'All'),
+                    SizedBox(width: 8.w),
+                    _buildFilterChip('active', context.locale.languageCode == 'ar' ? 'نشط' : 'Active'),
+                    SizedBox(width: 8.w),
+                    _buildFilterChip('completed', context.locale.languageCode == 'ar' ? 'مكتمل' : 'Completed'),
+                    SizedBox(width: 8.w),
+                    _buildFilterChip('defaulted', context.locale.languageCode == 'ar' ? 'متأخر' : 'Overdue'),
+                  ],
+                ),
+              ),
+              SizedBox(height: 12.h),
+              Expanded(
+                child: _filteredPlans.isEmpty
+                    ? Center(child: Text('no_installment_plans'.tr()))
+                    : ListView.builder(
+                        padding: EdgeInsets.symmetric(horizontal: 20.w),
+                        itemCount: _filteredPlans.length,
+                        itemBuilder: (context, index) => _buildPlanCard(_filteredPlans[index]),
+                      ),
+              ),
+            ],
+          );
+  }
+
+  Widget _buildDesktopBody(double totalDue, int overdueCount) {
+    final colors = AppColors.of(context);
+    final formatter = CurrencyHelper.getFormatter('YER');
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpace.xl),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: DesktopMetrics.contentMaxWidth,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              PageHeader(
+                title: 'receivables'.tr(),
+                subtitle: '${_filteredPlans.length} ${'installments'.tr()}',
+              ),
+              const SizedBox(height: AppSpace.md),
+              _buildDesktopKpis(formatter, totalDue, overdueCount),
+              const SizedBox(height: AppSpace.lg),
+              _buildDesktopToolbar(colors),
+              const SizedBox(height: AppSpace.lg),
+              _buildDesktopTable(colors, formatter),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopKpis(NumberFormat formatter, double totalDue, int overdueCount) {
+    return ResponsiveGrid(
+      columns: 2,
+      children: [
+        StatCard(
+          title: 'total_remaining'.tr(),
+          value: formatter.format(totalDue),
+          icon: Icons.account_balance_wallet_rounded,
+          color: AppColors.primary,
+        ),
+        StatCard(
+          title: 'overdue'.tr(),
+          value: '$overdueCount',
+          icon: Icons.warning_amber_rounded,
+          color: AppColors.error,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopToolbar(AppColorSet colors) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpace.md,
+        vertical: AppSpace.sm,
+      ),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: colors.border),
+        boxShadow: AppShadow.soft(Colors.black),
+      ),
+      child: Wrap(
+        spacing: AppSpace.xs,
+        runSpacing: AppSpace.xs,
+        children: [
+          _buildDesktopFilterChip('all', context.locale.languageCode == 'ar' ? 'الكل' : 'All'),
+          _buildDesktopFilterChip('active', context.locale.languageCode == 'ar' ? 'نشط' : 'Active'),
+          _buildDesktopFilterChip('completed', context.locale.languageCode == 'ar' ? 'مكتمل' : 'Completed'),
+          _buildDesktopFilterChip('defaulted', context.locale.languageCode == 'ar' ? 'متأخر' : 'Overdue'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopFilterChip(String key, String label) {
+    final isSelected = _filter == key;
+    final colors = AppColors.of(context);
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      showCheckmark: false,
+      onSelected: (val) {
+        if (val) {
+          setState(() => _filter = key);
+        }
+      },
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : colors.textPrimary,
+        fontSize: 12,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      backgroundColor: colors.surface,
+      selectedColor: AppColors.primary,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      side: BorderSide.none,
+      visualDensity: VisualDensity.compact,
+    );
+  }
+
+  Widget _buildDesktopTable(AppColorSet colors, NumberFormat formatter) {
+    if (_isLoading) {
+      return const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    final rows = _filteredPlans
+        .map((p) => _buildPlanRow(formatter, p))
+        .toList();
+    return DesktopTable(
+      headers: [
+        'installment_plan'.tr(),
+        'installments'.tr(),
+        'status'.tr(),
+        'remaining'.tr(),
+        'total'.tr(),
+        '',
+      ],
+      flexes: const [3, 2, 2, 2, 2, 1],
+      rows: rows,
+      emptyMessage: 'no_installment_plans'.tr(),
+    );
+  }
+
+  List<Widget> _buildPlanRow(NumberFormat formatter, InstallmentPlan plan) {
+    final statusColor = plan.status == 'completed' ? Colors.green : plan.isOverdue ? AppColors.error : AppColors.primary;
+    final statusLabel = plan.status == 'active' ? 'active'.tr() : plan.status == 'completed' ? 'completed'.tr() : 'overdue'.tr();
+
+    return [
+      Text(
+        '${'installment_plan'.tr()} #${plan.id}',
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      ),
+      Text(
+        '${plan.paidCount}/${plan.installmentCount} ${'installments'.tr()}',
+        style: const TextStyle(fontSize: 12),
+      ),
+      Text(
+        statusLabel,
+        style: TextStyle(fontSize: 12, color: statusColor, fontWeight: FontWeight.w600),
+      ),
+      Text(
+        formatter.format(plan.remaining),
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: statusColor),
+      ),
+      Text(
+        formatter.format(plan.totalAmount),
+        style: const TextStyle(fontSize: 12),
+      ),
+      IconButton(
+        tooltip: 'view'.tr(),
+        iconSize: 18,
+        visualDensity: VisualDensity.compact,
+        onPressed: () => _showPlanDetail(plan),
+        icon: const Icon(Icons.chevron_right_rounded),
+      ),
+    ];
   }
 
   Widget _buildStatCard(IconData icon, double value, Color color) {
@@ -263,5 +438,35 @@ class _ReceivablesDashboardScreenState extends State<ReceivablesDashboardScreen>
         );
       },
     );
+  }
+
+  void _onNavTap(int index) {
+    switch (index) {
+      case 0:
+        Navigator.pushReplacementNamed(context, Routes.home);
+        break;
+      case 1:
+        Navigator.pushReplacementNamed(context, Routes.customers);
+        break;
+      case 2:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
+          Navigator.pushNamed(context, Routes.sale).then((result) {
+            if (result == true) _load();
+          });
+        } else {
+          SubscriptionDialog.show(context);
+        }
+        break;
+      case 3:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.viewReports)) {
+          Navigator.pushReplacementNamed(context, Routes.reports);
+        } else {
+          SubscriptionDialog.show(context);
+        }
+        break;
+      case 4:
+        Navigator.pushReplacementNamed(context, Routes.store);
+        break;
+    }
   }
 }

@@ -12,7 +12,12 @@ import '../../../core/widgets/subscription_dialog.dart';
 import '../../../core/models/app_settings.dart';
 import '../../../core/routes/routes.dart';
 import '../../../core/utils/currency_helper.dart';
-import '../../../core/widgets/app_bottom_navigation_bar.dart';
+import '../../../core/theme/desktop_tokens.dart';
+import '../../../core/widgets/desktop/desktop_scaffold.dart';
+import '../../../core/widgets/desktop/desktop_table.dart';
+import '../../../core/widgets/desktop/page_header.dart';
+import '../../../core/widgets/desktop/responsive.dart';
+import '../../../core/widgets/desktop/stat_card.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 enum CustomerFilter { all, debtor, noDebt, active, inactive, vip }
@@ -113,62 +118,15 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return DesktopScaffold(
+      activeNavIndex: 1,
+      title: 'customers'.tr(),
       extendBody: true,
-      backgroundColor: AppColors.of(context).background,
-      appBar: AppBar(
-        title: Text('customers'.tr()),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: AppColors.of(context).textPrimary,
-      ),
-      body: Column(
-        children: [
-          _buildAnalyticsDashboard(),
-          Padding(
-            padding: EdgeInsets.fromLTRB(20.w, 10.h, 20.w, 10.h),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'search_hint'.tr(),
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: AppColors.of(context).surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15.r),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
-          _buildFilterChips(),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredCustomers.isEmpty
-                ? Center(child: Text('no_customers'.tr()))
-                : ListView.builder(
-                    padding: EdgeInsets.fromLTRB(20.w, 10.h, 20.w, 100.h),
-                    itemCount: _filteredCustomers.length,
-                    itemBuilder: (context, index) {
-                      final customer = _filteredCustomers[index];
-                      return _CustomerTile(
-                        customer: customer,
-                        settings: _settings,
-                        onTap: () => Navigator.pushNamed(
-                          context,
-                          '/customer_detail',
-                          arguments: customer,
-                        ).then((_) => _loadCustomers()),
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          if (sl<SubscriptionService>().canUseFeature(AppFeature.addCustomer)) {
+          if (sl<SubscriptionService>().canUseFeature(
+            AppFeature.addCustomer,
+          )) {
             _showAddCustomerDialog(context);
           } else {
             SubscriptionDialog.show(context);
@@ -177,11 +135,304 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.person_add),
       ),
-      bottomNavigationBar: AppBottomNavigationBar(
-        activeIndex: 1,
-        onTap: _onNavTap,
+      onNavigate: _onNavTap,
+      body: _buildMobileBody(),
+      desktopBody: _buildDesktopBody(),
+    );
+  }
+
+  Widget _buildMobileBody() {
+    return Column(
+      children: [
+        _buildAnalyticsDashboard(),
+        Padding(
+          padding: EdgeInsets.fromLTRB(20.w, 10.h, 20.w, 10.h),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'search_hint'.tr(),
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: AppColors.of(context).surface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15.r),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+        ),
+        _buildFilterChips(),
+        Expanded(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _filteredCustomers.isEmpty
+              ? Center(child: Text('no_customers'.tr()))
+              : ListView.builder(
+                  padding: EdgeInsets.fromLTRB(20.w, 10.h, 20.w, 100.h),
+                  itemCount: _filteredCustomers.length,
+                  itemBuilder: (context, index) {
+                    final customer = _filteredCustomers[index];
+                    return _CustomerTile(
+                      customer: customer,
+                      settings: _settings,
+                      onTap: () => Navigator.pushNamed(
+                        context,
+                        '/customer_detail',
+                        arguments: customer,
+                      ).then((_) => _loadCustomers()),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopBody() {
+    final colors = AppColors.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpace.xl),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: DesktopMetrics.contentMaxWidth,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              PageHeader(
+                title: 'customers'.tr(),
+                subtitle: '${_filteredCustomers.length}',
+                actions: [
+                  FilledButton.icon(
+                    onPressed: () {
+                      if (sl<SubscriptionService>().canUseFeature(
+                        AppFeature.addCustomer,
+                      )) {
+                        _showAddCustomerDialog(context);
+                      } else {
+                        SubscriptionDialog.show(context);
+                      }
+                    },
+                    icon: const Icon(Icons.person_add_rounded, size: 18),
+                    label: Text('add_new_customer'.tr()),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpace.md),
+              _buildDesktopStats(),
+              const SizedBox(height: AppSpace.lg),
+              _buildDesktopToolbar(colors),
+              const SizedBox(height: AppSpace.lg),
+              _buildDesktopCustomersTable(colors),
+            ],
+          ),
+        ),
       ),
     );
+  }
+
+  Widget _buildDesktopStats() {
+    return ResponsiveGrid(
+      columns: 3,
+      children: [
+        StatCard(
+          title: 'total'.tr(),
+          value: _analytics['total_customers']?.toString() ?? '0',
+          icon: Icons.people_alt_outlined,
+          color: AppColors.primary,
+        ),
+        StatCard(
+          title: 'debtors'.tr(),
+          value: _analytics['debtors_count']?.toString() ?? '0',
+          icon: Icons.person_pin_circle_outlined,
+          color: AppColors.error,
+        ),
+        StatCard(
+          title: 'active'.tr(),
+          value: _analytics['active_count']?.toString() ?? '0',
+          icon: Icons.timelapse_rounded,
+          color: AppColors.success,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopToolbar(AppColorSet colors) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpace.md,
+        vertical: AppSpace.sm,
+      ),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: colors.border),
+        boxShadow: AppShadow.soft(Colors.black),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 300,
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'search_hint'.tr(),
+                prefixIcon: const Icon(Icons.search),
+                isDense: true,
+                filled: true,
+                fillColor: colors.background,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpace.md),
+          Expanded(
+            child: Wrap(
+              spacing: AppSpace.xs,
+              runSpacing: AppSpace.xs,
+              children: [
+                for (final filter in CustomerFilter.values)
+                  _buildDesktopFilterChip(filter),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopFilterChip(CustomerFilter filter) {
+    final isSelected = _selectedFilter == filter;
+    final colors = AppColors.of(context);
+    return ChoiceChip(
+      label: Text(filter.name.tr()),
+      selected: isSelected,
+      showCheckmark: false,
+      onSelected: (val) {
+        if (val) {
+          setState(() {
+            _selectedFilter = filter;
+            _applyFilters();
+          });
+        }
+      },
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : colors.textPrimary,
+        fontSize: 12,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      backgroundColor: colors.surface,
+      selectedColor: AppColors.primary,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      side: BorderSide.none,
+      visualDensity: VisualDensity.compact,
+    );
+  }
+
+  Widget _buildDesktopCustomersTable(AppColorSet colors) {
+    if (_isLoading) {
+      return const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    final rows = _filteredCustomers
+        .map((c) => _buildCustomerRow(colors, c))
+        .toList();
+    return DesktopTable(
+      headers: [
+        'name'.tr(),
+        'phone_number'.tr(),
+        'status'.tr(),
+        'last_deal'.tr(),
+        'debt'.tr(),
+        'spent'.tr(),
+        '',
+      ],
+      flexes: const [3, 2, 2, 2, 2, 2, 1],
+      rows: rows,
+      emptyMessage: 'no_customers'.tr(),
+    );
+  }
+
+  List<Widget> _buildCustomerRow(AppColorSet colors, Customer customer) {
+    final isDebtor = customer.totalDebt > 0;
+    final (statusColor, statusLabel) = _customerStatus(customer);
+    return [
+      Text(
+        customer.name,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      ),
+      Text(customer.phone, style: const TextStyle(fontSize: 12)),
+      Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: AppSpace.xs),
+          Text(statusLabel, style: TextStyle(fontSize: 12, color: statusColor)),
+        ],
+      ),
+      Text(
+        customer.lastTransactionDate == null
+            ? '-'
+            : timeago.format(
+                customer.lastTransactionDate!,
+                locale: context.locale.languageCode,
+              ),
+        style: const TextStyle(fontSize: 12),
+      ),
+      Text(
+        CurrencyHelper.getFormatter('YER').format(customer.totalDebt),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: isDebtor ? AppColors.error : AppColors.success,
+        ),
+      ),
+      Text(
+        CurrencyHelper.getFormatter('YER').format(customer.totalSpent),
+        style: const TextStyle(fontSize: 12),
+      ),
+      IconButton(
+        tooltip: 'view'.tr(),
+        iconSize: 18,
+        visualDensity: VisualDensity.compact,
+        onPressed: () => Navigator.pushNamed(
+          context,
+          '/customer_detail',
+          arguments: customer,
+        ).then((_) => _loadCustomers()),
+        icon: const Icon(Icons.chevron_right_rounded),
+      ),
+    ];
+  }
+
+  (Color, String) _customerStatus(Customer customer) {
+    Color statusColor = Colors.grey;
+    String statusLabel = 'dead'.tr();
+    if (customer.lastTransactionDate != null) {
+      final days = DateTime.now()
+          .difference(customer.lastTransactionDate!)
+          .inDays;
+      if (days <= (_settings?.inactiveDays ?? 30)) {
+        statusColor = AppColors.success;
+        statusLabel = 'active'.tr();
+      } else if (days < (_settings?.deadDays ?? 90)) {
+        statusColor = Colors.orange;
+        statusLabel = 'inactive'.tr();
+      }
+    }
+    return (statusColor, statusLabel);
   }
 
   void _onNavTap(int index) {

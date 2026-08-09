@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:animate_do/animate_do.dart';
@@ -22,8 +23,13 @@ import '../../../core/widgets/barcode_scanner_view.dart';
 import '../../../core/utils/currency_helper.dart';
 import '../../../core/routes/routes.dart';
 import '../../../core/routes/app_router.dart';
-import '../../../core/widgets/app_bottom_navigation_bar.dart';
 import '../../../core/widgets/transaction_detail_sheet.dart';
+import '../../../core/theme/desktop_tokens.dart';
+import '../../../core/widgets/desktop/desktop_scaffold.dart';
+import '../../../core/widgets/desktop/desktop_table.dart';
+import '../../../core/widgets/desktop/page_header.dart';
+import '../../../core/widgets/desktop/responsive.dart';
+import '../../../core/widgets/desktop/stat_card.dart';
 import '../../marketing/views/whatsapp_marketing_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -77,70 +83,33 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return DesktopScaffold(
+      activeNavIndex: _bottomNavIndex,
+      title: 'app_name'.tr(),
+      subtitle: _storeName,
       extendBody: true,
-      backgroundColor: AppColors.of(context).background,
-      appBar: AppBar(
-        title: Text(
-          'app_name'.tr(),
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: AppColors.of(context).textPrimary,
-        leading: CircleAvatar(
-          radius: 40,
-          backgroundImage: AssetImage('assets/images/logo.png'),
-        ),
-        actions: [
-          if (_moduleConfig.showSuppliers)
-            IconButton(
-              icon: const Icon(Icons.business_rounded),
-              onPressed: () => Navigator.pushNamed(
-                context,
-                Routes.suppliers,
-              ).then((_) => _loadData()),
-              tooltip: 'suppliers'.tr(),
-            ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () async {
-              final settings = sl<SettingsService>().settings;
-              if (settings.staffConfig.isEnabled) {
-                final verified = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => PinAuthDialog(
-                    correctPin: settings.staffConfig.pinCode ?? '0000',
-                  ),
-                );
-                if (verified != true) return;
-              }
-              Navigator.pushNamed(
-                context,
-                '/settings',
-              ).then((_) => _loadData());
-            },
-          ),
-          // if (_moduleConfig.showInventory)
-          //   IconButton(
-          //     icon: const Icon(Icons.store_mall_directory),
-          //     onPressed: () => Navigator.pushNamed(
-          //       context,
-          //       '/store',
-          //     ).then((_) => _loadData()),
-          //   ),
-          // IconButton(
-          //   icon: const Icon(Icons.delete_forever),
-          //   onPressed: () => _showResetDataConfirmation(context),
-          // ),
-          // IconButton(
-          //   icon: const Icon(Icons.add),
-          //   onPressed: () =>
-          //   Navigator.pushNamed(context, '/sale').then((_) => _loadData()),
-          //   // onPressed: () => _showPaymentDialog(context),
-          // ),
-        ],
+      mobileLeading: CircleAvatar(
+        radius: 40,
+        backgroundImage: AssetImage('assets/images/logo.png'),
       ),
+      actions: [
+        if (_moduleConfig.showSuppliers)
+          IconButton(
+            icon: const Icon(Icons.business_rounded),
+            onPressed: () => Navigator.pushNamed(
+              context,
+              Routes.suppliers,
+            ).then((_) => _loadData()),
+            tooltip: 'suppliers'.tr(),
+          ),
+        IconButton(
+          icon: const Icon(Icons.settings_outlined),
+          onPressed: _openSettings,
+          tooltip: 'settings'.tr(),
+        ),
+      ],
+      onNavigate: _onNavTap,
+      onOpenSettings: _openSettings,
       body: RefreshIndicator(
         onRefresh: _loadData,
         child: SingleChildScrollView(
@@ -199,11 +168,533 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+      desktopBody: _buildDesktopBody(context),
+    );
+  }
 
-      bottomNavigationBar: AppBottomNavigationBar(
-        activeIndex: _bottomNavIndex,
-        onTap: _onNavTap,
+  String get _storeName {
+    final profile = sl<SettingsService>().settings.storeProfile;
+    return profile.storeName?.trim() ?? '';
+  }
+
+  Future<void> _openSettings() async {
+    final settings = sl<SettingsService>().settings;
+    if (settings.staffConfig.isEnabled) {
+      final verified = await showDialog<bool>(
+        context: context,
+        builder: (context) => PinAuthDialog(
+          correctPin: settings.staffConfig.pinCode ?? '0000',
+        ),
+      );
+      if (verified != true) return;
+    }
+    if (mounted) {
+      Navigator.pushNamed(
+        context,
+        Routes.settings,
+      ).then((_) => _loadData());
+    }
+  }
+
+  Widget _buildDesktopBody(BuildContext context) {
+    final storeName = _storeName;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpace.xl),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: DesktopMetrics.contentMaxWidth,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              PageHeader(
+                title: storeName.isNotEmpty ? storeName : 'app_name'.tr(),
+                subtitle:
+                    '${'today'.tr()} - ${DateFormat('EEE, d MMM yyyy', context.locale.languageCode).format(DateTime.now())}',
+                actions: [
+                  IconButton(
+                    tooltip: 'refresh'.tr(),
+                    onPressed: _loadData,
+                    icon: const Icon(Icons.refresh_rounded),
+                  ),
+                  if (_moduleConfig.showSales)
+                    ElevatedButton.icon(
+                      onPressed: () => _onNavTap(2),
+                      icon: const Icon(Icons.point_of_sale_rounded, size: 18),
+                      label: Text('new_sale'.tr()),
+                    ),
+                  if (_moduleConfig.showCustomers)
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        if (sl<SubscriptionService>().canUseFeature(
+                          AppFeature.addSale,
+                        )) {
+                          _showPaymentDialog(
+                            context,
+                            type: TransactionType.payment,
+                          );
+                        } else {
+                          SubscriptionDialog.show(context);
+                        }
+                      },
+                      icon: const Icon(Icons.check_circle_outline, size: 18),
+                      label: Text('get_payment'.tr()),
+                    ),
+                ],
+              ),
+              if (_isLoading) ...[
+                const SizedBox(height: AppSpace.md),
+                const LinearProgressIndicator(),
+              ],
+              const SizedBox(height: AppSpace.xl),
+              _buildKpiGrid(context),
+              const SizedBox(height: AppSpace.xl),
+              if (_hasDesktopAlerts) ...[
+                _buildDesktopAlerts(context),
+                const SizedBox(height: AppSpace.xl),
+              ],
+              _buildDesktopSections(context),
+            ],
+          ),
+        ),
       ),
+    );
+  }
+
+  bool get _hasDesktopAlerts {
+    final sub = sl<SubscriptionService>();
+    if (!sub.isPremiumActive) return true;
+    if (!sub.isSubscribed && !sub.isClockTampered) return true;
+    if (_nearExpiryProducts.isNotEmpty) return true;
+    if (_lowStockProducts.isNotEmpty) return true;
+    if (_overDebtCustomers.isNotEmpty && _moduleConfig.showCustomers) {
+      return true;
+    }
+    return false;
+  }
+
+  Widget _buildKpiGrid(BuildContext context) {
+    final cards = <Widget>[
+      if (_moduleConfig.showSales)
+        StatCard(
+          title: 'daily_sales'.tr(),
+          value: CurrencyHelper.getFormatter(
+            'YER',
+          ).format(_summary['daily_sales_yer'] ?? 0.0),
+          icon: Icons.trending_up_rounded,
+          color: AppColors.success,
+          onTap: _showDailySalesSheet,
+        ),
+      if (_moduleConfig.showCustomers)
+        StatCard(
+          title: 'total_debt'.tr(),
+          value: CurrencyHelper.getFormatter(
+            'YER',
+          ).format(_summary['total_debt_yer'] ?? 0.0),
+          icon: Icons.account_balance_wallet_rounded,
+          color: AppColors.error,
+          onTap: _showDebtTransactionsSheet,
+        ),
+      if (_moduleConfig.showInventory)
+        StatCard(
+          title: 'low_stock_products'.tr(),
+          value: _lowStockProducts.length.toString(),
+          subtitle: '${'stock'.tr()} / ${'units'.tr()}',
+          icon: Icons.inventory_2_outlined,
+          color: AppColors.warning,
+          onTap: () => _showProductsSheet(
+            'low_stock_products'.tr(),
+            _lowStockProducts,
+          ),
+        ),
+      if (_moduleConfig.showInventory)
+        StatCard(
+          title: 'near_expiry_products'.tr(),
+          value: _nearExpiryProducts.length.toString(),
+          icon: Icons.history_toggle_off_rounded,
+          color: Colors.orange,
+          onTap: () => _showProductsSheet(
+            'near_expiry_products'.tr(),
+            _nearExpiryProducts,
+          ),
+        ),
+      if (_moduleConfig.showCustomers)
+        StatCard(
+          title: 'over_debt_customers'.tr(),
+          value: _overDebtCustomers.length.toString(),
+          icon: Icons.person_pin_circle_outlined,
+          color: AppColors.primary,
+          onTap: _showOverDebtCustomersSheet,
+        ),
+    ];
+    if (cards.isEmpty) return const SizedBox.shrink();
+    return ResponsiveGrid(
+      children: cards,
+      columns: cards.length == 5 ? 3 : null,
+    );
+  }
+
+  Widget _buildDesktopAlerts(BuildContext context) {
+    final sub = sl<SubscriptionService>();
+    final alerts = <Widget>[
+      if (!sub.isPremiumActive)
+        _DesktopAlertTile(
+          title: 'trial_expired_home'.tr(),
+          desc: 'contact_dev_msg'.tr(),
+          icon: Icons.lock_clock_rounded,
+          color: AppColors.error,
+          onTap: _contactDev,
+        )
+      else if (!sub.isSubscribed && !sub.isClockTampered)
+        _DesktopAlertTile(
+          title: 'trial_active'.tr(),
+          desc: 'trial_remaining'.tr(
+            namedArgs: {'days': sub.remainingDays.toString()},
+          ),
+          icon: Icons.timer_outlined,
+          color: AppColors.primary,
+          onTap: () {},
+        ),
+      if (_nearExpiryProducts.isNotEmpty)
+        _DesktopAlertTile(
+          title: 'near_expiry_alert'.tr(),
+          desc: 'near_expiry_desc'.tr(
+            args: [_nearExpiryProducts.length.toString()],
+          ),
+          icon: Icons.history_toggle_off_rounded,
+          color: AppColors.error,
+          onTap: () => _showProductsSheet(
+            'near_expiry_products'.tr(),
+            _nearExpiryProducts,
+          ),
+        ),
+      if (_lowStockProducts.isNotEmpty)
+        _DesktopAlertTile(
+          title: 'low_stock_alert'.tr(),
+          desc: 'low_stock_desc'.tr(
+            args: [_lowStockProducts.length.toString()],
+          ),
+          icon: Icons.inventory_2_outlined,
+          color: Colors.orange,
+          onTap: () => _showProductsSheet(
+            'low_stock_products'.tr(),
+            _lowStockProducts,
+          ),
+        ),
+      if (_overDebtCustomers.isNotEmpty && _moduleConfig.showCustomers)
+        _DesktopAlertTile(
+          title: 'over_debt_alert'.tr(),
+          desc: 'over_debt_desc'.tr(
+            args: [_overDebtCustomers.length.toString()],
+          ),
+          icon: Icons.person_pin_circle_outlined,
+          color: AppColors.primary,
+          onTap: _showOverDebtCustomersSheet,
+        ),
+    ];
+    return Wrap(
+      spacing: AppSpace.sm,
+      runSpacing: AppSpace.sm,
+      children: alerts,
+    );
+  }
+
+  Widget _buildDesktopSections(BuildContext context) {
+    final useRow = MediaQuery.sizeOf(context).width >= 1150;
+    final recent = _buildRecentActivitySection(context);
+    final side = _buildDesktopSideColumn(context);
+    if (!useRow) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          recent,
+          const SizedBox(height: AppSpace.xl),
+          side,
+        ],
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(flex: 3, child: recent),
+        const SizedBox(width: AppSpace.xl),
+        Expanded(flex: 2, child: side),
+      ],
+    );
+  }
+
+  Widget _buildRecentActivitySection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        PageHeader(
+          title: 'recent_transactions'.tr(),
+          subtitle: '${'today'.tr()} ${DateFormat('MMM dd').format(DateTime.now())}',
+        ),
+        const SizedBox(height: AppSpace.md),
+        _buildRecentTable(context),
+      ],
+    );
+  }
+
+  Widget _buildRecentTable(BuildContext context) {
+    if (_isLoading) {
+      return const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    final rows = _recentTransactions
+        .map((tx) => _buildTransactionRow(context, tx))
+        .toList();
+    return DesktopTable(
+      headers: [
+        'type'.tr(),
+        'date'.tr(),
+        'amount'.tr(),
+        'remmining'.tr(),
+        'actions'.tr(),
+      ],
+      flexes: [2, 2, 2, 2, 2],
+      rows: rows,
+    );
+  }
+
+  List<Widget> _buildTransactionRow(BuildContext context, AppTransaction tx) {
+    final colors = AppColors.of(context);
+    final isRefund = tx.type == TransactionType.refund;
+    final isPayment = tx.type == TransactionType.payment;
+    final isAddDebt = tx.type == TransactionType.sale && tx.items.isEmpty;
+
+    String titleText;
+    if (isRefund) {
+      titleText = 'refund'.tr();
+    } else if (isPayment) {
+      titleText = 'payment'.tr();
+    } else if (isAddDebt) {
+      titleText = 'add_debt'.tr();
+    } else {
+      titleText = 'cash_sale'.tr();
+    }
+
+    Color iconColor;
+    IconData iconData;
+    if (isRefund) {
+      iconColor = AppColors.error;
+      iconData = Icons.keyboard_return;
+    } else if (isPayment) {
+      iconColor = AppColors.success;
+      iconData = Icons.arrow_downward;
+    } else if (isAddDebt) {
+      iconColor = AppColors.error;
+      iconData = Icons.arrow_upward;
+    } else {
+      iconColor = AppColors.success;
+      iconData = Icons.shopping_cart_outlined;
+    }
+
+    final remaining = tx.amount - tx.paidAmount;
+    final hasDebt = tx.type == TransactionType.sale && remaining > 0;
+
+    return [
+      Row(
+        children: [
+          Icon(iconData, color: iconColor, size: 16),
+          const SizedBox(width: AppSpace.xs),
+          Flexible(
+            child: Text(
+              titleText,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: colors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+      Text(
+        DateFormat('MMM dd, hh:mm a').format(tx.date),
+        style: TextStyle(fontSize: 12, color: colors.textSecondary),
+      ),
+      Text(
+        CurrencyHelper.getFormatter(tx.currency).format(tx.amount),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: isRefund || isAddDebt ? AppColors.error : AppColors.success,
+        ),
+      ),
+      hasDebt
+          ? Text(
+              '${'remmining'.tr()}: ${CurrencyHelper.getFormatter(tx.currency).format(remaining)}',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.orange.shade800,
+              ),
+            )
+          : Text(
+              '-',
+              style: TextStyle(fontSize: 12, color: colors.textLight),
+            ),
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: 'view'.tr(),
+            iconSize: 18,
+            visualDensity: VisualDensity.compact,
+            onPressed: () async {
+              final refresh = await TransactionDetailSheet.show(context, tx);
+              if (refresh == true) _loadData();
+            },
+            icon: const Icon(Icons.visibility_outlined),
+          ),
+          IconButton(
+            tooltip: 'void_transaction'.tr(),
+            iconSize: 18,
+            visualDensity: VisualDensity.compact,
+            onPressed: () => _confirmVoidTransaction(tx),
+            icon: const Icon(Icons.delete_outline),
+          ),
+        ],
+      ),
+    ];
+  }
+
+  Widget _buildDesktopSideColumn(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_moduleConfig.showAccounting) ...[
+          _buildAccountingBanner(context),
+          const SizedBox(height: AppSpace.md),
+        ],
+        _buildQuickLinksCard(context),
+      ],
+    );
+  }
+
+  Widget _buildAccountingBanner(BuildContext context) {
+    final flipX = Directionality.of(context) == ui.TextDirection.rtl;
+    return Material(
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.pushNamed(context, Routes.accountingHub),
+        child: Ink(
+          height: 96,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpace.lg),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.account_balance_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                const SizedBox(width: AppSpace.sm),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'accounting_hub'.tr(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      Text(
+                        'manage_business_finances'.tr(),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Transform.flip(
+                  flipX: flipX,
+                  child: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: Colors.white70,
+                    size: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickLinksCard(BuildContext context) {
+    return _DesktopCard(
+      title: 'quick_actions'.tr(),
+      child: Column(
+        children: [
+          if (_moduleConfig.showAccounting)
+            _buildQuickLink(
+              Icons.receipt_long_rounded,
+              'receivables'.tr(),
+              () => Navigator.pushNamed(context, Routes.receivables),
+            ),
+          if (_moduleConfig.enableCloudBackup)
+            _buildQuickLink(
+              Icons.cloud_upload_outlined,
+              'backup'.tr(),
+              () => Navigator.pushNamed(context, Routes.backup),
+            ),
+          _buildQuickLink(
+            Icons.info_outline_rounded,
+            'about'.tr(),
+            () => Navigator.pushNamed(context, Routes.about),
+          ),
+          _buildQuickLink(
+            Icons.settings_outlined,
+            'settings'.tr(),
+            _openSettings,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickLink(IconData icon, String label, VoidCallback onTap) {
+    final colors = AppColors.of(context);
+    return ListTile(
+      dense: true,
+      leading: Icon(icon, color: colors.primary, size: 20),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: colors.textPrimary,
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        color: colors.textLight,
+        size: 20,
+      ),
+      onTap: onTap,
     );
   }
 
@@ -1878,6 +2369,127 @@ class _QuickActionCard extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DesktopCard extends StatelessWidget {
+  final String title;
+  final Widget child;
+
+  const _DesktopCard({required this.title, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: colors.border),
+        boxShadow: AppShadow.soft(Colors.black),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpace.md,
+              AppSpace.md,
+              AppSpace.md,
+              AppSpace.xs,
+            ),
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: colors.textPrimary,
+              ),
+            ),
+          ),
+          const Divider(height: 1),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _DesktopAlertTile extends StatelessWidget {
+  final String title;
+  final String desc;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _DesktopAlertTile({
+    required this.title,
+    required this.desc,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Material(
+      color: color.withValues(alpha: 0.05),
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Container(
+          width: 300,
+          padding: const EdgeInsets.all(AppSpace.sm),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(color: color.withValues(alpha: 0.15)),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: AppSpace.xs),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                    Text(
+                      desc,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpace.xs),
+              Text(
+                'view'.tr(),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

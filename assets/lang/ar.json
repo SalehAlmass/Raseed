@@ -692,5 +692,9 @@
   "theme": "المظهر",
   "theme_light": "فاتح",
   "theme_dark": "داكن",
-  "theme_system": "تلقائي"
+  "theme_system": "تلقائي",
+  "more": "المزيد",
+  "recent_transactions": "أحدث المعاملات",
+  "refresh": "تحديث",
+  "premium_active": "الاشتراك مفعل"
 }

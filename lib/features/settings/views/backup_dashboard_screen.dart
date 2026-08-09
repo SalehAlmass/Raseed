@@ -10,6 +10,12 @@ import '../../../core/routes/routes.dart';
 import '../../../core/services/settings_service.dart';
 import '../../../core/services/google_drive_backup_service.dart';
 import '../../../core/models/user.dart';
+import '../../../core/models/app_feature.dart';
+import '../../../core/services/subscription_service.dart';
+import '../../../core/widgets/subscription_dialog.dart';
+import '../../../core/theme/desktop_tokens.dart';
+import '../../../core/widgets/desktop/desktop_scaffold.dart';
+import '../../../core/widgets/desktop/page_header.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
@@ -83,48 +89,140 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return DesktopScaffold(
+      activeNavIndex: -1,
+      title: 'backup_management'.tr(),
+      extendBody: false,
+      onNavigate: _onNavTap,
+      body: _buildMobileBody(),
+      desktopBody: _buildDesktopBody(),
+    );
+  }
+
+  Widget _buildMobileBody() {
     final user = _authService.currentUser;
-    return Scaffold(
-      backgroundColor: AppColors.of(context).background,
-      appBar: AppBar(
-        title: Text('backup_management'.tr()),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: AppColors.of(context).textPrimary,
-      ),
-      body: _isLoading
-          ? Center(child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(value: _progress > 0 ? _progress : null),
-                if (_statusMsg.isNotEmpty) ...[
-                  SizedBox(height: 12.h),
-                  Text(_statusMsg, style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
-                ],
+    return _isLoading
+        ? Center(child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(value: _progress > 0 ? _progress : null),
+              if (_statusMsg.isNotEmpty) ...[
+                SizedBox(height: 12.h),
+                Text(_statusMsg, style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
               ],
-            ))
-          : RefreshIndicator(
-              onRefresh: _loadBackupLists,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h, bottom: 100.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildUserSection(user),
+            ],
+          ))
+        : RefreshIndicator(
+            onRefresh: _loadBackupLists,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h, bottom: 100.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildUserSection(user),
+                  SizedBox(height: 24.h),
+                  _buildQuickActions(user),
+                  SizedBox(height: 24.h),
+                  _buildLocalBackupSection(),
+                  if (sl<SettingsService>().settings.moduleConfig.enableCloudBackup) ...[
                     SizedBox(height: 24.h),
-                    _buildQuickActions(user),
-                    SizedBox(height: 24.h),
-                    _buildLocalBackupSection(),
-                    if (sl<SettingsService>().settings.moduleConfig.enableCloudBackup) ...[
-                      SizedBox(height: 24.h),
-                      _buildCloudBackupSection(user != null),
-                    ],
+                    _buildCloudBackupSection(user != null),
                   ],
-                ),
+                ],
               ),
             ),
+          );
+  }
+
+  Widget _buildDesktopBody() {
+    final user = _authService.currentUser;
+    final colors = AppColors.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpace.xl),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: DesktopMetrics.contentMaxWidth,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              PageHeader(
+                title: 'backup_management'.tr(),
+                actions: [
+                  IconButton(
+                    tooltip: 'refresh'.tr(),
+                    icon: const Icon(Icons.refresh_rounded),
+                    onPressed: _loadBackupLists,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpace.lg),
+              if (_isLoading)
+                const SizedBox(
+                  height: 300,
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.all(AppSpace.lg),
+                  decoration: BoxDecoration(
+                    color: colors.surface,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(color: colors.border),
+                    boxShadow: AppShadow.soft(Colors.black),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildUserSection(user),
+                      const SizedBox(height: AppSpace.lg),
+                      _buildQuickActions(user),
+                      const SizedBox(height: AppSpace.lg),
+                      _buildLocalBackupSection(),
+                      if (sl<SettingsService>().settings.moduleConfig.enableCloudBackup) ...[
+                        const SizedBox(height: AppSpace.lg),
+                        _buildCloudBackupSection(user != null),
+                      ],
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
+  }
+
+  void _onNavTap(int index) {
+    switch (index) {
+      case 0:
+        Navigator.pushReplacementNamed(context, Routes.home);
+        break;
+      case 1:
+        Navigator.pushReplacementNamed(context, Routes.customers);
+        break;
+      case 2:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
+          Navigator.pushNamed(context, Routes.sale).then((result) {
+            if (result == true) _loadBackupLists();
+          });
+        } else {
+          SubscriptionDialog.show(context);
+        }
+        break;
+      case 3:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.viewReports)) {
+          Navigator.pushReplacementNamed(context, Routes.reports);
+        } else {
+          SubscriptionDialog.show(context);
+        }
+        break;
+      case 4:
+        Navigator.pushReplacementNamed(context, Routes.store);
+        break;
+    }
   }
 
   // ─── User Section ──────────────────────────────────────────────────────────

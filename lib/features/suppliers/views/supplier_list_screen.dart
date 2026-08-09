@@ -8,8 +8,14 @@ import '../../../core/theme/colors.dart';
 import '../../../core/models/supplier.dart';
 import '../../../core/models/supplier_category.dart';
 import '../../../core/utils/currency_helper.dart';
-import '../../../core/widgets/app_bottom_navigation_bar.dart';
 import '../../../core/routes/routes.dart';
+import '../../../core/services/subscription_service.dart';
+import '../../../core/models/app_feature.dart';
+import '../../../core/widgets/subscription_dialog.dart';
+import '../../../core/theme/desktop_tokens.dart';
+import '../../../core/widgets/desktop/desktop_scaffold.dart';
+import '../../../core/widgets/desktop/desktop_table.dart';
+import '../../../core/widgets/desktop/page_header.dart';
 import 'supplier_detail_screen.dart';
 
 class SupplierListScreen extends StatefulWidget {
@@ -24,6 +30,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
   List<Supplier> _suppliers = [];
   List<Supplier> _filteredSuppliers = [];
   List<SupplierCategory> _categories = [];
+  SupplierCategory? _selectedCategory;
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
 
@@ -65,69 +72,334 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return DesktopScaffold(
+      activeNavIndex: -1,
+      title: 'suppliers'.tr(),
       extendBody: true,
-      backgroundColor: AppColors.of(context).background,
-      appBar: AppBar(
-        title: Text('suppliers'.tr()),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: AppColors.of(context).textPrimary,
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.all(20.w),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'search_supplier'.tr(),
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: AppColors.of(context).surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15.r),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredSuppliers.isEmpty
-                ? Center(child: Text('no_suppliers'.tr()))
-                : ListView.builder(
-                    padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 100.h),
-                    itemCount: _filteredSuppliers.length,
-                    itemBuilder: (context, index) {
-                      final supplier = _filteredSuppliers[index];
-                      return FadeInUp(
-                        duration: Duration(milliseconds: 300 + (index * 50)),
-                        child: _SupplierTile(
-                          supplier: supplier,
-                          category: _categories.firstWhere((c) => c.id == supplier.categoryId, orElse: () => SupplierCategory(name: '')),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => SupplierDetailScreen(supplier: supplier),
-                              ),
-                            ).then((_) => _loadSuppliers());
-                          },
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddSupplierDialog(context),
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add_business_rounded),
       ),
+      onNavigate: _onNavTap,
+      body: _buildMobileBody(),
+      desktopBody: _buildDesktopBody(),
     );
+  }
+
+  Widget _buildMobileBody() {
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.all(20.w),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'search_supplier'.tr(),
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: AppColors.of(context).surface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15.r),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _filteredSuppliers.isEmpty
+              ? Center(child: Text('no_suppliers'.tr()))
+              : ListView.builder(
+                  padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 100.h),
+                  itemCount: _filteredSuppliers.length,
+                  itemBuilder: (context, index) {
+                    final supplier = _filteredSuppliers[index];
+                    return FadeInUp(
+                      duration: Duration(milliseconds: 300 + (index * 50)),
+                      child: _SupplierTile(
+                        supplier: supplier,
+                        category: _categories.firstWhere((c) => c.id == supplier.categoryId, orElse: () => SupplierCategory(name: '')),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SupplierDetailScreen(supplier: supplier),
+                            ),
+                          ).then((_) => _loadSuppliers());
+                        },
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopBody() {
+    final colors = AppColors.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpace.xl),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: DesktopMetrics.contentMaxWidth,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              PageHeader(
+                title: 'suppliers'.tr(),
+                subtitle: '${_desktopFilteredSuppliers.length} ${'suppliers'.tr()}',
+                actions: [
+                  FilledButton.icon(
+                    onPressed: () => _showAddSupplierDialog(context),
+                    icon: const Icon(Icons.add_business_rounded, size: 18),
+                    label: Text('add_new_supplier'.tr()),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpace.md),
+              _buildDesktopToolbar(colors),
+              const SizedBox(height: AppSpace.lg),
+              _buildDesktopSuppliersTable(colors),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Supplier> get _desktopFilteredSuppliers {
+    final query = _searchController.text.toLowerCase();
+    return _suppliers.where((s) {
+      final matchesSearch = s.name.toLowerCase().contains(query) ||
+          s.phone.contains(query) ||
+          (s.company?.toLowerCase().contains(query) ?? false);
+      final matchesCategory =
+          _selectedCategory == null || s.categoryId == _selectedCategory!.id;
+      return matchesSearch && matchesCategory;
+    }).toList();
+  }
+
+  Widget _buildDesktopToolbar(AppColorSet colors) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpace.md,
+        vertical: AppSpace.sm,
+      ),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: colors.border),
+        boxShadow: AppShadow.soft(Colors.black),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 300,
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'search_supplier'.tr(),
+                prefixIcon: const Icon(Icons.search),
+                isDense: true,
+                filled: true,
+                fillColor: colors.background,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpace.md),
+          Expanded(
+            child: Wrap(
+              spacing: AppSpace.xs,
+              runSpacing: AppSpace.xs,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                _buildDesktopFilterChip('all'.tr(), null),
+                for (final category in _categories)
+                  _buildDesktopFilterChip(category.name, category),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopFilterChip(String label, SupplierCategory? category) {
+    final isSelected = _selectedCategory?.id == category?.id;
+    final colors = AppColors.of(context);
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      showCheckmark: false,
+      onSelected: (val) {
+        if (val) {
+          setState(() {
+            _selectedCategory = category;
+          });
+        }
+      },
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : colors.textPrimary,
+        fontSize: 12,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      backgroundColor: colors.surface,
+      selectedColor: AppColors.primary,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      side: BorderSide.none,
+      visualDensity: VisualDensity.compact,
+    );
+  }
+
+  Widget _buildDesktopSuppliersTable(AppColorSet colors) {
+    if (_isLoading) {
+      return const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    final rows = _desktopFilteredSuppliers
+        .map((s) => _buildSupplierRow(colors, s))
+        .toList();
+    return DesktopTable(
+      headers: [
+        'name'.tr(),
+        'phone_number'.tr(),
+        'category'.tr(),
+        'total_paid'.tr(),
+        'remaining'.tr(),
+        '',
+      ],
+      flexes: const [3, 2, 2, 2, 2, 1],
+      rows: rows,
+      emptyMessage: 'no_suppliers'.tr(),
+    );
+  }
+
+  List<Widget> _buildSupplierRow(AppColorSet colors, Supplier supplier) {
+    final category = _categories.firstWhere(
+      (c) => c.id == supplier.categoryId,
+      orElse: () => SupplierCategory(name: ''),
+    );
+    return [
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              supplier.name,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
+          if (supplier.rating > 0) ...[
+            const SizedBox(width: AppSpace.xs),
+            const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+            const SizedBox(width: 2),
+            Text(
+              supplier.rating.toStringAsFixed(1),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.amber[800],
+              ),
+            ),
+          ],
+        ],
+      ),
+      Text(
+        supplier.phone,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 12),
+      ),
+      category.name.isEmpty
+          ? Text('-', style: const TextStyle(fontSize: 12))
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                category.name,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+      Text(
+        CurrencyHelper.getFormatter('YER').format(supplier.totalPaid),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: AppColors.success,
+        ),
+      ),
+      Text(
+        CurrencyHelper.getFormatter('YER').format(supplier.totalDebt),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: supplier.totalDebt > 0 ? AppColors.error : AppColors.success,
+        ),
+      ),
+      IconButton(
+        tooltip: 'view'.tr(),
+        iconSize: 18,
+        visualDensity: VisualDensity.compact,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SupplierDetailScreen(supplier: supplier),
+            ),
+          ).then((_) => _loadSuppliers());
+        },
+        icon: const Icon(Icons.chevron_right_rounded),
+      ),
+    ];
+  }
+
+  void _onNavTap(int index) {
+    switch (index) {
+      case 0:
+        Navigator.pushReplacementNamed(context, Routes.home);
+        break;
+      case 1:
+        break;
+      case 2:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
+          Navigator.pushNamed(context, Routes.sale).then((result) {
+            if (result == true) _loadSuppliers();
+          });
+        } else {
+          SubscriptionDialog.show(context);
+        }
+        break;
+      case 3:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.viewReports)) {
+          Navigator.pushReplacementNamed(context, Routes.reports);
+        } else {
+          SubscriptionDialog.show(context);
+        }
+        break;
+      case 4:
+        Navigator.pushReplacementNamed(context, Routes.store);
+        break;
+    }
   }
 
   void _showAddSupplierDialog(BuildContext context) {

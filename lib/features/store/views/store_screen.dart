@@ -14,7 +14,10 @@ import '../../../core/utils/currency_helper.dart';
 import 'widgets/add_edit_product_screen.dart';
 import 'widgets/quick_purchase_dialog.dart';
 import '../../../core/routes/routes.dart';
-import '../../../core/widgets/app_bottom_navigation_bar.dart';
+import '../../../core/theme/desktop_tokens.dart';
+import '../../../core/widgets/desktop/desktop_scaffold.dart';
+import '../../../core/widgets/desktop/desktop_table.dart';
+import '../../../core/widgets/desktop/page_header.dart';
 import 'widgets/sell_product_dialog.dart';
 import '../../../core/models/category.dart';
 import '../../../core/services/category_service.dart';
@@ -300,126 +303,41 @@ class _StoreScreenState extends State<StoreScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return DesktopScaffold(
+      activeNavIndex: 4,
+      title: 'store'.tr(),
       extendBody: true,
-      backgroundColor: AppColors.of(context).background,
-      appBar: AppBar(
-        title: Text('store'.tr()),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: AppColors.of(context).textPrimary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.business_rounded),
-            onPressed: () => Navigator.pushNamed(context, Routes.suppliers),
-            tooltip: 'suppliers'.tr(),
-          ),
-          IconButton(
-            icon: const Icon(Icons.category),
-            onPressed: () => Navigator.pushNamed(context, Routes.categories).then((_) => _loadProducts()),
-            tooltip: 'manage_categories'.tr(),
-          ),
-           IconButton(
-            icon: const Icon(Icons.straighten),
-            onPressed: () => Navigator.pushNamed(context, Routes.units).then((_) => _loadProducts()),
-            tooltip: 'manage_units'.tr(),
-          ),
-          IconButton(
-            icon: const Icon(Icons.replay, color: Colors.orange),
-            tooltip: 'returns_management'.tr(),
-            onPressed: () => Navigator.pushNamed(context, Routes.salesReturn).then((_) => _loadProducts()),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h, bottom: 10.h),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'search_hint'.tr(),
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _hasActiveFilters
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, color: AppColors.error),
-                        onPressed: _clearFilters,
-                      )
-                    : null,
-                filled: true,
-                fillColor: AppColors.of(context).surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15.r),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
-          // Horizontal Category filter chips & Status chips
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildCategoryFilterChip(context),
-                  SizedBox(width: 8.w),
-                  _buildStatusChip('all', context.locale.languageCode == 'ar' ? 'الكل' : 'All'),
-                  SizedBox(width: 8.w),
-                  _buildStatusChip('outOfStock', context.locale.languageCode == 'ar' ? 'نفذ من المخزن' : 'Out of Stock'),
-                  SizedBox(width: 8.w),
-                  _buildStatusChip('expired', context.locale.languageCode == 'ar' ? 'منتهي الصلاحية' : 'Expired'),
-                  SizedBox(width: 8.w),
-                  _buildStatusChip('nearExpiry', context.locale.languageCode == 'ar' ? 'قريب الانتهاء' : 'Near Expiry'),
-                ],
-              ),
-            ),
-          ),
-          SizedBox(height: 15.h),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredProducts.isEmpty
-                ? Center(child: Text('no_products'.tr()))
-                : ListView.builder(
-                    padding: EdgeInsets.only(
-                      left: 20.w,
-                      right: 20.w,
-                      bottom: 100.h,
-                    ),
-                    itemCount: _filteredProducts.length,
-                    itemBuilder: (context, index) {
-                      final product = _filteredProducts[index];
-                      return _ProductTile(
-                        product: product,
-                        onEdit: () {
-                          if (sl<SubscriptionService>().canUseFeature(
-                            AppFeature.editInventory,
-                          )) {
-                            _showAddEditDialog(product);
-                          } else {
-                            SubscriptionDialog.show(context);
-                          }
-                        },
-                        onSell: () {
-                          if (sl<SubscriptionService>().canUseFeature(
-                            AppFeature.addSale,
-                          )) {
-                            _showSellDialog(product);
-                          } else {
-                            SubscriptionDialog.show(context);
-                          }
-                        },
-                        onPurchase: product.supplierId == null
-                            ? null
-                            : () => _onPurchase(product),
-                        onDelete: () => _onDelete(product),
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.business_rounded),
+          onPressed: () => Navigator.pushNamed(context, Routes.suppliers),
+          tooltip: 'suppliers'.tr(),
+        ),
+        IconButton(
+          icon: const Icon(Icons.category),
+          onPressed: () => Navigator.pushNamed(
+            context,
+            Routes.categories,
+          ).then((_) => _loadProducts()),
+          tooltip: 'manage_categories'.tr(),
+        ),
+        IconButton(
+          icon: const Icon(Icons.straighten),
+          onPressed: () => Navigator.pushNamed(
+            context,
+            Routes.units,
+          ).then((_) => _loadProducts()),
+          tooltip: 'manage_units'.tr(),
+        ),
+        IconButton(
+          icon: const Icon(Icons.replay, color: Colors.orange),
+          tooltip: 'returns_management'.tr(),
+          onPressed: () => Navigator.pushNamed(
+            context,
+            Routes.salesReturn,
+          ).then((_) => _loadProducts()),
+        ),
+      ],
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           if (sl<SubscriptionService>().canUseFeature(
@@ -433,11 +351,458 @@ class _StoreScreenState extends State<StoreScreen> {
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add),
       ),
-      bottomNavigationBar: AppBottomNavigationBar(
-        activeIndex: 4,
-        onTap: _onNavTap,
+      onNavigate: _onNavTap,
+      body: _buildMobileBody(),
+      desktopBody: _buildDesktopBody(),
+    );
+  }
+
+  Widget _buildMobileBody() {
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h, bottom: 10.h),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'search_hint'.tr(),
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _hasActiveFilters
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_rounded, color: AppColors.error),
+                      onPressed: _clearFilters,
+                    )
+                  : null,
+              filled: true,
+              fillColor: AppColors.of(context).surface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15.r),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+        ),
+        // Horizontal Category filter chips & Status chips
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildCategoryFilterChip(context),
+                SizedBox(width: 8.w),
+                _buildStatusChip('all', context.locale.languageCode == 'ar' ? 'الكل' : 'All'),
+                SizedBox(width: 8.w),
+                _buildStatusChip('outOfStock', context.locale.languageCode == 'ar' ? 'نفذ من المخزن' : 'Out of Stock'),
+                SizedBox(width: 8.w),
+                _buildStatusChip('expired', context.locale.languageCode == 'ar' ? 'منتهي الصلاحية' : 'Expired'),
+                SizedBox(width: 8.w),
+                _buildStatusChip('nearExpiry', context.locale.languageCode == 'ar' ? 'قريب الانتهاء' : 'Near Expiry'),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(height: 15.h),
+        Expanded(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _filteredProducts.isEmpty
+              ? Center(child: Text('no_products'.tr()))
+              : ListView.builder(
+                  padding: EdgeInsets.only(
+                    left: 20.w,
+                    right: 20.w,
+                    bottom: 100.h,
+                  ),
+                  itemCount: _filteredProducts.length,
+                  itemBuilder: (context, index) {
+                    final product = _filteredProducts[index];
+                    return _ProductTile(
+                      product: product,
+                      onEdit: () {
+                        if (sl<SubscriptionService>().canUseFeature(
+                          AppFeature.editInventory,
+                        )) {
+                          _showAddEditDialog(product);
+                        } else {
+                          SubscriptionDialog.show(context);
+                        }
+                      },
+                      onSell: () {
+                        if (sl<SubscriptionService>().canUseFeature(
+                          AppFeature.addSale,
+                        )) {
+                          _showSellDialog(product);
+                        } else {
+                          SubscriptionDialog.show(context);
+                        }
+                      },
+                      onPurchase: product.supplierId == null
+                          ? null
+                          : () => _onPurchase(product),
+                      onDelete: () => _onDelete(product),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopBody() {
+    final colors = AppColors.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpace.xl),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: DesktopMetrics.contentMaxWidth,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              PageHeader(
+                title: 'store'.tr(),
+                subtitle: '${_filteredProducts.length} ${'products'.tr()}',
+                actions: [
+                  FilledButton.icon(
+                    onPressed: () {
+                      if (sl<SubscriptionService>().canUseFeature(
+                        AppFeature.editInventory,
+                      )) {
+                        _showAddEditDialog();
+                      } else {
+                        SubscriptionDialog.show(context);
+                      }
+                    },
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: Text('add_product'.tr()),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpace.md),
+              _buildDesktopToolbar(colors),
+              const SizedBox(height: AppSpace.lg),
+              _buildDesktopTable(colors),
+            ],
+          ),
+        ),
       ),
     );
+  }
+
+  Widget _buildDesktopToolbar(AppColorSet colors) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpace.md,
+        vertical: AppSpace.sm,
+      ),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: colors.border),
+        boxShadow: AppShadow.soft(Colors.black),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 300,
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'search_hint'.tr(),
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _hasActiveFilters
+                    ? IconButton(
+                        icon: const Icon(
+                          Icons.clear_rounded,
+                          color: AppColors.error,
+                        ),
+                        onPressed: _clearFilters,
+                      )
+                    : null,
+                isDense: true,
+                filled: true,
+                fillColor: colors.background,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpace.md),
+          Expanded(
+            child: Wrap(
+              spacing: AppSpace.xs,
+              runSpacing: AppSpace.xs,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                _buildDesktopCategoryChip(context),
+                _buildDesktopStatusChip('all', _statusChipLabel('all')),
+                _buildDesktopStatusChip('outOfStock', _statusChipLabel('outOfStock')),
+                _buildDesktopStatusChip('expired', _statusChipLabel('expired')),
+                _buildDesktopStatusChip('nearExpiry', _statusChipLabel('nearExpiry')),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _statusChipLabel(String status) {
+    final isArabic = context.locale.languageCode == 'ar';
+    switch (status) {
+      case 'all':
+        return isArabic ? 'الكل' : 'All';
+      case 'outOfStock':
+        return isArabic ? 'نفذ من المخزن' : 'Out of Stock';
+      case 'expired':
+        return isArabic ? 'منتهي الصلاحية' : 'Expired';
+      case 'nearExpiry':
+        return isArabic ? 'قريب الانتهاء' : 'Near Expiry';
+    }
+    return status;
+  }
+
+  Widget _buildDesktopStatusChip(String status, String label) {
+    final isSelected = _selectedStatus == status;
+    final colors = AppColors.of(context);
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _selectedStatus = status;
+          _applyFilters();
+        });
+      },
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpace.sm,
+          vertical: 6,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : colors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : colors.border,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: isSelected ? Colors.white : colors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopCategoryChip(BuildContext context) {
+    final isArabic = context.locale.languageCode == 'ar';
+    final colors = AppColors.of(context);
+    return PopupMenuButton<Category?>(
+      initialValue: _selectedCategory,
+      onSelected: (Category? category) {
+        setState(() {
+          _selectedCategory = category;
+          _applyFilters();
+        });
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem<Category?>(
+          value: null,
+          child: Text(isArabic ? 'كل الأصناف' : 'All Categories'),
+        ),
+        ..._categories.map(
+          (cat) => PopupMenuItem<Category?>(
+            value: cat,
+            child: Text(cat.name),
+          ),
+        ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpace.sm,
+          vertical: 6,
+        ),
+        decoration: BoxDecoration(
+          color: _selectedCategory != null
+              ? AppColors.primary
+              : colors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(
+            color: _selectedCategory != null
+                ? AppColors.primary
+                : colors.border,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.category_outlined,
+              size: 15,
+              color: _selectedCategory != null
+                  ? Colors.white
+                  : colors.textSecondary,
+            ),
+            const SizedBox(width: AppSpace.xs),
+            Text(
+              _selectedCategory?.name ??
+                  (isArabic ? 'الصنف' : 'Category'),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: _selectedCategory != null
+                    ? Colors.white
+                    : colors.textSecondary,
+              ),
+            ),
+            const SizedBox(width: 2),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 15,
+              color: _selectedCategory != null
+                  ? Colors.white
+                  : colors.textSecondary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopTable(AppColorSet colors) {
+    if (_isLoading) {
+      return const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    final rows = _filteredProducts
+        .map((p) => _buildProductRow(colors, p))
+        .toList();
+    return DesktopTable(
+      headers: [
+        'product_name'.tr(),
+        'category'.tr(),
+        'stock'.tr(),
+        'status'.tr(),
+        'price'.tr(),
+        '',
+      ],
+      flexes: const [3, 2, 2, 2, 2, 4],
+      rows: rows,
+      emptyMessage: 'no_products'.tr(),
+    );
+  }
+
+  List<Widget> _buildProductRow(AppColorSet colors, Product product) {
+    final inStock = product.stockQuantity > 0;
+    final isExpired = product.hasExpiredBatch;
+    final isNearExpiry = product.hasNearExpiryBatch;
+    final statusColor = isExpired
+        ? AppColors.error
+        : (isNearExpiry
+              ? Colors.orange
+              : (inStock ? AppColors.success : AppColors.error));
+    final statusLabel = isExpired
+        ? 'expired'.tr()
+        : (isNearExpiry
+              ? 'near_expiry'.tr()
+              : (inStock ? 'in_stock'.tr() : _statusChipLabel('outOfStock')));
+
+    String? categoryName;
+    for (final c in _categories) {
+      if (c.id == product.categoryId) {
+        categoryName = c.name;
+        break;
+      }
+    }
+
+    return [
+      Text(
+        product.name,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      ),
+      Text(categoryName ?? '-', style: const TextStyle(fontSize: 12)),
+      Text(
+        sl<ProductService>().formatStock(
+          product.stockQuantity,
+          product.unitsPerPackage,
+        ),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: statusColor,
+        ),
+      ),
+      Text(statusLabel, style: TextStyle(fontSize: 12, color: statusColor)),
+      Text(
+        '${CurrencyHelper.getFormatter(product.currency).format(product.price)}',
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: AppColors.primary,
+        ),
+      ),
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (inStock)
+            IconButton(
+              tooltip: 'sell'.tr(),
+              iconSize: 18,
+              visualDensity: VisualDensity.compact,
+              onPressed: () {
+                if (sl<SubscriptionService>().canUseFeature(
+                  AppFeature.addSale,
+                )) {
+                  _showSellDialog(product);
+                } else {
+                  SubscriptionDialog.show(context);
+                }
+              },
+              icon: const Icon(Icons.shopping_cart_outlined),
+            ),
+          if (product.supplierId != null)
+            IconButton(
+              tooltip: 'purchase'.tr(),
+              iconSize: 18,
+              visualDensity: VisualDensity.compact,
+              onPressed: () => _onPurchase(product),
+              icon: const Icon(Icons.add_shopping_cart),
+            ),
+          IconButton(
+            tooltip: 'edit'.tr(),
+            iconSize: 18,
+            visualDensity: VisualDensity.compact,
+            onPressed: () {
+              if (sl<SubscriptionService>().canUseFeature(
+                AppFeature.editInventory,
+              )) {
+                _showAddEditDialog(product);
+              } else {
+                SubscriptionDialog.show(context);
+              }
+            },
+            icon: const Icon(Icons.edit_outlined),
+          ),
+          IconButton(
+            tooltip: 'delete'.tr(),
+            iconSize: 18,
+            visualDensity: VisualDensity.compact,
+            onPressed: () => _onDelete(product),
+            icon: const Icon(Icons.delete_outline),
+          ),
+        ],
+      ),
+    ];
   }
 }
 
