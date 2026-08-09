@@ -117,8 +117,19 @@ class _DiscountCodesScreenState extends State<DiscountCodesScreen> {
                   active: active,
                   createdAt: existing?.createdAt ?? DateTime.now(),
                 );
-                if (existing != null) { await _service.updateCode(code); } else { await _service.addCode(code); }
-                if (ctx.mounted) Navigator.pop(ctx, true);
+                try {
+                  if (existing != null) { await _service.updateCode(code); } else { await _service.addCode(code); }
+                  if (ctx.mounted) Navigator.pop(ctx, true);
+                } catch (e) {
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      SnackBar(
+                        content: Text('error_occurred'.tr()),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
               },
               child: Text('save'.tr()),
             ),

@@ -345,6 +345,58 @@ class DatabaseHelper {
       )
     ''');
 
+    // Discount codes table (v36)
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS discount_codes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT NOT NULL UNIQUE,
+        discount_type TEXT NOT NULL,
+        discount_value REAL NOT NULL,
+        min_purchase REAL DEFAULT 0,
+        max_uses INTEGER DEFAULT 0,
+        current_uses INTEGER DEFAULT 0,
+        valid_from TEXT,
+        valid_to TEXT,
+        active INTEGER DEFAULT 1,
+        created_at TEXT NOT NULL
+      )
+    ''');
+
+    // Installment plans table (v36)
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS installment_plans (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        transaction_id INTEGER NOT NULL,
+        customer_id INTEGER NOT NULL,
+        total_amount REAL NOT NULL,
+        down_payment REAL DEFAULT 0,
+        remaining REAL NOT NULL,
+        installment_amount REAL NOT NULL,
+        installment_count INTEGER NOT NULL,
+        period_days INTEGER DEFAULT 30,
+        start_date TEXT NOT NULL,
+        status TEXT DEFAULT 'active',
+        notes TEXT,
+        FOREIGN KEY (transaction_id) REFERENCES transactions (id) ON DELETE CASCADE,
+        FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE
+      )
+    ''');
+
+    // Installment payments table (v36)
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS installment_payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        plan_id INTEGER NOT NULL,
+        amount REAL NOT NULL,
+        due_date TEXT NOT NULL,
+        paid_date TEXT,
+        status TEXT DEFAULT 'pending',
+        late_fee REAL DEFAULT 0,
+        note TEXT,
+        FOREIGN KEY (plan_id) REFERENCES installment_plans (id) ON DELETE CASCADE
+      )
+    ''');
+
     // Create a default admin user
     final now = DateTime.now().toIso8601String();
     await db.insert('users', {

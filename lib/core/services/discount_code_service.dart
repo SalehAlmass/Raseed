@@ -19,7 +19,9 @@ class DiscountCodeService {
 
   Future<void> addCode(DiscountCode code) async {
     final db = await _dbHelper.database;
-    await db.insert('discount_codes', code.toMap());
+    final map = code.toMap();
+    map.remove('id');
+    await db.insert('discount_codes', map);
   }
 
   Future<void> updateCode(DiscountCode code) async {
