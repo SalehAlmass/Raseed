@@ -37,7 +37,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 36,
+      version: 37,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -51,7 +51,8 @@ class DatabaseHelper {
         phone TEXT NOT NULL,
         total_debt REAL DEFAULT 0,
         total_spent REAL DEFAULT 0,
-        last_transaction_date TEXT
+        last_transaction_date TEXT,
+        total_debt_sar REAL DEFAULT 0
       )
     ''');
 
@@ -66,6 +67,12 @@ class DatabaseHelper {
         date TEXT NOT NULL,
         note TEXT,
         is_void INTEGER DEFAULT 0,
+        shift_id INTEGER,
+        return_reason TEXT,
+        return_condition TEXT DEFAULT 'good',
+        discount_type TEXT DEFAULT 'none',
+        discount_value REAL DEFAULT 0,
+        promo_code TEXT,
         FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE
       )
     ''');
@@ -79,6 +86,7 @@ class DatabaseHelper {
         quantity INTEGER NOT NULL,
         price REAL NOT NULL,
         cost_price REAL DEFAULT 0,
+        line_discount REAL DEFAULT 0,
         currency TEXT DEFAULT 'YER',
         FOREIGN KEY (transaction_id) REFERENCES transactions (id) ON DELETE CASCADE,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL
@@ -205,13 +213,14 @@ class DatabaseHelper {
       CREATE TABLE supplier_transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         supplier_id INTEGER NOT NULL,
-        type TEXT NOT NULL, -- purchase, payment
+        type TEXT NOT NULL, -- purchase, payment, return
         amount REAL NOT NULL,
         paid_amount REAL DEFAULT 0,
         currency TEXT DEFAULT 'YER',
         date TEXT NOT NULL,
         note TEXT,
         is_void INTEGER DEFAULT 0,
+        return_reason TEXT,
         FOREIGN KEY (supplier_id) REFERENCES suppliers (id) ON DELETE CASCADE
       )
     ''');
@@ -417,6 +426,9 @@ class DatabaseHelper {
     await db.execute('CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode)');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_suppliers_name ON suppliers(name)');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_supplier_transactions_supplier_id ON supplier_transactions(supplier_id)');
+
+    // Ensure the canonical final schema (guarantees fresh == fully migrated)
+    await _applyCanonicalSchema(db);
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -561,7 +573,11 @@ class DatabaseHelper {
       await db.execute("ALTER TABLE products ADD COLUMN shelf_location TEXT");
     }
     if (oldVersion < 16) {
-      await db.execute("ALTER TABLE units ADD COLUMN parent_id INTEGER");
+      try {
+        await db.execute("ALTER TABLE units ADD COLUMN parent_id INTEGER");
+      } catch (e) {
+        if (!e.toString().contains('duplicate column name')) rethrow;
+      }
       
       // Update existing default units if they exist
       final units = await db.query('units');
@@ -995,6 +1011,64 @@ class DatabaseHelper {
         )
       ''');
     }
+
+    // v37: Canonical schema reconciliation.
+    // Ensures every database (regardless of its migration origin) converges to the
+    // same final schema as a fresh installation, without touching existing data.
+    await _applyCanonicalSchema(db);
+  }
+
+  Future<void> _ensureColumn(Database db, String table, String column, String definition) async {
+    try {
+      final info = await db.rawQuery('PRAGMA table_info($table)');
+      final names = info.map((row) => row['name']).toList();
+      if (!names.contains(column)) {
+        await db.execute('ALTER TABLE $table ADD COLUMN $column $definition');
+      }
+    } catch (e) {
+      debugPrint('_ensureColumn skipped ($table.$column): $e');
+    }
+  }
+
+  Future<void> _applyCanonicalSchema(Database db) async {
+    // settings
+    await _ensureColumn(db, 'settings', 'store_profile', 'TEXT');
+
+    // transactions
+    await _ensureColumn(db, 'transactions', 'shift_id', 'INTEGER');
+    await _ensureColumn(db, 'transactions', 'return_reason', 'TEXT');
+    await _ensureColumn(db, 'transactions', 'return_condition', "TEXT DEFAULT 'good'");
+    await _ensureColumn(db, 'transactions', 'discount_type', "TEXT DEFAULT 'none'");
+    await _ensureColumn(db, 'transactions', 'discount_value', 'REAL DEFAULT 0');
+    await _ensureColumn(db, 'transactions', 'promo_code', 'TEXT');
+
+    // transaction_items
+    await _ensureColumn(db, 'transaction_items', 'line_discount', 'REAL DEFAULT 0');
+
+    // supplier_transactions
+    await _ensureColumn(db, 'supplier_transactions', 'return_reason', 'TEXT');
+
+    // customers
+    await _ensureColumn(db, 'customers', 'total_debt_sar', 'REAL DEFAULT 0');
+
+    // products
+    await _ensureColumn(db, 'products', 'total_spent', 'REAL DEFAULT 0');
+
+    // categories
+    await _ensureColumn(db, 'categories', 'icon', 'TEXT');
+    await _ensureColumn(db, 'categories', 'color', 'INTEGER');
+
+    // units
+    await _ensureColumn(db, 'units', 'type', "TEXT NOT NULL DEFAULT 'main'");
+    await _ensureColumn(db, 'units', 'conversion_factor', 'INTEGER DEFAULT 1');
+
+    // Performance indexes
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_transactions_customer_id ON transactions(customer_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_transaction_items_transaction_id ON transaction_items(transaction_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_suppliers_name ON suppliers(name)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_supplier_transactions_supplier_id ON supplier_transactions(supplier_id)');
   }
 
   Future<void> _insertDefaultAccounts(Database db) async {
