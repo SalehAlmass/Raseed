@@ -3,10 +3,20 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import '../../../core/di/injection_container.dart';
+import '../../../core/models/app_feature.dart';
 import '../../../core/models/shift.dart';
+import '../../../core/routes/routes.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/shift_service.dart';
+import '../../../core/services/subscription_service.dart';
 import '../../../core/theme/colors.dart';
+import '../../../core/theme/desktop_tokens.dart';
+import '../../../core/widgets/desktop/desktop_scaffold.dart';
+import '../../../core/widgets/desktop/desktop_table.dart';
+import '../../../core/widgets/desktop/page_header.dart';
+import '../../../core/widgets/desktop/responsive.dart';
+import '../../../core/widgets/desktop/stat_card.dart';
+import '../../../core/widgets/subscription_dialog.dart';
 
 class ShiftManagementScreen extends StatefulWidget {
   const ShiftManagementScreen({super.key});
@@ -46,37 +56,209 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('shift_management'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: true,
-      ),
-      body: ListenableBuilder(
-        listenable: _shiftService,
-        builder: (context, _) {
-          final current = _shiftService.currentShift;
-          return SingleChildScrollView(
-            padding: EdgeInsets.all(20.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildCurrentShiftCard(current),
-                SizedBox(height: 30.h),
-                Text(
-                  'shift_history'.tr(),
-                  style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 15.h),
-                _isLoading 
-                    ? const Center(child: CircularProgressIndicator())
-                    : _buildHistoryList(),
-              ],
-            ),
-          );
-        },
-      ),
+    return DesktopScaffold(
+      activeNavIndex: -1,
+      title: 'shift_management'.tr(),
+      onNavigate: _onNavTap,
+      body: _buildMobileBody(context),
+      desktopBody: _buildDesktopBody(context),
     );
+  }
+
+  Widget _buildMobileBody(BuildContext context) {
+    return ListenableBuilder(
+      listenable: _shiftService,
+      builder: (context, _) {
+        final current = _shiftService.currentShift;
+        return SingleChildScrollView(
+          padding: EdgeInsets.all(20.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildCurrentShiftCard(current),
+              SizedBox(height: 30.h),
+              Text(
+                'shift_history'.tr(),
+                style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 15.h),
+              _isLoading 
+                  ? const Center(child: CircularProgressIndicator())
+                  : _buildHistoryList(),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDesktopBody(BuildContext context) {
+    return ListenableBuilder(
+      listenable: _shiftService,
+      builder: (context, _) {
+        final current = _shiftService.currentShift;
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpace.xl),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: DesktopMetrics.contentMaxWidth),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  PageHeader(
+                    title: 'shift_management'.tr(),
+                    actions: [
+                      FilledButton.icon(
+                        onPressed: () => current != null
+                            ? _showCloseShiftDialog()
+                            : _showOpenShiftDialog(),
+                        icon: Icon(
+                          current != null
+                              ? Icons.lock_outline_rounded
+                              : Icons.lock_open_rounded,
+                          size: 18,
+                        ),
+                        label: Text(
+                          current != null ? 'close_shift'.tr() : 'open_new_shift'.tr(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpace.lg),
+                  _buildDesktopSummary(current),
+                  const SizedBox(height: AppSpace.lg),
+                  _buildDesktopHistoryTable(),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDesktopSummary(Shift? current) {
+    final isOpen = current != null;
+    final balancedCount = _history
+        .where(
+          (s) =>
+              s.status == ShiftStatus.closed &&
+              (s.closingBalanceActual ?? 0) - (s.closingBalanceSystem ?? 0) == 0,
+        )
+        .length;
+
+    return ResponsiveGrid(
+      columns: 4,
+      spacing: AppSpace.lg,
+      runSpacing: AppSpace.lg,
+      children: [
+        StatCard(
+          title: isOpen ? 'shift_is_open'.tr() : 'no_active_shift'.tr(),
+          value: isOpen ? '${current.openingBalance} YER' : '--',
+          icon: isOpen ? Icons.lock_open_rounded : Icons.lock_outline_rounded,
+          color: isOpen ? AppColors.success : Colors.grey,
+          subtitle: isOpen
+              ? '${'started_at'.tr()}: ${DateFormat('HH:mm').format(current.startTime)}'
+              : 'open_new_shift'.tr(),
+          onTap: () => isOpen ? _showCloseShiftDialog() : _showOpenShiftDialog(),
+        ),
+        StatCard(
+          title: 'shift_history'.tr(),
+          value: '${_history.length}',
+          icon: Icons.history_rounded,
+          color: AppColors.primary,
+        ),
+        StatCard(
+          title: 'open'.tr(),
+          value: '${_history.where((s) => s.status == ShiftStatus.open).length}',
+          icon: Icons.lock_open_rounded,
+          color: AppColors.warning,
+        ),
+        StatCard(
+          title: 'balanced'.tr(),
+          value: '$balancedCount',
+          icon: Icons.check_circle_outline_rounded,
+          color: AppColors.success,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopHistoryTable() {
+    final colors = AppColors.of(context);
+    return DesktopTable(
+      headers: [
+        'date'.tr(),
+        'opening_balance'.tr(),
+        'total'.tr(),
+        'status'.tr(),
+      ],
+      flexes: const [3, 2, 2, 2],
+      rows: [
+        for (final shift in _history)
+          _buildShiftRow(colors, shift),
+      ],
+      isLoading: _isLoading,
+      emptyMessage: 'no_history'.tr(),
+    );
+  }
+
+  List<Widget> _buildShiftRow(AppColorSet colors, Shift shift) {
+    final variance = (shift.closingBalanceActual ?? 0) - (shift.closingBalanceSystem ?? 0);
+    final isOpen = shift.status == ShiftStatus.open;
+
+    return [
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            DateFormat('yyyy/MM/dd').format(shift.startTime),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          ),
+          Text(
+            '${DateFormat('HH:mm').format(shift.startTime)} - ${shift.endTime != null ? DateFormat('HH:mm').format(shift.endTime!) : '--'}',
+            style: TextStyle(fontSize: 11, color: colors.textSecondary),
+          ),
+        ],
+      ),
+      Text('${shift.openingBalance} YER', style: const TextStyle(fontSize: 12)),
+      Text(
+        shift.closingBalanceActual != null ? '${shift.closingBalanceActual} YER' : '--',
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+      ),
+      isOpen
+          ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpace.xs, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+              child: Text(
+                'open'.tr(),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.warning),
+              ),
+            )
+          : variance == 0
+              ? Container(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpace.xs, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: colors.success.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Text(
+                    'balanced'.tr(),
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: colors.success),
+                  ),
+                )
+              : Text(
+                  '${variance > 0 ? '+' : ''}$variance',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: variance == 0 ? colors.success : colors.error,
+                  ),
+                ),
+    ];
   }
 
   Widget _buildCurrentShiftCard(Shift? current) {
@@ -88,7 +270,7 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
       decoration: BoxDecoration(
         color: isOpen ? Colors.green.shade50 : AppColors.surface,
         borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(color: isOpen ? Colors.green.withOpacity(0.3) : Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: isOpen ? Colors.green.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
@@ -244,5 +426,23 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
         ],
       ),
     );
+  }
+
+  void _onNavTap(int index) {
+    switch (index) {
+      case 0: Navigator.pushReplacementNamed(context, Routes.home); break;
+      case 1: Navigator.pushReplacementNamed(context, Routes.customers); break;
+      case 2:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
+          Navigator.pushNamed(context, Routes.sale);
+        } else { SubscriptionDialog.show(context); }
+        break;
+      case 3:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.viewReports)) {
+          Navigator.pushReplacementNamed(context, Routes.reports);
+        } else { SubscriptionDialog.show(context); }
+        break;
+      case 4: Navigator.pushReplacementNamed(context, Routes.store); break;
+    }
   }
 }

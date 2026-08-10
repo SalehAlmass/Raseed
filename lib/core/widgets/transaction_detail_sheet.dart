@@ -24,10 +24,14 @@ class TransactionDetailSheet extends StatefulWidget {
   const TransactionDetailSheet({super.key, required this.transaction});
 
   static Future<bool?> show(BuildContext context, AppTransaction transaction) {
+    final isWide = MediaQuery.sizeOf(context).width >= 900;
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      constraints: BoxConstraints(
+        maxWidth: isWide ? 760 : double.infinity,
+      ),
       builder: (context) => TransactionDetailSheet(transaction: transaction),
     );
   }

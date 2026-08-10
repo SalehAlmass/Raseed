@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rseed/core/routes/routes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/models/app_feature.dart';
 import '../../../../core/models/product.dart';
 import '../../../../core/models/batch.dart';
 import '../../../../core/models/category.dart';
@@ -11,6 +12,7 @@ import '../../../../core/models/unit.dart';
 import '../../../../core/services/product_service.dart';
 import '../../../../core/services/category_service.dart';
 import '../../../../core/services/unit_service.dart';
+import '../../../../core/services/subscription_service.dart';
 import '../../../../core/services/supplier_service.dart';
 import '../../../../core/services/supplier_transaction_service.dart';
 import '../../../../core/models/supplier.dart';
@@ -19,8 +21,12 @@ import '../../../../core/models/supplier_transaction_item.dart';
 import '../../../../core/models/app_settings.dart';
 import '../../../../core/services/settings_service.dart';
 import '../../../../core/theme/colors.dart';
+import '../../../../core/theme/desktop_tokens.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../core/widgets/barcode_scanner_view.dart';
+import '../../../../core/widgets/desktop/desktop_scaffold.dart';
+import '../../../../core/widgets/desktop/page_header.dart';
+import '../../../../core/widgets/subscription_dialog.dart';
 
 class AddEditProductScreen extends StatefulWidget {
   final Product? product;
@@ -482,38 +488,1014 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
-    return Scaffold(
-      backgroundColor: AppColors.of(context).background,
-      appBar: AppBar(
-        title: Text(
-          widget.product == null ? 'add_product'.tr() : 'edit_product'.tr(),
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        foregroundColor: AppColors.of(context).textPrimary,
-      ),
-      body: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-                child: Column(
-                  children: [
-                    _buildTier1Section(),
-                    _buildTier2Section(),
-                    SizedBox(height: 20.h),
-                  ],
-                ),
+    return DesktopScaffold(
+      activeNavIndex: 4,
+      title: widget.product == null ? 'add_product'.tr() : 'edit_product'.tr(),
+      extendBody: true,
+      onNavigate: _onNavTap,
+      body: _buildMobileBody(),
+      desktopBody: _buildDesktopBody(),
+    );
+  }
+
+  void _onNavTap(int index) {
+    switch (index) {
+      case 0:
+        Navigator.pushReplacementNamed(context, Routes.home);
+        break;
+      case 1:
+        Navigator.pushReplacementNamed(context, Routes.customers);
+        break;
+      case 2:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
+          Navigator.pushNamed(context, Routes.sale).then((result) {
+            if (result == true) setState(() {});
+          });
+        } else {
+          SubscriptionDialog.show(context);
+        }
+        break;
+      case 3:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.viewReports)) {
+          Navigator.pushReplacementNamed(context, Routes.reports);
+        } else {
+          SubscriptionDialog.show(context);
+        }
+        break;
+      case 4:
+        break;
+    }
+  }
+
+  Widget _buildMobileBody() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+              child: Column(
+                children: [
+                  _buildTier1Section(),
+                  _buildTier2Section(),
+                  SizedBox(height: 20.h),
+                ],
               ),
             ),
-            _buildActions(),
+          ),
+          _buildActions(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopBody() {
+    final colors = AppColors.of(context);
+    return Form(
+      key: _formKey,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpace.xl),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: DesktopMetrics.contentMaxWidth,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                PageHeader(
+                  title: widget.product == null
+                      ? 'add_product'.tr()
+                      : 'edit_product'.tr(),
+                  subtitle: widget.product?.name,
+                  actions: [
+                    OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('cancel'.tr()),
+                    ),
+                    const SizedBox(width: AppSpace.xs),
+                    SizedBox(
+                      height: 40,
+                      child: FilledButton.icon(
+                        onPressed: _isSaving ? null : _save,
+                        icon: _isSaving
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.check, size: 18),
+                        label: Text('save'.tr()),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpace.lg),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isWide =
+                        constraints.maxWidth >= AppBreakpoints.desktop;
+                    final left = _buildDesktopTier1Section(colors);
+                    final right = _buildDesktopTier2Section(colors);
+                    if (isWide) {
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(flex: 6, child: left),
+                          const SizedBox(width: AppSpace.lg),
+                          Expanded(flex: 6, child: right),
+                        ],
+                      );
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        left,
+                        const SizedBox(height: AppSpace.lg),
+                        right,
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopSectionCard(
+    AppColorSet colors,
+    String title,
+    IconData icon,
+    List<Widget> children,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpace.lg),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: colors.border),
+        boxShadow: AppShadow.soft(Colors.black),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: colors.textSecondary),
+              const SizedBox(width: AppSpace.xs),
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: colors.textPrimary,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpace.md),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopField(
+    TextEditingController controller,
+    String label,
+    IconData icon, {
+    TextInputType type = TextInputType.text,
+    FocusNode? focusNode,
+    String? Function(String?)? validator,
+    bool required = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: type,
+      focusNode: focusNode,
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: required ? '$label *' : label,
+        prefixIcon: Icon(icon, size: 20, color: AppColors.primary),
+        isDense: true,
+        filled: true,
+        fillColor: Colors.grey[50],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopTier1Section(AppColorSet colors) {
+    return _buildDesktopSectionCard(
+      colors,
+      'product_name'.tr(),
+      Icons.inventory_2_outlined,
+      [
+        _buildDesktopField(
+          _nameController,
+          'product_name'.tr(),
+          Icons.inventory_2_outlined,
+          required: true,
+          validator: (v) =>
+              v == null || v.isEmpty ? 'required_field'.tr() : null,
+        ),
+        if (_formConfig.showBarcode) ...[
+          const SizedBox(height: AppSpace.sm),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _buildDesktopField(
+                  _barcodeController,
+                  'barcode'.tr(),
+                  Icons.qr_code_outlined,
+                ),
+              ),
+              const SizedBox(width: AppSpace.xs),
+              SizedBox(
+                height: 44,
+                child: IconButton.filled(
+                  onPressed: () async {
+                    final code = await Navigator.push<String>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const BarcodeScannerView(),
+                      ),
+                    );
+                    if (code != null) {
+                      setState(() => _barcodeController.text = code);
+                    }
+                  },
+                  icon: const Icon(Icons.qr_code_scanner),
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+        if (_formConfig.showPurchasePrice) ...[
+          const SizedBox(height: AppSpace.sm),
+          _buildDesktopSarConverterCard(),
+        ],
+        const SizedBox(height: AppSpace.sm),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_formConfig.showPurchasePrice) ...[
+              Expanded(
+                child: _buildDesktopField(
+                  _purchasePriceController,
+                  'purchase_price'.tr(),
+                  Icons.shopping_basket_outlined,
+                  type: TextInputType.number,
+                  validator: (v) {
+                    if (v != null &&
+                        v.isNotEmpty &&
+                        double.tryParse(v) == null) {
+                      return 'invalid_number'.tr();
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              const SizedBox(width: AppSpace.sm),
+            ],
+            Expanded(
+              child: _buildDesktopField(
+                _salePriceController,
+                'selling_price'.tr(),
+                Icons.sell_outlined,
+                type: TextInputType.number,
+                focusNode: _salePriceFocusNode,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'required_field'.tr();
+                  if (double.tryParse(v) == null) return 'invalid_number'.tr();
+                  if (double.parse(v) < 0) return 'cannot_be_negative'.tr();
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+        if (!_formConfig.showUnits) ...[
+          const SizedBox(height: AppSpace.sm),
+          _buildDesktopField(
+            _totalStockController,
+            'stock_quantity'.tr(),
+            Icons.inventory_2_outlined,
+            type: TextInputType.number,
+            validator: (v) {
+              if (v == null || v.isEmpty) return 'required_field'.tr();
+              if (int.tryParse(v) == null) return 'invalid_number'.tr();
+              if (int.parse(v) < 0) return 'cannot_be_negative'.tr();
+              return null;
+            },
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDesktopTier2Section(AppColorSet colors) {
+    return _buildDesktopSectionCard(
+      colors,
+      'pricing_and_organization'.tr(),
+      Icons.analytics_outlined,
+      [
+        if (_formConfig.showCategory) ...[
+          _buildDesktopCategoryDropdown(),
+          const SizedBox(height: AppSpace.sm),
+        ],
+        if (_formConfig.showWholesale) ...[
+          _buildDesktopField(
+            _wholesalePriceController,
+            'wholesale_price'.tr(),
+            Icons.groups_outlined,
+            type: TextInputType.number,
+            focusNode: _wholesalePriceFocusNode,
+            validator: (v) {
+              if (v != null &&
+                  v.isNotEmpty &&
+                  double.tryParse(v) == null) {
+                return 'invalid_number'.tr();
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: AppSpace.sm),
+        ],
+        if (_formConfig.showPurchasePrice) ...[
+          _buildDesktopMarginDisplay(),
+          const SizedBox(height: AppSpace.sm),
+        ],
+        if (_formConfig.showSupplier) ...[
+          _buildDesktopSupplierDropdown(),
+          if (_selectedSupplier != null) ...[
+            const SizedBox(height: AppSpace.sm),
+            _buildDesktopPurchaseSection(colors),
+          ],
+        ],
+        if (_formConfig.showExpiry) ...[
+          const SizedBox(height: AppSpace.sm),
+          _buildDesktopExpirySelector(),
+        ],
+        if (_formConfig.showUnits) ...[
+          const SizedBox(height: AppSpace.md),
+          Divider(height: 1, color: colors.border),
+          const SizedBox(height: AppSpace.md),
+          _buildDesktopUnitPairSelection(),
+          const SizedBox(height: AppSpace.sm),
+          _buildDesktopField(
+            _conversionController,
+            'units_per_package'.tr(),
+            Icons.unfold_more,
+            type: TextInputType.number,
+            validator: (v) {
+              if (v == null || v.isEmpty) return 'required_field'.tr();
+              final val = int.tryParse(v);
+              if (val == null) return 'invalid_number'.tr();
+              if (val < 1) return 'min_value_1'.tr();
+              return null;
+            },
+          ),
+          const SizedBox(height: AppSpace.sm),
+          _buildDesktopQuantityGrid(),
+        ],
+        if (_formConfig.showReorder) ...[
+          const SizedBox(height: AppSpace.sm),
+          _buildDesktopField(
+            _reorderLevelController,
+            'reorder_level'.tr(),
+            Icons.report_problem_outlined,
+            type: TextInputType.number,
+            validator: (v) {
+              if (v != null &&
+                  v.isNotEmpty &&
+                  int.tryParse(v) == null) {
+                return 'invalid_number'.tr();
+              }
+              return null;
+            },
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDesktopCategoryDropdown() {
+    final isArabic = context.locale.languageCode == 'ar';
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: DropdownButtonFormField<Category>(
+            value: _selectedCategory,
+            decoration: InputDecoration(
+              labelText: 'category'.tr(),
+              prefixIcon: const Icon(Icons.category_outlined),
+              filled: true,
+              fillColor: Colors.grey[50],
+              isDense: true,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+              ),
+            ),
+            items: _categories
+                .map((c) => DropdownMenuItem(value: c, child: Text(c.name)))
+                .toList(),
+            onChanged: (val) => setState(() => _selectedCategory = val),
+          ),
+        ),
+        const SizedBox(width: AppSpace.xs),
+        SizedBox(
+          height: 44,
+          child: IconButton.filled(
+            onPressed: () async {
+              await Navigator.pushNamed(context, Routes.categories);
+              final cats = await _categoryService.getAllCategories();
+              setState(() {
+                _categories = cats;
+                if (_selectedCategory != null &&
+                    !cats.any((c) => c.id == _selectedCategory!.id)) {
+                  _selectedCategory = null;
+                }
+              });
+            },
+            icon: const Icon(Icons.add),
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+            ),
+            tooltip: isArabic ? 'إدارة الأصناف' : 'Manage Categories',
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopSupplierDropdown() {
+    final isArabic = context.locale.languageCode == 'ar';
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: DropdownButtonFormField<Supplier>(
+            value: _selectedSupplier,
+            decoration: InputDecoration(
+              labelText: 'suppliers'.tr(),
+              prefixIcon: const Icon(Icons.business_rounded),
+              filled: true,
+              fillColor: Colors.grey[50],
+              isDense: true,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+              ),
+            ),
+            items: _suppliers
+                .map((s) => DropdownMenuItem(value: s, child: Text(s.name)))
+                .toList(),
+            onChanged: (val) {
+              setState(() {
+                _selectedSupplier = val;
+                _lastPurchasePrice = null;
+              });
+              if (val != null && widget.product != null) {
+                sl<ProductService>()
+                    .getLastPurchaseInfo(widget.product!.id!, val.id!)
+                    .then((info) {
+                  if (mounted) {
+                    setState(() {
+                      _lastPurchasePrice = info != null
+                          ? (info['cost_price'] as num).toDouble()
+                          : null;
+                    });
+                  }
+                });
+              }
+            },
+          ),
+        ),
+        const SizedBox(width: AppSpace.xs),
+        SizedBox(
+          height: 44,
+          child: IconButton.filled(
+            onPressed: () async {
+              await Navigator.pushNamed(context, Routes.suppliers);
+              final suppliers = await sl<SupplierService>().getAllSuppliers();
+              setState(() {
+                _suppliers = suppliers;
+                if (_selectedSupplier != null &&
+                    !suppliers.any((s) => s.id == _selectedSupplier!.id)) {
+                  _selectedSupplier = null;
+                }
+              });
+            },
+            icon: const Icon(Icons.add),
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+            ),
+            tooltip: isArabic ? 'إدارة الموردين' : 'Manage Suppliers',
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopSimpleDropdown({
+    required String label,
+    Unit? value,
+    required List<Unit> units,
+    void Function(Unit?)? onChanged,
+  }) {
+    return DropdownButtonFormField<Unit>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor: Colors.grey[50],
+        isDense: true,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+        ),
+      ),
+      items: units
+          .map((u) => DropdownMenuItem(value: u, child: Text(u.name)))
+          .toList(),
+      onChanged: onChanged,
+    );
+  }
+
+  Widget _buildDesktopUnitPairSelection() {
+    final mainUnits = _units.where((u) => u.parentId == null).toList();
+    final filteredSubUnits = _mainUnit == null
+        ? <Unit>[]
+        : _units.where((u) => u.parentId == _mainUnit?.id).toList();
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: _buildDesktopSimpleDropdown(
+            label: 'main_unit'.tr(),
+            value: _mainUnit,
+            units: mainUnits,
+            onChanged: (v) {
+              setState(() {
+                _mainUnit = v;
+                final potentialSubs = _units
+                    .where((u) => u.parentId == _mainUnit?.id)
+                    .toList();
+                if (potentialSubs.length == 1) {
+                  _subUnit = potentialSubs.first;
+                } else if (_subUnit != null &&
+                    _subUnit?.parentId != _mainUnit?.id) {
+                  _subUnit = null;
+                }
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: AppSpace.sm),
+        Expanded(
+          child: _buildDesktopSimpleDropdown(
+            label: 'sub_unit'.tr(),
+            value: _subUnit,
+            units: filteredSubUnits,
+            onChanged: _mainUnit == null || filteredSubUnits.isEmpty
+                ? null
+                : (v) => setState(() => _subUnit = v),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopQuantityGrid() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'detailed_stock'.tr(),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        ),
+        const SizedBox(height: AppSpace.xs),
+        Container(
+          padding: const EdgeInsets.all(AppSpace.sm),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildDesktopField(
+                  _mainStockController,
+                  _mainUnit?.name ?? 'main_unit'.tr(),
+                  Icons.inventory_2_outlined,
+                  type: TextInputType.number,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpace.xs),
+                child: Icon(Icons.add, color: Colors.grey[400], size: 16),
+              ),
+              Expanded(
+                child: _buildDesktopField(
+                  _subStockController,
+                  _subUnit?.name ?? 'sub_unit'.tr(),
+                  Icons.inventory_2_outlined,
+                  type: TextInputType.number,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopMarginDisplay() {
+    final bool isProfit = _marginPercentage >= 0;
+    return Container(
+      padding: const EdgeInsets.all(AppSpace.sm),
+      decoration: BoxDecoration(
+        color: (isProfit ? Colors.green : Colors.red).withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: (isProfit ? Colors.green : Colors.red).withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'profit_margin'.tr(),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+          Text(
+            '${_marginPercentage.toStringAsFixed(1)}%',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: isProfit ? Colors.green : Colors.red,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopExpirySelector() {
+    final direction = Directionality.of(context);
+    return InkWell(
+      onTap: () async {
+        final date = await showDatePicker(
+          context: context,
+          initialDate: DateTime.now().add(const Duration(days: 365)),
+          firstDate: DateTime.now(),
+          lastDate: DateTime.now().add(const Duration(days: 3650)),
+          locale: context.locale,
+        );
+        if (date != null) setState(() => _expiryDate = date);
+      },
+      child: Container(
+        padding: const EdgeInsets.all(AppSpace.sm),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.calendar_month_outlined, color: Colors.grey),
+            const SizedBox(width: AppSpace.sm),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'expiry_date'.tr(),
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                ),
+                Text(
+                  _expiryDate == null
+                      ? 'not_set'.tr()
+                      : DateFormat.yMd(context.locale.toString())
+                          .format(_expiryDate!),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const Spacer(),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 14,
+              color: Colors.grey,
+              textDirection: direction,
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDesktopPurchaseSection(AppColorSet colors) {
+    final currentStock = int.tryParse(_totalStockController.text) ?? 0;
+    final hasNewStock = currentStock > _initialStock;
+    if (!hasNewStock && widget.product != null) return const SizedBox.shrink();
+
+    final currentPurchasePrice =
+        double.tryParse(_purchasePriceController.text) ?? 0;
+    final hasPriceDiff = _lastPurchasePrice != null &&
+        _lastPurchasePrice! > 0 &&
+        currentPurchasePrice > 0;
+    final priceDiff =
+        hasPriceDiff ? currentPurchasePrice - _lastPurchasePrice! : 0.0;
+    final diffPercent = hasPriceDiff
+        ? ((priceDiff / _lastPurchasePrice!) * 100).abs()
+        : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpace.md),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.receipt_long_outlined,
+                  color: AppColors.primary, size: 20),
+              const SizedBox(width: AppSpace.xs),
+              Text(
+                'accounting_entry'.tr(),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: AppColors.primary,
+                ),
+              ),
+              const Spacer(),
+              Switch(
+                value: _recordAsPurchase,
+                onChanged: (val) => setState(() => _recordAsPurchase = val),
+                activeThumbColor: AppColors.primary,
+              ),
+            ],
+          ),
+          if (_recordAsPurchase) ...[
+            const SizedBox(height: AppSpace.sm),
+            if (_lastPurchasePrice != null && _lastPurchasePrice! > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpace.sm,
+                  vertical: AppSpace.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: hasPriceDiff && priceDiff > 0
+                      ? Colors.red.withValues(alpha: 0.05)
+                      : Colors.green.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  border: Border.all(
+                    color: hasPriceDiff && priceDiff > 0
+                        ? Colors.red.withValues(alpha: 0.2)
+                        : Colors.green.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      hasPriceDiff && priceDiff > 0
+                          ? Icons.trending_up
+                          : Icons.trending_down,
+                      size: 16,
+                      color:
+                          hasPriceDiff && priceDiff > 0
+                          ? Colors.red
+                          : Colors.green,
+                    ),
+                    const SizedBox(width: AppSpace.xs),
+                    Expanded(
+                      child: Text(
+                        '${'last_purchase'.tr()}: ${CurrencyHelper.getFormatter('YER').format(_lastPurchasePrice!)}  '
+                        '(${hasPriceDiff ? '${priceDiff > 0 ? "+" : ""}${CurrencyHelper.getFormatter('YER').format(priceDiff)}' : "0"} '
+                        '| ${diffPercent.toStringAsFixed(1)}%)',
+                        style: TextStyle(fontSize: 10, color: Colors.grey[700]),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: AppSpace.sm),
+            Text(
+              'record_as_purchase_desc'.tr(),
+              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: AppSpace.sm),
+            _buildDesktopField(
+              _paidAmountController,
+              'paid_amount'.tr(),
+              Icons.payments_outlined,
+              type: TextInputType.number,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopSarConverterCard() {
+    final isArabic = context.locale.languageCode == 'ar';
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      padding: const EdgeInsets.all(AppSpace.sm),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primary.withValues(alpha: 0.08),
+            Colors.amber.withValues(alpha: 0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.currency_exchange_rounded,
+                  color: AppColors.primary, size: 20),
+              const SizedBox(width: AppSpace.xs),
+              Expanded(
+                child: Text(
+                  isArabic ? 'حاسبة الشراء بالعملات الأجنبية' : 'Foreign Currency Calculator',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+              Switch(
+                value: _useSarConversion,
+                activeThumbColor: AppColors.primary,
+                onChanged: (val) {
+                  setState(() {
+                    _useSarConversion = val;
+                    if (!val) {
+                      _sarPurchasePriceController.clear();
+                    } else {
+                      _updateSarToYemeniConversion();
+                    }
+                  });
+                },
+              ),
+            ],
+          ),
+          if (_useSarConversion) ...[
+            const SizedBox(height: AppSpace.sm),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                _buildDesktopCurrencyChoiceChip(
+                  'SAR',
+                  isArabic ? 'ريال سعودي 🇸🇦' : 'SAR 🇸🇦',
+                ),
+                const SizedBox(width: AppSpace.xs),
+                _buildDesktopCurrencyChoiceChip(
+                  'USD',
+                  isArabic ? 'دولار أمريكي 🇺🇸' : 'USD 🇺🇸',
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpace.sm),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _buildDesktopField(
+                    _sarPurchasePriceController,
+                    _converterCurrency == 'SAR'
+                        ? (isArabic ? 'سعر الشراء (سعودي 🇸🇦)' : 'Purchase Cost (SAR 🇸🇦)')
+                        : (isArabic ? 'سعر الشراء (دولار 🇺🇸)' : 'Purchase Cost (USD 🇺🇸)'),
+                    Icons.payments_outlined,
+                    type: TextInputType.number,
+                  ),
+                ),
+                const SizedBox(width: AppSpace.sm),
+                Expanded(
+                  child: _buildDesktopField(
+                    _exchangeRateController,
+                    isArabic ? 'سعر الصرف اليوم' : 'Exchange Rate Today',
+                    Icons.trending_up_rounded,
+                    type: TextInputType.number,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpace.sm),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpace.sm,
+                vertical: AppSpace.xs,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    isArabic ? 'القيمة المعادلة باليمني:' : 'Equivalent in YER:',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '${_purchasePriceController.text} ${isArabic ? "ريال يمني 🇾🇪" : "YER 🇾🇪"}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.green[700],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopCurrencyChoiceChip(String value, String label) {
+    final isSelected = _converterCurrency == value;
+    return ChoiceChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() {
+            _converterCurrency = value;
+            final prefs = sl<SharedPreferences>();
+            if (value == 'SAR') {
+              final lastRate = prefs.getDouble('last_sar_exchange_rate') ?? 400.0;
+              _exchangeRateController.text = lastRate.toStringAsFixed(0);
+            } else {
+              final lastRate = prefs.getDouble('last_usd_exchange_rate') ?? 1500.0;
+              _exchangeRateController.text = lastRate.toStringAsFixed(0);
+            }
+            _updateSarToYemeniConversion();
+          });
+        }
+      },
+      selectedColor: AppColors.primary.withValues(alpha: 0.2),
+      checkmarkColor: AppColors.primary,
     );
   }
 
@@ -766,10 +1748,10 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: (isProfit ? Colors.green : Colors.red).withOpacity(0.05),
+        color: (isProfit ? Colors.green : Colors.red).withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(15.r),
         border: Border.all(
-          color: (isProfit ? Colors.green : Colors.red).withOpacity(0.2),
+          color: (isProfit ? Colors.green : Colors.red).withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -842,11 +1824,11 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 16.h),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
+              borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
+              borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
@@ -1129,9 +2111,9 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.05),
+        color: AppColors.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(15.r),
-        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1158,10 +2140,10 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
                 decoration: BoxDecoration(
-                  color: hasPriceDiff && priceDiff > 0 ? Colors.red.withOpacity(0.05) : Colors.green.withOpacity(0.05),
+                  color: hasPriceDiff && priceDiff > 0 ? Colors.red.withValues(alpha: 0.05) : Colors.green.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(8.r),
                   border: Border.all(
-                    color: hasPriceDiff && priceDiff > 0 ? Colors.red.withOpacity(0.2) : Colors.green.withOpacity(0.2),
+                    color: hasPriceDiff && priceDiff > 0 ? Colors.red.withValues(alpha: 0.2) : Colors.green.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Row(
@@ -1211,15 +2193,15 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primary.withOpacity(0.08),
-            Colors.amber.withOpacity(0.05),
+            AppColors.primary.withValues(alpha: 0.08),
+            Colors.amber.withValues(alpha: 0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
-          color: AppColors.primary.withOpacity(0.2),
+          color: AppColors.primary.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -1295,7 +2277,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8.r),
-                border: Border.all(color: Colors.grey.withOpacity(0.15)),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1346,7 +2328,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           });
         }
       },
-      selectedColor: AppColors.primary.withOpacity(0.2),
+      selectedColor: AppColors.primary.withValues(alpha: 0.2),
       checkmarkColor: AppColors.primary,
     );
   }

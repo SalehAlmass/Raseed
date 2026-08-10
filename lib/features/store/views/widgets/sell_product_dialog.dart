@@ -10,6 +10,7 @@ import '../../../../core/services/customer_service.dart';
 import '../../../../core/services/product_service.dart';
 import '../../../../core/services/unit_service.dart';
 import '../../../../core/theme/colors.dart';
+import '../../../../core/theme/desktop_tokens.dart';
 import '../../../../core/utils/currency_helper.dart';
 
 class SellProductDialog extends StatefulWidget {
@@ -86,36 +87,92 @@ class _SellProductDialogState extends State<SellProductDialog> {
   Widget build(BuildContext context) {
     if (_dataLoading) return const Center(child: CircularProgressIndicator());
 
+    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
+
     final inputQty = int.tryParse(_quantityController.text) ?? 1;
     final unitPrice = _sellByMainUnit ? (widget.product.price * widget.product.conversionFactor) : widget.product.price;
     final totalPrice = unitPrice * inputQty;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
+      constraints: isDesktop ? const BoxConstraints(maxWidth: 880) : null,
       child: Padding(
         padding: EdgeInsets.all(24.w),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildReceiptHeader(),
-            const Divider(height: 32),
-            _buildStockBadge(),
-            SizedBox(height: 20.h),
-            _buildCustomUnitToggle(),
-            SizedBox(height: 16.h),
-            _buildQuantityInput(),
-            SizedBox(height: 16.h),
-            _buildTypeSelector(),
-            if (_selectedType == TransactionType.sale) ...[
-              SizedBox(height: 16.h),
-              _buildCustomerDropdown(),
-            ],
-            SizedBox(height: 32.h),
-            _buildBillSummary(unitPrice, totalPrice),
-            SizedBox(height: 24.h),
-            _buildActions(),
-          ],
-        ),
+        child: isDesktop
+            ? _buildDesktopContent(unitPrice, totalPrice)
+            : _buildMobileContent(unitPrice, totalPrice),
+      ),
+    );
+  }
+
+  Widget _buildMobileContent(double unitPrice, double totalPrice) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildReceiptHeader(),
+        const Divider(height: 32),
+        _buildStockBadge(),
+        SizedBox(height: 20.h),
+        _buildCustomUnitToggle(),
+        SizedBox(height: 16.h),
+        _buildQuantityInput(),
+        SizedBox(height: 16.h),
+        _buildTypeSelector(),
+        if (_selectedType == TransactionType.sale) ...[
+          SizedBox(height: 16.h),
+          _buildCustomerDropdown(),
+        ],
+        SizedBox(height: 32.h),
+        _buildBillSummary(unitPrice, totalPrice),
+        SizedBox(height: 24.h),
+        _buildActions(),
+      ],
+    );
+  }
+
+  Widget _buildDesktopContent(double unitPrice, double totalPrice) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: 3,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildReceiptHeader(),
+                const SizedBox(height: AppSpace.lg),
+                Center(child: _buildStockBadge()),
+                const SizedBox(height: AppSpace.lg),
+                _buildCustomUnitToggle(),
+                const SizedBox(height: AppSpace.lg),
+                _buildBillSummary(unitPrice, totalPrice),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpace.xl),
+          VerticalDivider(width: 1, thickness: 1, color: AppColors.of(context).divider),
+          const SizedBox(width: AppSpace.xl),
+          Expanded(
+            flex: 2,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildQuantityInput(),
+                const SizedBox(height: AppSpace.md),
+                _buildTypeSelector(),
+                if (_selectedType == TransactionType.sale) ...[
+                  const SizedBox(height: AppSpace.md),
+                  _buildCustomerDropdown(),
+                ],
+                const SizedBox(height: AppSpace.xl),
+                _buildActions(),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -134,7 +191,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
   Widget _buildStockBadge() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-      decoration: BoxDecoration(color: AppColors.success.withOpacity(0.1), borderRadius: BorderRadius.circular(20.r)),
+      decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20.r)),
       child: Text(
         '${'stock'.tr()}: ${_productService.formatStock(widget.product.stockQuantity, widget.product.conversionFactor)}',
         style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold, fontSize: 12.sp),
@@ -165,7 +222,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
           decoration: BoxDecoration(
             color: isSelected ? Colors.white : Colors.transparent,
             borderRadius: BorderRadius.circular(11.r),
-            boxShadow: isSelected ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))] : null,
+            boxShadow: isSelected ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))] : null,
           ),
           child: Center(
             child: Text(
@@ -253,9 +310,9 @@ class _SellProductDialogState extends State<SellProductDialog> {
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.05),
+        color: AppColors.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
       ),
       child: Column(
         children: [

@@ -4,13 +4,22 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:printing/printing.dart';
 import '../../../core/di/injection_container.dart';
+import '../../../core/models/app_feature.dart';
 import '../../../core/services/customer_service.dart';
+import '../../../core/services/subscription_service.dart';
 import '../../../core/services/transaction_service.dart';
 import '../../reports/services/export_service.dart';
 import '../../../core/theme/colors.dart';
+import '../../../core/theme/desktop_tokens.dart';
 import '../../../core/models/customer.dart';
 import '../../../core/models/app_transaction.dart';
 import '../../../core/utils/currency_helper.dart';
+import '../../../core/widgets/desktop/desktop_scaffold.dart';
+import '../../../core/widgets/desktop/desktop_table.dart';
+import '../../../core/widgets/desktop/page_header.dart';
+import '../../../core/widgets/desktop/responsive.dart';
+import '../../../core/widgets/desktop/stat_card.dart';
+import '../../../core/widgets/subscription_dialog.dart';
 import '../../../core/widgets/transaction_detail_sheet.dart';
 import '../../../core/routes/routes.dart';
 
@@ -265,49 +274,243 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.of(context).background,
-      appBar: AppBar(
-        title: Text(_currentCustomer.name),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: AppColors.of(context).textPrimary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () {}, // Implementation later
-          ),
-          IconButton(
-            icon: const Icon(Icons.replay, color: Colors.orange),
-            tooltip: 'sales_return'.tr(),
-            onPressed: () => Navigator.pushNamed(context, Routes.salesReturn),
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: EdgeInsets.all(20.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildCustomerHeader(),
-                  SizedBox(height: 30.h),
-                  _buildActionButtons(),
-                  SizedBox(height: 30.h),
-                  Text(
-                    'transaction_history'.tr(),
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.of(context).textPrimary,
-                    ),
+    return DesktopScaffold(
+      activeNavIndex: 1,
+      title: _currentCustomer.name,
+      extendBody: true,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.edit_outlined),
+          onPressed: () {}, // Implementation later
+          tooltip: 'edit'.tr(),
+        ),
+        IconButton(
+          icon: const Icon(Icons.replay, color: Colors.orange),
+          tooltip: 'sales_return'.tr(),
+          onPressed: () => Navigator.pushNamed(context, Routes.salesReturn),
+        ),
+      ],
+      onNavigate: _onNavTap,
+      body: _buildMobileBody(),
+      desktopBody: _buildDesktopBody(),
+    );
+  }
+
+  void _onNavTap(int index) {
+    switch (index) {
+      case 0:
+        Navigator.pushReplacementNamed(context, Routes.home);
+        break;
+      case 1:
+        break;
+      case 2:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
+          Navigator.pushNamed(context, Routes.sale).then((result) {
+            if (result == true) _loadData();
+          });
+        } else {
+          SubscriptionDialog.show(context);
+        }
+        break;
+      case 3:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.viewReports)) {
+          Navigator.pushReplacementNamed(context, Routes.reports);
+        } else {
+          SubscriptionDialog.show(context);
+        }
+        break;
+      case 4:
+        Navigator.pushReplacementNamed(context, Routes.store);
+        break;
+    }
+  }
+
+  Widget _buildMobileBody() {
+    return _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
+            padding: EdgeInsets.all(20.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildCustomerHeader(),
+                SizedBox(height: 30.h),
+                _buildActionButtons(),
+                SizedBox(height: 30.h),
+                Text(
+                  'transaction_history'.tr(),
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.of(context).textPrimary,
                   ),
-                  SizedBox(height: 15.h),
-                  _buildTransactionList(),
+                ),
+                SizedBox(height: 15.h),
+                _buildTransactionList(),
+              ],
+            ),
+          );
+  }
+
+  Widget _buildDesktopBody() {
+    final colors = AppColors.of(context);
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpace.xl),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: DesktopMetrics.contentMaxWidth,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              PageHeader(
+                title: _currentCustomer.name,
+                subtitle: _currentCustomer.phone,
+                actions: [
+                  OutlinedButton.icon(
+                    onPressed: _showExportOptionsDialog,
+                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                    label: Text('export_pdf'.tr()),
+                  ),
+                  FilledButton.icon(
+                    onPressed: _openWhatsApp,
+                    icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                    label: Text('whatsapp'.tr()),
+                  ),
                 ],
               ),
+              const SizedBox(height: AppSpace.lg),
+              _buildDesktopStats(),
+              const SizedBox(height: AppSpace.lg),
+              _buildDesktopTransactionsTable(colors),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopStats() {
+    final isDebtor = _currentCustomer.totalDebt > 0;
+    return ResponsiveGrid(
+      columns: 3,
+      children: [
+        StatCard(
+          title: 'current_balance'.tr(),
+          value: CurrencyHelper.getFormatter('YER')
+              .format(_currentCustomer.totalDebt),
+          icon: Icons.account_balance_wallet_outlined,
+          color: isDebtor ? AppColors.error : AppColors.success,
+        ),
+        StatCard(
+          title: 'spent'.tr(),
+          value: CurrencyHelper.getFormatter('YER')
+              .format(_currentCustomer.totalSpent),
+          icon: Icons.payments_outlined,
+          color: AppColors.primary,
+        ),
+        StatCard(
+          title: 'transaction_history'.tr(),
+          value: '${_transactions.length}',
+          icon: Icons.receipt_long_outlined,
+          color: AppColors.secondary,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopTransactionsTable(AppColorSet colors) {
+    final rows = _transactions.map((tx) {
+      final isRefund = tx.type == TransactionType.refund;
+      final isSale = tx.type == TransactionType.sale;
+      final isVoid = tx.isVoid;
+      return <Widget>[
+        Row(
+          children: [
+            Icon(
+              isRefund
+                  ? Icons.keyboard_return
+                  : (isSale ? Icons.shopping_cart : Icons.payment),
+              size: 16,
+              color: isRefund ? AppColors.error : AppColors.success,
             ),
+            const SizedBox(width: AppSpace.xs),
+            Text(
+              tx.type.name.tr(),
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                decoration: isVoid ? TextDecoration.lineThrough : null,
+              ),
+            ),
+            if (isVoid) ...[
+              const SizedBox(width: AppSpace.xs),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpace.xs,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Text(
+                  'voided'.tr(),
+                  style: const TextStyle(
+                    color: AppColors.error,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        Text(
+          DateFormat('MMM dd, yyyy').format(tx.date),
+          style: TextStyle(fontSize: 12, color: colors.textSecondary),
+        ),
+        Text(
+          '${isRefund ? '+' : '-'}${CurrencyHelper.getSymbol(tx.currency)} ${tx.amount.toStringAsFixed(0)}',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: isVoid
+                ? Colors.grey
+                : (isRefund ? AppColors.error : AppColors.success),
+            decoration: isVoid ? TextDecoration.lineThrough : null,
+          ),
+        ),
+        IconButton(
+          tooltip: 'view'.tr(),
+          iconSize: 18,
+          visualDensity: VisualDensity.compact,
+          onPressed: () async {
+            final refresh = await TransactionDetailSheet.show(context, tx);
+            if (refresh == true) {
+              _loadData();
+            }
+          },
+          icon: const Icon(Icons.chevron_right_rounded),
+        ),
+      ];
+    }).toList();
+    return DesktopTable(
+      headers: [
+        'type'.tr(),
+        'date'.tr(),
+        'amount'.tr(),
+        '',
+      ],
+      flexes: const [4, 2, 2, 1],
+      rows: rows,
+      emptyMessage: 'no_transactions'.tr(),
+      maxHeight: 520,
     );
   }
 

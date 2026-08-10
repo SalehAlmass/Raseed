@@ -665,6 +665,9 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
   void _showRestoreOptions() {
     showModalBottomSheet(
       context: context,
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.sizeOf(context).width >= 900 ? 760 : double.infinity,
+      ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20.r))),
       builder: (_) => Column(
         mainAxisSize: MainAxisSize.min,
@@ -723,6 +726,9 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.sizeOf(context).width >= 900 ? 760 : double.infinity,
+      ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20.r))),
       builder: (_) => _BackupListSheet(
         title: 'restore_from_local'.tr(),
@@ -776,6 +782,9 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.sizeOf(context).width >= 900 ? 760 : double.infinity,
+      ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20.r))),
       builder: (_) => _BackupListSheet(
         title: 'restore_from_drive'.tr(),

@@ -42,6 +42,7 @@ class DesktopTable extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildHeaderRow(colors, widthMap),
@@ -62,36 +63,34 @@ class DesktopTable extends StatelessWidget {
               ),
             )
           else
-            Flexible(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: maxHeight ?? 420),
-                child: SingleChildScrollView(
-                  child: Table(
-                    columnWidths: widthMap,
-                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                    children: [
-                      for (var r = 0; r < rows.length; r++)
-                        TableRow(
-                          decoration: BoxDecoration(
-                            color: r.isEven
-                                ? colors.surface
-                                : colors.surfaceContainer.withValues(
-                                    alpha: 0.5,
-                                  ),
-                          ),
-                          children: [
-                            for (final cell in rows[r])
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpace.sm,
-                                  vertical: AppSpace.sm,
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: maxHeight ?? 420),
+              child: SingleChildScrollView(
+                child: Table(
+                  columnWidths: widthMap,
+                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                  children: [
+                    for (var r = 0; r < rows.length; r++)
+                      TableRow(
+                        decoration: BoxDecoration(
+                          color: r.isEven
+                              ? colors.surface
+                              : colors.surfaceContainer.withValues(
+                                  alpha: 0.5,
                                 ),
-                                child: cell,
-                              ),
-                          ],
                         ),
-                    ],
-                  ),
+                        children: [
+                          for (final cell in rows[r])
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpace.sm,
+                                vertical: AppSpace.sm,
+                              ),
+                              child: cell,
+                            ),
+                        ],
+                      ),
+                  ],
                 ),
               ),
             ),

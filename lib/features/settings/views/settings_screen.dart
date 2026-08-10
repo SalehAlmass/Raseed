@@ -14,6 +14,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../../core/theme/desktop_tokens.dart';
 import '../../../core/widgets/desktop/desktop_scaffold.dart';
+import '../../../core/widgets/desktop/page_header.dart';
 import '../../../core/widgets/pin_auth_dialog.dart';
 import '../../../core/widgets/subscription_dialog.dart';
 
@@ -153,44 +154,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         style: TextStyle(color: Colors.grey, fontSize: 12.sp),
                       ),
                       SizedBox(height: 6.h),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 5.h),
-                        decoration: BoxDecoration(
-                          color: AppColors.of(context).surface,
-                          borderRadius: BorderRadius.circular(15.r),
-                          border: Border.all(color: Colors.grey.withOpacity(0.15)),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<DebtMode>(
-                            value: _settings.debtMode,
-                            isExpanded: true,
-                            icon: Icon(Icons.security, color: AppColors.primary, size: 20.sp),
-                            items: [
-                              DropdownMenuItem(
-                                value: DebtMode.block,
-                                child: Text(
-                                  context.locale.languageCode == 'ar' ? 'حظر البيع (منع المعاملة)' : 'Block Sale (Strict)',
-                                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
-                                ),
-                              ),
-                              DropdownMenuItem(
-                                value: DebtMode.warning,
-                                child: Text(
-                                  context.locale.languageCode == 'ar' ? 'تحذير فقط (السماح بالبيع)' : 'Warning Only (Allow)',
-                                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
-                                ),
-                              ),
-                            ],
-                            onChanged: (DebtMode? newValue) {
-                              if (newValue != null) {
-                                setState(() {
-                                  _settings = _settings.copyWith(debtMode: newValue);
-                                });
-                              }
-                            },
-                          ),
-                        ),
-                      ),
+                      _buildDebtModeDropdown(),
                       SizedBox(height: 16.h),
                       _buildInventoryFieldsTile(context),
                       if (_isDeveloperMode) ...[
@@ -346,41 +310,344 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ];
   }
 
+  Widget _buildDebtModeDropdown() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 5.h),
+      decoration: BoxDecoration(
+        color: AppColors.of(context).surface,
+        borderRadius: BorderRadius.circular(15.r),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<DebtMode>(
+          value: _settings.debtMode,
+          isExpanded: true,
+          icon: Icon(Icons.security, color: AppColors.primary, size: 20.sp),
+          items: [
+            DropdownMenuItem(
+              value: DebtMode.block,
+              child: Text(
+                context.locale.languageCode == 'ar' ? 'حظر البيع (منع المعاملة)' : 'Block Sale (Strict)',
+                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+              ),
+            ),
+            DropdownMenuItem(
+              value: DebtMode.warning,
+              child: Text(
+                context.locale.languageCode == 'ar' ? 'تحذير فقط (السماح بالبيع)' : 'Warning Only (Allow)',
+                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+          onChanged: (DebtMode? newValue) {
+            if (newValue != null) {
+              setState(() {
+                _settings = _settings.copyWith(debtMode: newValue);
+              });
+            }
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _buildDesktopBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpace.xl),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1100),
+          constraints: const BoxConstraints(
+            maxWidth: DesktopMetrics.contentMaxWidth,
+          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: _handleDevModeTap,
-                    child: Text(
-                      'settings'.tr(),
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.of(context).textPrimary,
-                      ),
+              GestureDetector(
+                onTap: _handleDevModeTap,
+                behavior: HitTestBehavior.opaque,
+                child: PageHeader(
+                  title: 'settings'.tr(),
+                  actions: [
+                    ElevatedButton.icon(
+                      onPressed: _saveSettings,
+                      icon: const Icon(Icons.check, size: 18),
+                      label: Text('save_changes'.tr()),
                     ),
-                  ),
-                  const Spacer(),
-                  ElevatedButton.icon(
-                    onPressed: _saveSettings,
-                    icon: const Icon(Icons.check, size: 18),
-                    label: Text('save_changes'.tr()),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpace.xl),
-              ..._buildSettingsSections(),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final twoColumns = constraints.maxWidth >= 1100;
+                  final leftCards = _buildDesktopLeftCards();
+                  final rightCards = _buildDesktopRightCards();
+                  if (twoColumns) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            children: _withVerticalGaps(leftCards),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpace.lg),
+                        Expanded(
+                          child: Column(
+                            children: _withVerticalGaps(rightCards),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return Column(
+                    children: [
+                      ..._withVerticalGaps(leftCards),
+                      const SizedBox(height: AppSpace.lg),
+                      ..._withVerticalGaps(rightCards),
+                    ],
+                  );
+                },
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  List<Widget> _withVerticalGaps(List<Widget> cards) {
+    return [
+      for (var i = 0; i < cards.length; i++) ...[
+        if (i > 0) const SizedBox(height: AppSpace.lg),
+        cards[i],
+      ],
+    ];
+  }
+
+  List<Widget> _buildDesktopLeftCards() {
+    final colors = AppColors.of(context);
+    return [
+      _buildDesktopCard(
+        title: 'merchant_config'.tr(),
+        icon: Icons.storefront_rounded,
+        children: [
+          _buildSettingTile(
+            label: 'max_debt_limit'.tr(),
+            controller: _maxDebtController,
+            icon: Icons.money_off,
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: AppSpace.sm),
+          _buildSettingTile(
+            label: 'reminder_days'.tr(),
+            controller: _reminderDaysController,
+            icon: Icons.notification_important_outlined,
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: AppSpace.md),
+          Text(
+            context.locale.languageCode == 'ar'
+                ? 'إجراء تجاوز حد الدين'
+                : 'Action on Exceeding Debt Limit',
+            style: TextStyle(color: colors.textSecondary, fontSize: 12),
+          ),
+          const SizedBox(height: AppSpace.xs),
+          _buildDebtModeDropdown(),
+          const SizedBox(height: AppSpace.sm),
+          _buildInventoryFieldsTile(context),
+          if (_isDeveloperMode) ...[
+            const SizedBox(height: AppSpace.sm),
+            _buildModuleManagementTile(context),
+          ],
+        ],
+      ),
+      _buildDesktopCard(
+        title: 'store_profile'.tr(),
+        icon: Icons.store_rounded,
+        children: [
+          _buildStoreProfileSection(),
+        ],
+      ),
+      _buildDesktopCard(
+        title: 'advanced'.tr(),
+        icon: Icons.admin_panel_settings_rounded,
+        children: [
+          _buildStaffModeSection(),
+          const SizedBox(height: AppSpace.md),
+          SwitchListTile(
+            title: Text('strict_mode'.tr()),
+            subtitle: Text('strict_mode_desc'.tr()),
+            value: _settings.strictMode,
+            onChanged: (val) {
+              setState(() {
+                _settings = _settings.copyWith(strictMode: val);
+              });
+            },
+            activeColor: AppColors.primary,
+            contentPadding: EdgeInsets.zero,
+          ),
+          const Divider(),
+          SwitchListTile(
+            title: Text('enable_whatsapp_notification'.tr()),
+            subtitle: Text('enable_whatsapp_notification_desc'.tr()),
+            value: _settings.enableWhatsapp,
+            onChanged: (val) {
+              setState(() {
+                _settings = _settings.copyWith(enableWhatsapp: val);
+              });
+            },
+            activeColor: AppColors.primary,
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
+      ),
+    ];
+  }
+
+  List<Widget> _buildDesktopRightCards() {
+    final colors = AppColors.of(context);
+    return [
+      _buildDesktopCard(
+        title: 'crm_config'.tr(),
+        icon: Icons.people_outline_rounded,
+        children: [
+          _buildSettingTile(
+            label: 'vip_threshold'.tr(),
+            controller: _vipThresholdController,
+            icon: Icons.star_border_rounded,
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: AppSpace.sm),
+          _buildSettingTile(
+            label: 'inactive_days'.tr(),
+            controller: _inactiveDaysController,
+            icon: Icons.timer_outlined,
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: AppSpace.sm),
+          _buildSettingTile(
+            label: 'dead_days'.tr(),
+            controller: _deadDaysController,
+            icon: Icons.hourglass_empty,
+            keyboardType: TextInputType.number,
+          ),
+        ],
+      ),
+      _buildDesktopCard(
+        title: context.locale.languageCode == 'ar'
+            ? 'إعدادات الطباعة والـ PDF'
+            : 'Print & PDF Settings',
+        icon: Icons.print_rounded,
+        children: [
+          Text(
+            'pdf_page_format'.tr(),
+            style: TextStyle(color: colors.textSecondary, fontSize: 12),
+          ),
+          const SizedBox(height: AppSpace.xs),
+          _buildPdfPageFormatDropdown(context),
+          const SizedBox(height: AppSpace.md),
+          Text(
+            'receipt_width'.tr(),
+            style: TextStyle(color: colors.textSecondary, fontSize: 12),
+          ),
+          const SizedBox(height: AppSpace.xs),
+          _buildReceiptWidthDropdown(context),
+          const SizedBox(height: AppSpace.sm),
+          SwitchListTile(
+            title: Text('enable_pdf_receipt_prompt'.tr()),
+            subtitle: Text('enable_pdf_receipt_prompt_desc'.tr()),
+            value: _settings.enablePdfReceipt,
+            onChanged: (val) {
+              setState(() {
+                _settings = _settings.copyWith(enablePdfReceipt: val);
+              });
+            },
+            activeColor: AppColors.primary,
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
+      ),
+      _buildDesktopCard(
+        title: context.locale.languageCode == 'ar'
+            ? 'الإعدادات العامة والحساب'
+            : 'General & Account Settings',
+        icon: Icons.settings_rounded,
+        children: [
+          Text(
+            'language'.tr(),
+            style: TextStyle(color: colors.textSecondary, fontSize: 12),
+          ),
+          const SizedBox(height: AppSpace.xs),
+          _buildLanguageDropdown(context),
+          const SizedBox(height: AppSpace.md),
+          _buildThemeDropdown(context),
+          const SizedBox(height: AppSpace.sm),
+          _buildBackupTile(context),
+          const SizedBox(height: AppSpace.sm),
+          _buildDiscountCodesTile(context),
+          const SizedBox(height: AppSpace.sm),
+          _buildReceivablesTile(context),
+          const SizedBox(height: AppSpace.sm),
+          _buildAboutTile(context),
+          if (_isDeveloperMode) ...[
+            const SizedBox(height: AppSpace.sm),
+            _buildSubscriptionTile(context),
+          ],
+          const SizedBox(height: AppSpace.md),
+          _buildLogoutTile(context),
+        ],
+      ),
+    ];
+  }
+
+  Widget _buildDesktopCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    final colors = AppColors.of(context);
+    return Container(
+      padding: const EdgeInsets.all(AppSpace.lg),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainer,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: colors.border),
+        boxShadow: AppShadow.soft(Colors.black),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSpace.xs),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: Icon(icon, color: AppColors.primary, size: 20),
+              ),
+              const SizedBox(width: AppSpace.sm),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: colors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpace.md),
+          ...children,
+        ],
       ),
     );
   }

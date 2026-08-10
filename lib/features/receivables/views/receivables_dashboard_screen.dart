@@ -386,6 +386,9 @@ class _ReceivablesDashboardScreenState extends State<ReceivablesDashboardScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.sizeOf(context).width >= 900 ? 760 : double.infinity,
+      ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20.r))),
       builder: (ctx) {
         final schedule = refreshed.schedule;

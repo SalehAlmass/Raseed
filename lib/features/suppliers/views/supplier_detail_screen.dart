@@ -3,16 +3,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/di/injection_container.dart';
+import '../../../core/models/app_feature.dart';
 import '../../../core/models/supplier.dart';
 import '../../../core/models/supplier_transaction.dart';
 import '../../../core/models/product.dart';
 import '../../../core/services/product_service.dart';
+import '../../../core/services/subscription_service.dart';
 import '../../../core/services/supplier_service.dart';
 import '../../../core/services/supplier_transaction_service.dart';
 import '../../reports/services/report_service.dart';
 import '../../../core/theme/colors.dart';
+import '../../../core/theme/desktop_tokens.dart';
 import '../../../core/utils/currency_helper.dart';
 import '../../../core/routes/routes.dart';
+import '../../../core/widgets/desktop/desktop_scaffold.dart';
+import '../../../core/widgets/desktop/desktop_table.dart';
+import '../../../core/widgets/desktop/page_header.dart';
+import '../../../core/widgets/desktop/responsive.dart';
+import '../../../core/widgets/desktop/stat_card.dart';
+import '../../../core/widgets/subscription_dialog.dart';
 import 'supplier_purchase_history_screen.dart';
 
 class SupplierDetailScreen extends StatefulWidget {
@@ -34,6 +43,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
   List<Map<String, dynamic>> _lowStockItems = [];
   Map<int, Map<String, dynamic>?> _lastPurchaseInfo = {};
   bool _isLoading = true;
+  int _desktopTabIndex = 0;
 
   @override
   void initState() {
@@ -66,74 +76,413 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.of(context).background,
-      appBar: AppBar(
-        title: Text(_supplier.name),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: AppColors.of(context).textPrimary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.replay, color: Colors.orange),
-            tooltip: 'supplier_return'.tr(),
-            onPressed: () => Navigator.pushNamed(context, Routes.supplierReturn),
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : DefaultTabController(
-              length: 2,
-              child: Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.all(20.w),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildDebtCard(),
-                          SizedBox(height: 20.h),
-                          _buildActionButtons(),
-                          if (_lowStockItems.isNotEmpty) ...[
-                            SizedBox(height: 30.h),
-                            _buildLowStockSection(),
-                          ],
+    return DesktopScaffold(
+      activeNavIndex: -1,
+      title: _supplier.name,
+      extendBody: true,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.replay, color: Colors.orange),
+          tooltip: 'supplier_return'.tr(),
+          onPressed: () => Navigator.pushNamed(context, Routes.supplierReturn),
+        ),
+      ],
+      onNavigate: _onNavTap,
+      body: _buildMobileBody(),
+      desktopBody: _buildDesktopBody(),
+    );
+  }
+
+  void _onNavTap(int index) {
+    switch (index) {
+      case 0:
+        Navigator.pushReplacementNamed(context, Routes.home);
+        break;
+      case 1:
+        break;
+      case 2:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.addSale)) {
+          Navigator.pushNamed(context, Routes.sale);
+        } else {
+          SubscriptionDialog.show(context);
+        }
+        break;
+      case 3:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.viewReports)) {
+          Navigator.pushReplacementNamed(context, Routes.reports);
+        } else {
+          SubscriptionDialog.show(context);
+        }
+        break;
+      case 4:
+        Navigator.pushReplacementNamed(context, Routes.store);
+        break;
+    }
+  }
+
+  Widget _buildMobileBody() {
+    return _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : DefaultTabController(
+            length: 2,
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(20.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildDebtCard(),
+                        SizedBox(height: 20.h),
+                        _buildActionButtons(),
+                        if (_lowStockItems.isNotEmpty) ...[
                           SizedBox(height: 30.h),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: AppColors.of(context).surface,
-                              borderRadius: BorderRadius.circular(15.r),
-                            ),
-                            child: TabBar(
-                              labelColor: AppColors.primary,
-                              unselectedLabelColor: Colors.grey,
-                              indicatorColor: AppColors.primary,
-                              indicatorSize: TabBarIndicatorSize.label,
-                              tabs: [
-                                Tab(text: 'account_statement'.tr()),
-                                Tab(text: 'products'.tr()),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 20.h),
-                          SizedBox(
-                            height: 500.h, // Fixed height for tab content
-                            child: TabBarView(
-                              children: [
-                                _buildTransactionList(),
-                                _buildProductList(),
-                              ],
-                            ),
-                          ),
+                          _buildLowStockSection(),
                         ],
-                      ),
+                        SizedBox(height: 30.h),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.of(context).surface,
+                            borderRadius: BorderRadius.circular(15.r),
+                          ),
+                          child: TabBar(
+                            labelColor: AppColors.primary,
+                            unselectedLabelColor: Colors.grey,
+                            indicatorColor: AppColors.primary,
+                            indicatorSize: TabBarIndicatorSize.label,
+                            tabs: [
+                              Tab(text: 'account_statement'.tr()),
+                              Tab(text: 'products'.tr()),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 20.h),
+                        SizedBox(
+                          height: 500.h, // Fixed height for tab content
+                          child: TabBarView(
+                            children: [
+                              _buildTransactionList(),
+                              _buildProductList(),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
+                ),
+              ],
+            ),
+          );
+  }
+
+  Widget _buildDesktopBody() {
+    final colors = AppColors.of(context);
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpace.xl),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: DesktopMetrics.contentMaxWidth,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              PageHeader(
+                title: _supplier.name,
+                subtitle: _supplier.company != null
+                    ? '${_supplier.company} • ${_supplier.phone}'
+                    : _supplier.phone,
+                actions: [
+                  FilledButton.icon(
+                    onPressed: _showPaymentDialog,
+                    icon: const Icon(Icons.payment, size: 18),
+                    label: Text('pay_supplier'.tr()),
+                  ),
+                  const SizedBox(width: AppSpace.xs),
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            SupplierPurchaseHistoryScreen(
+                              initialSupplier: _supplier,
+                            ),
+                      ),
+                    ).then((_) => _loadData()),
+                    icon: const Icon(Icons.history, size: 18),
+                    label: Text('purchase_history'.tr()),
                   ),
                 ],
               ),
+              const SizedBox(height: AppSpace.lg),
+              _buildDesktopStats(colors),
+              if (_lowStockItems.isNotEmpty) ...[
+                const SizedBox(height: AppSpace.lg),
+                _buildDesktopLowStockTable(colors),
+              ],
+              const SizedBox(height: AppSpace.lg),
+              _buildDesktopTabSelector(),
+              const SizedBox(height: AppSpace.md),
+              if (_desktopTabIndex == 0)
+                _buildDesktopTransactionsTable(colors)
+              else
+                _buildDesktopProductsTable(colors),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopStats(AppColorSet colors) {
+    final purchasesCount = _transactions
+        .where((t) => t.type == SupplierTransactionType.purchase)
+        .length;
+    return ResponsiveGrid(
+      columns: 3,
+      children: [
+        StatCard(
+          title: 'total_paid'.tr(),
+          value: CurrencyHelper.getFormatter('YER')
+              .format(_supplier.totalPaid),
+          icon: Icons.payments_outlined,
+          color: AppColors.success,
+        ),
+        StatCard(
+          title: 'remaining'.tr(),
+          value: CurrencyHelper.getFormatter('YER')
+              .format(_supplier.totalDebt),
+          icon: Icons.account_balance_wallet_outlined,
+          color: AppColors.error,
+        ),
+        StatCard(
+          title: 'purchase_history'.tr(),
+          value: '$purchasesCount',
+          icon: Icons.shopping_cart_outlined,
+          color: AppColors.primary,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopLowStockTable(AppColorSet colors) {
+    final rows = _lowStockItems.map((item) {
+      return <Widget>[
+        Text(
+          item['name'],
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+        Text('${item['stock_quantity']}', style: const TextStyle(fontSize: 12)),
+        Text(
+          '${item['reorder_level']}',
+          style: const TextStyle(fontSize: 12, color: AppColors.error, fontWeight: FontWeight.bold),
+        ),
+      ];
+    }).toList();
+    return DesktopTable(
+      headers: [
+        'product_name'.tr(),
+        'stock_quantity'.tr(),
+        'reorder_level'.tr(),
+      ],
+      flexes: const [4, 2, 2],
+      rows: rows,
+      emptyMessage: 'no_products'.tr(),
+      maxHeight: 220,
+    );
+  }
+
+  Widget _buildDesktopTabSelector() {
+    final colors = AppColors.of(context);
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(color: colors.border),
+        ),
+        child: SegmentedButton<int>(
+          segments: [
+            ButtonSegment(
+              value: 0,
+              icon: const Icon(Icons.receipt_long_outlined, size: 16),
+              label: Text('account_statement'.tr()),
             ),
+            ButtonSegment(
+              value: 1,
+              icon: const Icon(Icons.inventory_2_outlined, size: 16),
+              label: Text('products'.tr()),
+            ),
+          ],
+          selected: {_desktopTabIndex},
+          onSelectionChanged: (selection) {
+            setState(() => _desktopTabIndex = selection.first);
+          },
+          showSelectedIcon: false,
+          style: ButtonStyle(
+            visualDensity: VisualDensity.compact,
+            backgroundColor: WidgetStatePropertyAll(colors.surface),
+            foregroundColor: WidgetStatePropertyAll(colors.textPrimary),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopTransactionsTable(AppColorSet colors) {
+    if (_transactions.isEmpty) {
+      return DesktopTable(
+        headers: [''],
+        rows: const [],
+        emptyMessage: 'no_transactions'.tr(),
+        maxHeight: 320,
+      );
+    }
+    final rows = _transactions.map((tx) {
+      final isPurchase = tx.type == SupplierTransactionType.purchase;
+      return <Widget>[
+        Row(
+          children: [
+            Icon(
+              isPurchase ? Icons.arrow_upward : Icons.arrow_downward,
+              size: 16,
+              color: isPurchase ? AppColors.error : AppColors.success,
+            ),
+            const SizedBox(width: AppSpace.xs),
+            Text(
+              isPurchase ? 'purchase'.tr() : 'payment'.tr(),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        Text(
+          DateFormat('MMM dd, yyyy').format(tx.date),
+          style: TextStyle(fontSize: 12, color: colors.textSecondary),
+        ),
+        Text(
+          CurrencyHelper.getFormatter(tx.currency).format(tx.amount),
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: isPurchase ? AppColors.error : AppColors.success,
+          ),
+        ),
+        Row(
+          children: [
+            if (tx.isVoid)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpace.xs,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Text(
+                  'voided'.tr(),
+                  style: const TextStyle(
+                    color: AppColors.error,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            if (isPurchase)
+              IconButton(
+                tooltip: 'view'.tr(),
+                iconSize: 18,
+                visualDensity: VisualDensity.compact,
+                onPressed: () => _showPurchaseInvoice(tx),
+                icon: const Icon(Icons.receipt_long_outlined),
+              ),
+            if (!tx.isVoid)
+              IconButton(
+                tooltip: 'delete'.tr(),
+                iconSize: 18,
+                visualDensity: VisualDensity.compact,
+                onPressed: () => _showVoidConfirmation(tx),
+                icon: const Icon(Icons.delete_outline),
+              ),
+          ],
+        ),
+      ];
+    }).toList();
+    return DesktopTable(
+      headers: [
+        'type'.tr(),
+        'date'.tr(),
+        'amount'.tr(),
+        '',
+      ],
+      flexes: const [3, 2, 2, 2],
+      rows: rows,
+      emptyMessage: 'no_transactions'.tr(),
+      maxHeight: 520,
+    );
+  }
+
+  Widget _buildDesktopProductsTable(AppColorSet colors) {
+    if (_products.isEmpty) {
+      return DesktopTable(
+        headers: [''],
+        rows: const [],
+        emptyMessage: 'no_products'.tr(),
+        maxHeight: 320,
+      );
+    }
+    final rows = _products.map((product) {
+      final lastPurchase = _lastPurchaseInfo[product.id];
+      final hasPurchaseInfo = lastPurchase != null;
+      final lastPrice = hasPurchaseInfo
+          ? (lastPurchase!['cost_price'] as num).toDouble()
+          : 0.0;
+      return <Widget>[
+        Text(
+          product.name,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+        Text(
+          sl<ProductService>()
+              .formatStock(product.stockQuantity, product.conversionFactor),
+          style: const TextStyle(fontSize: 12),
+        ),
+        Text(
+          hasPurchaseInfo
+              ? '${CurrencyHelper.getFormatter('YER').format(lastPrice)}'
+                  ' • ${DateFormat('yyyy/MM/dd').format(DateTime.parse(lastPurchase!['date'] as String))}'
+              : '-',
+          style: TextStyle(fontSize: 12, color: colors.textSecondary),
+        ),
+        Text(
+          CurrencyHelper.getFormatter(product.currency).format(product.price),
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
+          ),
+        ),
+      ];
+    }).toList();
+    return DesktopTable(
+      headers: [
+        'product_name'.tr(),
+        'stock_quantity'.tr(),
+        'last_purchase'.tr(),
+        'selling_price'.tr(),
+      ],
+      flexes: const [4, 2, 3, 2],
+      rows: rows,
+      emptyMessage: 'no_products'.tr(),
+      maxHeight: 520,
     );
   }
 

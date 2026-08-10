@@ -20,8 +20,15 @@ import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/utils/currency_helper.dart';
+import '../../../core/routes/routes.dart';
+import '../../../core/services/subscription_service.dart';
+import '../../../core/models/app_feature.dart';
 import '../../../core/widgets/barcode_scanner_view.dart';
+import '../../../core/widgets/subscription_dialog.dart';
 import '../../../core/widgets/transaction_detail_sheet.dart';
+import '../../../core/widgets/desktop/desktop_scaffold.dart';
+import '../../../core/widgets/desktop/desktop_table.dart';
+import '../../../core/theme/desktop_tokens.dart';
 
 class SaleScreen extends StatefulWidget {
   final TransactionType initialType;
@@ -46,6 +53,8 @@ class _SaleScreenState extends State<SaleScreen> {
   List<Product> _products = [];
   List<Customer> _customers = [];
   bool _isLoading = false;
+
+  String _desktopProductSearchQuery = '';
 
   DiscountType _discountType = DiscountType.none;
   double _discountValue = 0;
@@ -353,25 +362,648 @@ class _SaleScreenState extends State<SaleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return DesktopScaffold(
+      activeNavIndex: 2,
+      title: 'new_sale'.tr(),
       extendBody: true,
-      appBar: AppBar(
-        title: Text('new_sale'.tr()),
-        actions: [
-          IconButton(
-            onPressed: _scanBarcode,
-            icon: const Icon(Icons.qr_code_scanner),
+      actions: [
+        IconButton(
+          onPressed: _scanBarcode,
+          icon: const Icon(Icons.qr_code_scanner),
+          tooltip: 'scan'.tr(),
+        ),
+      ],
+      onNavigate: _onNavTap,
+      body: _buildMobileBody(),
+      desktopBody: _buildDesktopBody(),
+      showMobileBottomNav: false,
+    );
+  }
+
+  Widget _buildMobileBody() {
+    return Column(
+      children: [
+        _buildProductSearch(),
+        Expanded(child: _buildCartList()),
+        _buildCheckoutSection(),
+      ],
+    );
+  }
+
+  void _onNavTap(int index) {
+    switch (index) {
+      case 0:
+        Navigator.pushReplacementNamed(context, Routes.home);
+        break;
+      case 1:
+        Navigator.pushReplacementNamed(context, Routes.customers);
+        break;
+      case 2:
+        // Already on the sale screen; do not stack a duplicate.
+        break;
+      case 3:
+        if (sl<SubscriptionService>().canUseFeature(AppFeature.viewReports)) {
+          Navigator.pushReplacementNamed(context, Routes.reports);
+        } else {
+          SubscriptionDialog.show(context);
+        }
+        break;
+      case 4:
+        Navigator.pushReplacementNamed(context, Routes.store);
+        break;
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // Desktop UI (presentation-only). All values come from the
+  // existing getters/state and all actions reuse the existing
+  // callbacks unchanged.
+  // ──────────────────────────────────────────────────────────────
+
+  Widget _buildDesktopBody() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= AppBreakpoints.desktop;
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpace.xl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildDesktopWorkspace(constraints, wide),
+              const SizedBox(height: AppSpace.xl),
+              _buildDesktopCartTable(),
+            ],
           ),
-        ],
-      ),
-      body: Column(
+        );
+      },
+    );
+  }
+
+  Widget _buildDesktopWorkspace(BoxConstraints constraints, bool wide) {
+    final productPanel = _buildDesktopProductPanel(constraints);
+    final summaryPanel = _buildDesktopSummaryPanel();
+
+    if (wide) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildProductSearch(),
-          Expanded(child: _buildCartList()),
-          _buildCheckoutSection(),
+          Expanded(flex: 6, child: productPanel),
+          const SizedBox(width: AppSpace.xl),
+          Expanded(flex: 4, child: summaryPanel),
         ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        productPanel,
+        const SizedBox(height: AppSpace.xl),
+        summaryPanel,
+      ],
+    );
+  }
+
+  Widget _buildDesktopProductPanel(BoxConstraints constraints) {
+    final colors = AppColors.of(context);
+    final products = _filteredProducts();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpace.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'select_product'.tr(),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: colors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSpace.sm),
+            TextField(
+              onChanged: (v) =>
+                  setState(() => _desktopProductSearchQuery = v),
+              decoration: InputDecoration(
+                hintText: 'search_products'.tr(),
+                prefixIcon: const Icon(Icons.search, size: 20),
+                isDense: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+              ),
+              onSubmitted: (_) {
+                final first = products.isNotEmpty ? products.first : null;
+                if (first != null) _addToCart(first);
+              },
+            ),
+            const SizedBox(height: AppSpace.sm),
+            Text(
+              '${products.length} ${'items'.tr()}',
+              style: TextStyle(fontSize: 12, color: colors.textLight),
+            ),
+            const SizedBox(height: AppSpace.sm),
+            Expanded(
+              child: products.isEmpty
+                  ? Center(
+                      child: Text(
+                        'no_products_found'.tr(),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: colors.textLight,
+                        ),
+                      ),
+                    )
+                  : _buildDesktopProductGrid(constraints),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  List<Product> _filteredProducts() {
+    final query = _desktopProductSearchQuery.toLowerCase().trim();
+    if (query.isEmpty) return _products;
+    return _products
+        .where((p) => p.name.toLowerCase().contains(query))
+        .toList();
+  }
+
+  Widget _buildDesktopProductGrid(BoxConstraints constraints) {
+    final products = _filteredProducts();
+    final panelWidth = constraints.maxWidth;
+    final int cols =
+        (panelWidth.isFinite ? panelWidth / 190 : 2).clamp(1.0, 4.0).round();
+
+    return SingleChildScrollView(
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: cols,
+          crossAxisSpacing: AppSpace.sm,
+          mainAxisSpacing: AppSpace.sm,
+          childAspectRatio: 3.0,
+        ),
+        itemCount: products.length,
+        itemBuilder: (_, index) {
+          final product = products[index];
+          return _SaleProductTile(
+            product: product,
+            onAdd: () => _addToCart(product),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDesktopSummaryPanel() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpace.lg),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildDesktopInvoiceHeader(),
+                const SizedBox(height: AppSpace.md),
+                _buildDesktopCustomerSelector(constraints),
+                const SizedBox(height: AppSpace.md),
+                _buildDesktopDiscountSection(),
+                const SizedBox(height: AppSpace.md),
+                _buildDesktopTotals(constraints),
+                const SizedBox(height: AppSpace.md),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: (_isLoading || _cart.isEmpty || _paidAmount > _totalAmount)
+                        ? null
+                        : _completeSale,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding:
+                          const EdgeInsets.symmetric(vertical: AppSpace.md),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                      ),
+                    ),
+                    icon: _isLoading
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.check_rounded, size: 20),
+                    label: Text(
+                      'complete_sale'.tr(),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopInvoiceHeader() {
+    final colors = AppColors.of(context);
+    final isCustomerRequired = _paidAmount < _totalAmount;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'new_sale'.tr(),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: colors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: AppSpace.xs),
+        Text(
+          _selectedCustomer == null
+              ? (isCustomerRequired
+                  ? '${'select_customer'.tr()} *'.tr()
+                  : '${'select_customer'.tr()} ${'optional'.tr()}'.tr())
+              : '${'selected_customer'.tr()}: ${_selectedCustomer!.name}',
+          style: TextStyle(fontSize: 12, color: colors.textSecondary),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopCustomerSelector(BoxConstraints constraints) {
+    final colors = AppColors.of(context);
+    return DropdownMenu<Customer>(
+      initialSelection: _selectedCustomer,
+      width: constraints.maxWidth,
+      enableFilter: true,
+      requestFocusOnTap: true,
+      leadingIcon: Icon(Icons.search, size: 20, color: colors.textSecondary),
+      label: Text('select_customer'.tr()),
+      inputDecorationTheme: InputDecorationTheme(
+        isDense: true,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+      ),
+      dropdownMenuEntries: _customers
+          .map(
+            (c) => DropdownMenuEntry<Customer>(
+              value: c,
+              label:
+                  '${c.name} (${CurrencyHelper.getFormatter('YER').format(c.totalDebt)})',
+              enabled: true,
+            ),
+          )
+          .toList(),
+      onSelected: (val) => setState(() => _selectedCustomer = val),
+    );
+  }
+
+  Widget _buildDesktopDiscountSection() {
+    final colors = AppColors.of(context);
+    final bool showRemaining =
+        _selectedCustomer != null && _paidAmount < _totalAmount;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(children: [
+          _buildDesktopDiscountChip(DiscountType.percentage),
+          const SizedBox(width: AppSpace.xs),
+          _buildDesktopDiscountChip(DiscountType.fixed),
+          if (_discountType != DiscountType.none) ...[
+            const SizedBox(width: AppSpace.xs),
+            GestureDetector(
+              onTap: () => setState(() {
+                _discountType = DiscountType.none;
+                _discountValue = 0;
+              }),
+              child: const Icon(Icons.close, size: 18, color: Colors.red),
+            ),
+          ],
+        ]),
+        if (_discountType != DiscountType.none &&
+            _discountType == DiscountType.percentage) ...[
+          const SizedBox(height: AppSpace.sm),
+          SizedBox(
+            width: 90,
+            child: TextField(
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                hintText: '10',
+                suffixText: '%',
+                isDense: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+              ),
+              onChanged: (v) => setState(
+                  () => _discountValue = double.tryParse(v) ?? 0),
+            ),
+          ),
+        ],
+        if (_discountType != DiscountType.none &&
+            _discountType == DiscountType.fixed) ...[
+          const SizedBox(height: AppSpace.sm),
+          SizedBox(
+            width: 110,
+            child: TextField(
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                hintText: '1000',
+                prefixText: '${CurrencyHelper.getSymbol('YER')} ',
+                isDense: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+              ),
+              onChanged: (v) => setState(
+                  () => _discountValue = double.tryParse(v) ?? 0),
+            ),
+          ),
+        ],
+        const SizedBox(height: AppSpace.sm),
+        if (_invoiceDiscount > 0 || _promoDiscount > 0) ...[
+          _buildDesktopTotalRow('subtotal'.tr(),
+              CurrencyHelper.getFormatter('YER').format(_subtotal),
+              colors.textSecondary, 11),
+          if (_invoiceDiscount > 0)
+            _buildDesktopTotalRow('discount'.tr(),
+                '-${CurrencyHelper.getFormatter('YER').format(_invoiceDiscount)}',
+                Colors.green[700]!, 11),
+          if (_promoDiscount > 0)
+            _buildDesktopTotalRow('promo'.tr(),
+                '-${CurrencyHelper.getFormatter('YER').format(_promoDiscount)}',
+                Colors.blue[700]!, 11),
+        ],
+        const SizedBox(height: AppSpace.sm),
+        Row(children: [
+          Icon(Icons.redeem, size: 16, color: colors.textLight),
+          const SizedBox(width: AppSpace.xs),
+          Expanded(
+            child: TextField(
+              controller: _promoCodeController,
+              decoration: InputDecoration(
+                hintText: 'promo_code'.tr(),
+                isDense: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                suffixIcon: _promoCodeController.text.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(_promoValid
+                            ? Icons.check_circle
+                            : Icons.search),
+                        color: _promoValid ? Colors.green : colors.textLight,
+                        iconSize: 18,
+                        onPressed: _validatePromoCode,
+                      )
+                    : null,
+              ),
+              onChanged: (_) => setState(() => _promoValid = false),
+              onSubmitted: (_) => _validatePromoCode(),
+            ),
+          ),
+        ]),
+        if (showRemaining) ...[
+          const SizedBox(height: AppSpace.sm),
+          Row(children: [
+            Icon(Icons.calendar_month, size: 16, color: colors.textLight),
+            const SizedBox(width: AppSpace.xs),
+            Text('installments'.tr(),
+                style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+            const Spacer(),
+            Switch(
+              value: _enableInstallments,
+              onChanged: _paidAmount >= _totalAmount
+                  ? null
+                  : (v) => setState(() => _enableInstallments = v),
+              activeThumbColor: AppColors.primary,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ]),
+          if (_enableInstallments) ...[
+            const SizedBox(height: AppSpace.sm),
+            Row(children: [
+              Text('${'number_of_installments'.tr()}: ',
+                  style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+              _buildDesktopStepper(_installmentCount,
+                  (v) => setState(() => _installmentCount = v.clamp(2, 24))),
+              const SizedBox(width: AppSpace.sm),
+              Text('${'every'.tr()}: ',
+                  style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+              _buildDesktopStepper(_installmentPeriod,
+                  (v) => setState(() => _installmentPeriod = v.clamp(7, 90))),
+              Text(' ${'days'.tr()}', style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+            ]),
+          ],
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDesktopDiscountChip(DiscountType type) {
+    final colors = AppColors.of(context);
+    final bool isSelected = _discountType == type;
+    final label = switch (type) {
+      DiscountType.percentage => '%',
+      DiscountType.fixed => 'fixed'.tr(),
+      DiscountType.none => '',
+    };
+    return GestureDetector(
+      onTap: () => setState(() {
+        // Preserved exact logic from mobile _buildDiscountChip.
+        _discountType = isSelected ? DiscountType.none : type;
+        if (!isSelected) _discountValue = 0;
+      }),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? Colors.blue.withValues(alpha: 0.15)
+              : Colors.grey.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(
+            color: isSelected ? Colors.blue : Colors.grey.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.blue : colors.textSecondary)),
+      ),
+    );
+  }
+
+  Widget _buildDesktopStepper(int value, ValueChanged<int> onChanged) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      GestureDetector(
+        onTap: () => onChanged(value - 1),
+        child: Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: Colors.grey.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+          ),
+          child: const Icon(Icons.remove, size: 16),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Text('$value',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+      ),
+      GestureDetector(
+        onTap: () => onChanged(value + 1),
+        child: Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: Colors.grey.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+          ),
+          child: const Icon(Icons.add, size: 16),
+        ),
+      ),
+    ]);
+  }
+
+  Widget _buildDesktopTotals(BoxConstraints constraints) {
+    final colors = AppColors.of(context);
+    final bool isOverpaid = _paidAmount > _totalAmount;
+    final fmt = CurrencyHelper.getFormatter('YER');
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      TextField(
+        controller: _paidAmountController,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          labelText: 'paid_amount'.tr(),
+          errorText: isOverpaid ? 'amount_exceeds_total'.tr() : null,
+          prefixText: '${CurrencyHelper.getSymbol('YER')} ',
+          isDense: true,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+          ),
+        ),
+        onChanged: (val) => setState(() {}),
+      ),
+      const SizedBox(height: AppSpace.md),
+      _buildDesktopTotalRow('subtotal'.tr(), fmt.format(_subtotal),
+          colors.textSecondary, 13),
+      if (_invoiceDiscount > 0)
+        _buildDesktopTotalRow('discount'.tr(),
+            '-${fmt.format(_invoiceDiscount)}', Colors.green[700]!, 13),
+      if (_promoDiscount > 0)
+        _buildDesktopTotalRow('promo'.tr(),
+            '-${fmt.format(_promoDiscount)}', Colors.blue[700]!, 13),
+      _buildDesktopTotalRow('tax'.tr(), fmt.format(0),
+          colors.textSecondary, 13),
+      const Divider(height: 16, thickness: 1),
+      _buildDesktopTotalRow('total_amount'.tr(), fmt.format(_totalAmount),
+          colors.textPrimary, 16, FontWeight.bold, AppColors.primary),
+      if (isOverpaid)
+        _buildDesktopTotalRow('amount_exceeds_total'.tr(),
+            '-${fmt.format(_paidAmount - _totalAmount)}', Colors.red, 12),
+      if (_paidAmount < _totalAmount && _totalAmount > 0)
+        _buildDesktopTotalRow('remaining_amount'.tr(),
+            fmt.format(_totalAmount - _paidAmount), Colors.orange[800]!, 13),
+      if (_paidAmount == _totalAmount && _totalAmount > 0)
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(Icons.check_circle_outline,
+              color: Colors.green, size: 16),
+          const SizedBox(width: AppSpace.xs),
+          Text('paid_full'.tr(),
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green[800])),
+        ]),
+    ]);
+  }
+
+  Widget _buildDesktopTotalRow(String label, String value, Color color,
+      double size, [FontWeight weight = FontWeight.normal, Color? valueColor]) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(children: [
+        Expanded(
+            child: Text(label,
+                style: TextStyle(
+                    fontSize: size,
+                    color: color,
+                    fontWeight: weight))),
+        Text(value,
+            style: TextStyle(
+                fontSize: size,
+                color: valueColor ?? color,
+                fontWeight: weight)),
+      ]),
+    );
+  }
+
+  Widget _buildDesktopCartTable() {
+    return DesktopTable(
+      headers: [
+        'product'.tr(),
+        'quantity'.tr(),
+        'price'.tr(),
+        'total'.tr(),
+      ],
+      flexes: [4, 2, 2, 2],
+      emptyMessage: 'cart_empty'.tr(),
+      rows: [
+        for (int i = 0; i < _cart.length; i++) _buildCartRow(i, _cart[i]),
+      ],
+    );
+  }
+
+  List<Widget> _buildCartRow(int index, TransactionItem item) {
+    final fmt = CurrencyHelper.getFormatter(item.currency);
+    return [
+      Text(item.productName,
+          style: TextStyle(color: AppColors.of(context).textPrimary),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis),
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        IconButton(
+          tooltip: 'remove'.tr(),
+          padding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+          icon: const Icon(Icons.remove, size: 16, color: AppColors.error),
+          onPressed: () => _updateQuantity(index, -1),
+        ),
+        Text('${item.quantity}',
+            style: TextStyle(
+                fontSize: 13, fontWeight: FontWeight.bold)),
+        IconButton(
+          tooltip: 'add'.tr(),
+          padding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+          icon: const Icon(Icons.add, size: 16, color: AppColors.success),
+          onPressed: () => _updateQuantity(index, 1),
+        ),
+      ]),
+      Text(fmt.format(item.price),
+          textAlign: TextAlign.right,
+          style: TextStyle(color: AppColors.of(context).textSecondary)),
+      Text(fmt.format(item.total),
+          textAlign: TextAlign.right,
+          style: TextStyle(
+              fontWeight: FontWeight.bold, color: AppColors.primary)),
+    ];
   }
 
   Widget _buildProductSearch() {
@@ -933,6 +1565,70 @@ class _SaleScreenState extends State<SaleScreen> {
               ),
             ),
           ],
+        ),
+      ),
+      
+    );
+  }
+}
+
+class _SaleProductTile extends StatelessWidget {
+  final Product product;
+  final VoidCallback onAdd;
+
+  const _SaleProductTile({required this.product, required this.onAdd});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final symbol = CurrencyHelper.getSymbol(product.currency);
+    return Card(
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        onTap: onAdd,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpace.sm),
+          child: Row(children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(product.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary)),
+                  const SizedBox(height: 2),
+                  Text('$symbol ${product.price.toStringAsFixed(0)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontSize: 12, color: colors.textSecondary)),
+                ],
+              ),
+            ),
+            if (product.stockQuantity > 0)
+              Text('${product.stockQuantity}',
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.green[700],
+                      fontWeight: FontWeight.w600)),
+            const SizedBox(width: AppSpace.xs),
+            SizedBox(
+              width: 28,
+              height: 28,
+              child: IconButton(
+                tooltip: 'add'.tr(),
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.add, size: 18, color: AppColors.primary),
+                onPressed: onAdd,
+              ),
+            ),
+          ]),
         ),
       ),
     );

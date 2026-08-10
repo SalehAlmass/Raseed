@@ -24,6 +24,7 @@ class DesktopScaffold extends StatefulWidget {
   final Widget? mobileTitle;
   final Widget? floatingActionButton;
   final bool extendBody;
+  final bool showMobileBottomNav;
 
   const DesktopScaffold({
     super.key,
@@ -39,6 +40,7 @@ class DesktopScaffold extends StatefulWidget {
     this.mobileTitle,
     this.floatingActionButton,
     this.extendBody = false,
+    this.showMobileBottomNav = true,
   });
 
   @override
@@ -73,11 +75,13 @@ class _DesktopScaffoldState extends State<DesktopScaffold> {
               actions: widget.actions,
             ),
             body: widget.body,
-            floatingActionButton: widget.floatingActionButton,
-            bottomNavigationBar: AppBottomNavigationBar(
-              activeIndex: widget.activeNavIndex,
-              onTap: widget.onNavigate,
-            ),
+             floatingActionButton: widget.floatingActionButton,
+             bottomNavigationBar: widget.showMobileBottomNav
+                 ? AppBottomNavigationBar(
+                     activeIndex: widget.activeNavIndex,
+                     onTap: widget.onNavigate,
+                   )
+                 : null,
           );
         }
 
