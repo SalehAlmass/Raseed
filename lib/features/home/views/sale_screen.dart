@@ -268,7 +268,7 @@ class _SaleScreenState extends State<SaleScreen> {
                 onPressed: () => Navigator.pop(context, false),
                 child: Text(
                   'cancel'.tr(),
-                  style: const TextStyle(color: Colors.grey),
+                  style: TextStyle(color: AppColors.of(context).textLight),
                 ),
               ),
               ElevatedButton(
@@ -505,9 +505,10 @@ class _SaleScreenState extends State<SaleScreen> {
               style: TextStyle(fontSize: 12, color: colors.textLight),
             ),
             const SizedBox(height: AppSpace.sm),
-            Expanded(
-              child: products.isEmpty
-                  ? Center(
+            products.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpace.xl),
+                    child: Center(
                       child: Text(
                         'no_products_found'.tr(),
                         style: TextStyle(
@@ -515,9 +516,9 @@ class _SaleScreenState extends State<SaleScreen> {
                           color: colors.textLight,
                         ),
                       ),
-                    )
-                  : _buildDesktopProductGrid(constraints),
-            ),
+                    ),
+                  )
+                : _buildDesktopProductGrid(constraints),
           ],
         ),
       ),
@@ -833,10 +834,10 @@ class _SaleScreenState extends State<SaleScreen> {
         decoration: BoxDecoration(
           color: isSelected
               ? Colors.blue.withValues(alpha: 0.15)
-              : Colors.grey.withValues(alpha: 0.1),
+              : colors.surfaceContainer,
           borderRadius: BorderRadius.circular(AppRadius.pill),
           border: Border.all(
-            color: isSelected ? Colors.blue : Colors.grey.withValues(alpha: 0.3),
+            color: isSelected ? Colors.blue : colors.border,
           ),
         ),
         child: Text(label,
@@ -849,13 +850,14 @@ class _SaleScreenState extends State<SaleScreen> {
   }
 
   Widget _buildDesktopStepper(int value, ValueChanged<int> onChanged) {
+    final colors = AppColors.of(context);
     return Row(mainAxisSize: MainAxisSize.min, children: [
       GestureDetector(
         onTap: () => onChanged(value - 1),
         child: Container(
           padding: const EdgeInsets.all(2),
           decoration: BoxDecoration(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: colors.surfaceContainer,
             borderRadius: BorderRadius.circular(AppRadius.sm),
           ),
           child: const Icon(Icons.remove, size: 16),
@@ -871,7 +873,7 @@ class _SaleScreenState extends State<SaleScreen> {
         child: Container(
           padding: const EdgeInsets.all(2),
           decoration: BoxDecoration(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: colors.surfaceContainer,
             borderRadius: BorderRadius.circular(AppRadius.sm),
           ),
           child: const Icon(Icons.add, size: 16),
@@ -1009,7 +1011,7 @@ class _SaleScreenState extends State<SaleScreen> {
   Widget _buildProductSearch() {
     return Container(
       padding: EdgeInsets.all(16.w),
-      color: AppColors.surface,
+      color: AppColors.of(context).surface,
       child: LayoutBuilder(
         builder: (context, constraints) {
           return DropdownMenu<Product>(
@@ -1057,10 +1059,10 @@ class _SaleScreenState extends State<SaleScreen> {
             Icon(
               Icons.shopping_cart_outlined,
               size: 64.sp,
-              color: Colors.grey.withOpacity(0.5),
+              color: AppColors.of(context).textLight,
             ),
             SizedBox(height: 16.h),
-            Text('cart_empty'.tr(), style: const TextStyle(color: Colors.grey)),
+            Text('cart_empty'.tr(), style: TextStyle(color: AppColors.of(context).textLight)),
           ],
         ),
       );
@@ -1077,11 +1079,11 @@ class _SaleScreenState extends State<SaleScreen> {
           child: Container(
             padding: EdgeInsets.all(12.w),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: AppColors.of(context).surface,
               borderRadius: BorderRadius.circular(12.r),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 5,
                   offset: const Offset(0, 2),
                 ),
@@ -1103,7 +1105,7 @@ class _SaleScreenState extends State<SaleScreen> {
                       Text(
                         '${CurrencyHelper.getSymbol(item.currency)}${item.price} / unit',
                         style: TextStyle(
-                          color: AppColors.textSecondary,
+                          color: AppColors.of(context).textSecondary,
                           fontSize: 12.sp,
                         ),
                       ),
@@ -1155,9 +1157,9 @@ class _SaleScreenState extends State<SaleScreen> {
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.05),
+        color: Colors.blue.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: Colors.blue.withOpacity(0.2)),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1221,9 +1223,9 @@ class _SaleScreenState extends State<SaleScreen> {
             SizedBox(height: 6.h),
             Row(
               children: [
-                Text('subtotal'.tr(), style: TextStyle(fontSize: 11.sp, color: Colors.grey[600])),
+                Text('subtotal'.tr(), style: TextStyle(fontSize: 11.sp, color: AppColors.of(context).textSecondary)),
                 const Spacer(),
-                Text(CurrencyHelper.getFormatter('YER').format(_subtotal), style: TextStyle(fontSize: 11.sp, color: Colors.grey[600])),
+                Text(CurrencyHelper.getFormatter('YER').format(_subtotal), style: TextStyle(fontSize: 11.sp, color: AppColors.of(context).textSecondary)),
               ],
             ),
             if (_invoiceDiscount > 0)
@@ -1246,7 +1248,7 @@ class _SaleScreenState extends State<SaleScreen> {
           SizedBox(height: 8.h),
           Row(
             children: [
-              Icon(Icons.redeem, size: 16, color: Colors.grey[600]),
+              Icon(Icons.redeem, size: 16, color: AppColors.of(context).textSecondary),
               SizedBox(width: 6.w),
               Expanded(
                 child: TextField(
@@ -1258,7 +1260,7 @@ class _SaleScreenState extends State<SaleScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
                     suffixIcon: _promoCodeController.text.isNotEmpty
                         ? IconButton(
-                            icon: Icon(_promoValid ? Icons.check_circle : Icons.search, size: 18, color: _promoValid ? Colors.green : Colors.grey),
+                            icon: Icon(_promoValid ? Icons.check_circle : Icons.search, size: 18, color: _promoValid ? Colors.green : AppColors.of(context).textLight),
                             onPressed: _validatePromoCode,
                           )
                         : null,
@@ -1273,7 +1275,7 @@ class _SaleScreenState extends State<SaleScreen> {
           if (_selectedCustomer != null)
             Row(
               children: [
-                Icon(Icons.calendar_month, size: 16, color: Colors.grey[600]),
+                Icon(Icons.calendar_month, size: 16, color: AppColors.of(context).textSecondary),
                 SizedBox(width: 6.w),
                 Text(context.locale.languageCode == 'ar' ? 'تقسيط' : 'Installments', style: TextStyle(fontSize: 12.sp)),
                 const Spacer(),
@@ -1304,6 +1306,7 @@ class _SaleScreenState extends State<SaleScreen> {
 
   Widget _buildDiscountChip(DiscountType type, String key, String label) {
     final isSelected = _discountType == type;
+    final colors = AppColors.of(context);
     return GestureDetector(
       onTap: () => setState(() {
         _discountType = isSelected ? DiscountType.none : type;
@@ -1312,16 +1315,17 @@ class _SaleScreenState extends State<SaleScreen> {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.withOpacity(0.15) : Colors.grey.withOpacity(0.1),
+          color: isSelected ? Colors.blue.withValues(alpha: 0.15) : colors.surfaceContainer,
           borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: isSelected ? Colors.blue : Colors.grey.withOpacity(0.3)),
+          border: Border.all(color: isSelected ? Colors.blue : colors.border),
         ),
-        child: Text(label, style: TextStyle(fontSize: 12.sp, color: isSelected ? Colors.blue : Colors.grey[700])),
+        child: Text(label, style: TextStyle(fontSize: 12.sp, color: isSelected ? Colors.blue : AppColors.of(context).textSecondary)),
       ),
     );
   }
 
   Widget _buildStepper(int value, ValueChanged<int> onChanged) {
+    final colors = AppColors.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1330,7 +1334,7 @@ class _SaleScreenState extends State<SaleScreen> {
           child: Container(
             padding: EdgeInsets.all(2.w),
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.1),
+              color: colors.surfaceContainer,
               borderRadius: BorderRadius.circular(4.r),
             ),
             child: const Icon(Icons.remove, size: 16),
@@ -1345,7 +1349,7 @@ class _SaleScreenState extends State<SaleScreen> {
           child: Container(
             padding: EdgeInsets.all(2.w),
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.1),
+              color: colors.surfaceContainer,
               borderRadius: BorderRadius.circular(4.r),
             ),
             child: const Icon(Icons.add, size: 16),
@@ -1390,11 +1394,11 @@ class _SaleScreenState extends State<SaleScreen> {
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -1465,7 +1469,7 @@ class _SaleScreenState extends State<SaleScreen> {
                       'total_amount'.tr(),
                       style: TextStyle(
                         fontSize: 14.sp,
-                        color: AppColors.textSecondary,
+                        color: AppColors.of(context).textSecondary,
                       ),
                     ),
                     Text(
@@ -1486,9 +1490,9 @@ class _SaleScreenState extends State<SaleScreen> {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
+                    color: Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8.r),
-                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1519,9 +1523,9 @@ class _SaleScreenState extends State<SaleScreen> {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
+                    color: Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8.r),
-                    border: Border.all(color: Colors.green.withOpacity(0.3)),
+                    border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,

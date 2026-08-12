@@ -70,12 +70,12 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen> {
                   decoration: BoxDecoration(
                     color: isParent
                         ? AppColors.primary.withValues(alpha: 0.05)
-                        : AppColors.surface,
+                        : AppColors.of(context).surface,
                     borderRadius: BorderRadius.circular(12.r),
                     border: Border.all(
                       color: isParent
                           ? AppColors.primary.withValues(alpha: 0.2)
-                          : Colors.grey.withValues(alpha: 0.1),
+                          : AppColors.of(context).border,
                     ),
                   ),
                   child: ListTile(
@@ -84,7 +84,9 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen> {
                       account.code,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: isParent ? AppColors.primary : Colors.grey[600],
+                        color: isParent
+                            ? AppColors.primary
+                            : AppColors.of(context).textSecondary,
                       ),
                     ),
                     title: Text(
@@ -98,7 +100,7 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen> {
                       CurrencyHelper.getFormatter('YER').format(account.balance),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: account.balance >= 0 ? AppColors.textPrimary : AppColors.error,
+                        color: account.balance >= 0 ? AppColors.of(context).textPrimary : AppColors.error,
                       ),
                     ),
                   ),

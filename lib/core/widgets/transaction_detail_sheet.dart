@@ -284,7 +284,7 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
       builder: (context) => WillPopScope(
         onWillPop: () async => false,
         child: Dialog(
-          backgroundColor: AppColors.surface,
+          backgroundColor: AppColors.of(context).surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.r)),
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 24.w),
@@ -333,7 +333,7 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: AppColors.of(context).background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
       child: Column(
@@ -344,7 +344,7 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
             width: 40.w,
             height: 4.h,
             decoration: BoxDecoration(
-              color: Colors.grey.shade400,
+              color: AppColors.of(context).border,
               borderRadius: BorderRadius.circular(2.r),
             ),
           ),
@@ -355,7 +355,7 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
               children: [
                 Row(
                   children: [
-                    Icon(headerIcon, color: tx.isVoid ? Colors.grey : statusColor, size: 24.sp),
+                    Icon(headerIcon, color: tx.isVoid ? AppColors.of(context).textLight : statusColor, size: 24.sp),
                     SizedBox(width: 8.w),
                     Text(
                       titleText,
@@ -386,7 +386,7 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                         decoration: BoxDecoration(
-                          color: (tx.isVoid ? AppColors.error : statusColor).withOpacity(0.1),
+                          color: (tx.isVoid ? AppColors.error : statusColor).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                         child: Text(
@@ -401,7 +401,7 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
                       Text(
                         '#${tx.id ?? "NEW"}',
                         style: TextStyle(
-                          color: Colors.grey,
+                          color: AppColors.of(context).textLight,
                           fontSize: 14.sp,
                           fontWeight: FontWeight.bold,
                         ),
@@ -414,7 +414,7 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
                   Container(
                     padding: EdgeInsets.all(16.w),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: AppColors.of(context).surface,
                       borderRadius: BorderRadius.circular(16.r),
                     ),
                     child: Column(
@@ -435,16 +435,16 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
                   else if (_customer != null) ...[
                     Text(
                       'customer'.tr(),
-                      style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                      style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: AppColors.of(context).textSecondary),
                     ),
                     SizedBox(height: 8.h),
                     Container(
                       padding: EdgeInsets.all(16.w),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(16.r),
-                      ),
-                      child: Row(
+                      color: AppColors.of(context).surface,
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                    child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Column(
@@ -457,14 +457,14 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
                               if (_customer!.phone.isNotEmpty)
                                 Text(
                                   _customer!.phone,
-                                  style: TextStyle(color: Colors.grey, fontSize: 13.sp),
+                                  style: TextStyle(color: AppColors.of(context).textLight, fontSize: 13.sp),
                                 ),
                             ],
                           ),
                           Container(
                             padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                             decoration: BoxDecoration(
-                              color: AppColors.error.withOpacity(0.05),
+                              color: AppColors.error.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(6.r),
                             ),
                             child: Text(
@@ -482,13 +482,13 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
                   if (tx.items.isNotEmpty) ...[
                     Text(
                       'items'.tr(),
-                      style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                      style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: AppColors.of(context).textSecondary),
                     ),
                     SizedBox(height: 8.h),
                     Container(
                       padding: EdgeInsets.all(16.w),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: AppColors.of(context).surface,
                         borderRadius: BorderRadius.circular(16.r),
                       ),
                       child: ListView.separated(
@@ -511,14 +511,14 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
                                     ),
                                     Text(
                                       '${item.quantity} x ${item.price.toStringAsFixed(0)} $currencySymbol',
-                                      style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+                                      style: TextStyle(color: AppColors.of(context).textLight, fontSize: 12.sp),
                                     ),
                                   ],
                                 ),
                               ),
                               Text(
                                 '${item.total.toStringAsFixed(0)} $currencySymbol',
-                                style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14.sp),
+                                style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.of(context).textPrimary, fontSize: 14.sp),
                               ),
                             ],
                           );
@@ -532,9 +532,9 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
                   Container(
                     padding: EdgeInsets.all(16.w),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: AppColors.of(context).surface,
                       borderRadius: BorderRadius.circular(16.r),
-                      border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                      border: Border.all(color: AppColors.of(context).border.withValues(alpha: 0.6)),
                     ),
                     child: Column(
                       children: [
@@ -559,10 +559,10 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
                   SizedBox(height: 24.h),
 
                   // Actions Section
-                  Text(
-                    'actions'.tr(),
-                    style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
-                  ),
+                    Text(
+                      'actions'.tr(),
+                      style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: AppColors.of(context).textSecondary),
+                    ),
                   SizedBox(height: 12.h),
 
                   // Modern grid of custom print/export options
@@ -634,8 +634,8 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 13.sp)),
-        Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp, color: AppColors.textPrimary)),
+        Text(label, style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 13.sp)),
+        Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp, color: AppColors.of(context).textPrimary)),
       ],
     );
   }
@@ -647,7 +647,7 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
         Text(
           label,
           style: TextStyle(
-            color: isBold ? (color ?? AppColors.textPrimary) : AppColors.textSecondary,
+            color: isBold ? (color ?? AppColors.of(context).textPrimary) : AppColors.of(context).textSecondary,
             fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
             fontSize: isBold ? 15.sp : 13.sp,
           ),
@@ -656,7 +656,7 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
           '${value.toStringAsFixed(0)} $symbol',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: color ?? AppColors.textPrimary,
+            color: color ?? AppColors.of(context).textPrimary,
             fontSize: isBold ? 16.sp : 13.sp,
           ),
         ),
@@ -676,16 +676,16 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
       child: Container(
         padding: EdgeInsets.all(10.w),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.of(context).surface,
           borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: color.withOpacity(0.2), width: 1),
+          border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
         ),
         child: Row(
           children: [
             Container(
               padding: EdgeInsets.all(8.w),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 20.sp),
@@ -697,7 +697,7 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 12.sp,
-                  color: AppColors.textPrimary,
+                  color: AppColors.of(context).textPrimary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

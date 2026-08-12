@@ -30,7 +30,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       title: 'subscription'.tr(),
       extendBody: false,
       mobileLeading: IconButton(
-        icon: const Icon(Icons.close, color: AppColors.textPrimary),
+        icon: Icon(Icons.close, color: AppColors.of(context).textPrimary),
         onPressed: () => Navigator.pop(context),
       ),
       onNavigate: _onNavTap,
@@ -127,7 +127,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         Container(
           padding: EdgeInsets.all(20.w),
           decoration: BoxDecoration(
-            color: isExpired ? AppColors.error.withOpacity(0.1) : AppColors.primary.withOpacity(0.1),
+            color: isExpired ? AppColors.error.withValues(alpha: 0.1) : AppColors.primary.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -145,7 +145,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           style: TextStyle(
             fontSize: _subService.isClockTampered ? 20.sp : 28.sp, 
             fontWeight: FontWeight.bold, 
-            color: _subService.isClockTampered ? AppColors.error : AppColors.textPrimary
+            color: _subService.isClockTampered ? AppColors.error : AppColors.of(context).textPrimary
           ),
         ),
         SizedBox(height: 8.h),
@@ -187,7 +187,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           style: TextStyle(
             fontSize: _subService.isClockTampered ? 20 : 28,
             fontWeight: FontWeight.bold,
-            color: _subService.isClockTampered ? AppColors.error : AppColors.textPrimary,
+            color: _subService.isClockTampered ? AppColors.error : AppColors.of(context).textPrimary,
           ),
         ),
         const SizedBox(height: AppSpace.xs),
@@ -204,10 +204,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Container(
       padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(24.r),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 15, offset: const Offset(0, 5)),
         ],
       ),
       child: Column(
@@ -215,7 +215,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         children: [
           Text(
             'premium_features'.tr(),
-            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: AppColors.of(context).textPrimary),
           ),
           SizedBox(height: 24.h),
           _buildFeatureRow(Icons.people_alt_rounded, 'feature_unlimited_customers'.tr()),
@@ -231,7 +231,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Container(
       padding: const EdgeInsets.all(AppSpace.xl),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.of(context).border),
         boxShadow: AppShadow.soft(Colors.black),
@@ -241,7 +241,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         children: [
           Text(
             'premium_features'.tr(),
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.of(context).textPrimary),
           ),
           const SizedBox(height: AppSpace.lg),
           _buildDesktopFeatureRow(Icons.people_alt_rounded, 'feature_unlimited_customers'.tr()),
@@ -263,7 +263,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         children: [
           Icon(icon, color: AppColors.primary, size: 24.sp),
           SizedBox(width: 16.w),
-          Text(text, style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
+          Text(text, style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w500, color: AppColors.of(context).textPrimary)),
         ],
       ),
     );
@@ -274,7 +274,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       children: [
         Icon(icon, color: AppColors.primary, size: 24),
         const SizedBox(width: AppSpace.md),
-        Text(text, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
+        Text(text, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.of(context).textPrimary)),
       ],
     );
   }
@@ -287,7 +287,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         gradient: AppColors.primaryGradient,
         borderRadius: BorderRadius.circular(30.r),
         boxShadow: [
-          BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10)),
+          BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 10)),
         ],
       ),
       child: Column(
@@ -353,7 +353,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       child: Text(
         'restricted_msg'.tr(),
         textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 13.sp, color: Colors.grey, height: 1.5),
+        style: TextStyle(fontSize: 13.sp, color: AppColors.of(context).textSecondary, height: 1.5),
       ),
     );
   }
@@ -364,7 +364,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       child: Text(
         'restricted_msg'.tr(),
         textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.5),
+        style: TextStyle(fontSize: 13, color: AppColors.of(context).textSecondary, height: 1.5),
       ),
     );
   }

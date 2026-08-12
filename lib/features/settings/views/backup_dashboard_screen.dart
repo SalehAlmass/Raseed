@@ -108,7 +108,7 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
               CircularProgressIndicator(value: _progress > 0 ? _progress : null),
               if (_statusMsg.isNotEmpty) ...[
                 SizedBox(height: 12.h),
-                Text(_statusMsg, style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+                Text(_statusMsg, style: TextStyle(fontSize: 12.sp, color: AppColors.of(context).textLight)),
               ],
             ],
           ))
@@ -234,12 +234,12 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isLoggedIn
-              ? [AppColors.primary.withOpacity(0.15), AppColors.primary.withOpacity(0.05)]
-              : [Colors.orange.withOpacity(0.15), Colors.orange.withOpacity(0.05)],
+              ? [AppColors.primary.withValues(alpha: 0.15), AppColors.primary.withValues(alpha: 0.05)]
+              : [Colors.orange.withValues(alpha: 0.15), Colors.orange.withValues(alpha: 0.05)],
         ),
         borderRadius: BorderRadius.circular(20.r),
         border: Border.all(
-          color: (isLoggedIn ? AppColors.primary : Colors.orange).withOpacity(0.25),
+          color: (isLoggedIn ? AppColors.primary : Colors.orange).withValues(alpha: 0.25),
         ),
       ),
       child: Row(
@@ -352,7 +352,7 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
             padding: EdgeInsets.only(top: 4.h, bottom: 8.h, left: 4.w),
             child: Text(
               '${'last_sync'.tr()}: ${DateFormat('yyyy-MM-dd HH:mm').format(lastDate)}',
-              style: TextStyle(fontSize: 11.sp, color: Colors.grey),
+              style: TextStyle(fontSize: 11.sp, color: AppColors.of(context).textLight),
             ),
           )
         else
@@ -408,8 +408,8 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
         borderRadius: BorderRadius.circular(14.r),
         border: Border.all(
           color: customPath != null
-              ? Colors.teal.withOpacity(0.35)
-              : Colors.grey.withOpacity(0.2),
+              ? Colors.teal.withValues(alpha: 0.35)
+              : AppColors.of(context).border.withValues(alpha: 0.2),
         ),
       ),
       padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
@@ -418,12 +418,12 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
           Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
-              color: (customPath != null ? Colors.teal : Colors.grey).withOpacity(0.1),
+              color: (customPath != null ? Colors.teal : AppColors.of(context).border).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10.r),
             ),
             child: Icon(
               customPath != null ? Icons.folder_special_outlined : Icons.folder_outlined,
-              color: customPath != null ? Colors.teal : Colors.grey,
+              color: customPath != null ? Colors.teal : AppColors.of(context).textLight,
               size: 20.sp,
             ),
           ),
@@ -441,7 +441,7 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
                   customPath != null ? _shortenPath(customPath) : 'backup_default_location'.tr(),
                   style: TextStyle(
                     fontSize: 10.sp,
-                    color: customPath != null ? Colors.teal : Colors.grey,
+                    color: customPath != null ? Colors.teal : AppColors.of(context).textLight,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -465,7 +465,7 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
               ),
               if (customPath != null)
                 IconButton(
-                  icon: Icon(Icons.close, size: 16.sp, color: Colors.grey),
+                  icon: Icon(Icons.close, size: 16.sp, color: AppColors.of(context).textLight),
                   onPressed: () async {
                     await _localBackup.clearCustomBackupPath();
                     setState(() {});
@@ -495,7 +495,7 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
           padding: EdgeInsets.only(bottom: 8.h),
           child: Text(
             'available_backups'.tr(),
-            style: TextStyle(fontSize: 12.sp, color: Colors.grey, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 12.sp, color: AppColors.of(context).textLight, fontWeight: FontWeight.bold),
           ),
         ),
         ..._localBackups.take(5).map((f) {
@@ -538,9 +538,9 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
             margin: EdgeInsets.only(top: 10.h),
             padding: EdgeInsets.all(16.w),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.08),
+              color: Colors.orange.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: Colors.orange.withOpacity(0.2)),
+              border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
             ),
             child: Row(
               children: [
@@ -557,7 +557,7 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
               padding: EdgeInsets.only(top: 4.h, bottom: 8.h, left: 4.w),
               child: Text(
                 '${'last_sync'.tr()}: ${DateFormat('yyyy-MM-dd HH:mm').format(lastDate)}',
-                style: TextStyle(fontSize: 11.sp, color: Colors.grey),
+                style: TextStyle(fontSize: 11.sp, color: AppColors.of(context).textLight),
               ),
             )
           else
@@ -594,14 +594,14 @@ class _BackupDashboardScreenState extends State<BackupDashboardScreen> {
           padding: EdgeInsets.only(bottom: 8.h),
           child: Text(
             'available_cloud_backups'.tr(),
-            style: TextStyle(fontSize: 12.sp, color: Colors.grey, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 12.sp, color: AppColors.of(context).textLight, fontWeight: FontWeight.bold),
           ),
         ),
 
         if (_driveBackups.isNotEmpty) ...[
           Padding(
             padding: EdgeInsets.symmetric(vertical: 4.h),
-            child: Text('Google Drive Backups:', style: TextStyle(fontSize: 10.sp, color: Colors.grey, fontWeight: FontWeight.bold)),
+            child: Text('Google Drive Backups:', style: TextStyle(fontSize: 10.sp, color: AppColors.of(context).textLight, fontWeight: FontWeight.bold)),
           ),
           ..._driveBackups.take(5).map((driveFile) {
             final name = driveFile.name ?? 'Unknown';
@@ -901,7 +901,7 @@ class _ActionCard extends StatelessWidget {
           color: AppColors.of(context).surface,
           borderRadius: BorderRadius.circular(15.r),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 4)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 4)),
           ],
         ),
         child: InkWell(
@@ -913,7 +913,7 @@ class _ActionCard extends StatelessWidget {
               children: [
                 Container(
                   padding: EdgeInsets.all(10.w),
-                  decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(12.r)),
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12.r)),
                   child: Icon(icon, color: color),
                 ),
                 SizedBox(width: 15.w),
@@ -922,11 +922,11 @@ class _ActionCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp)),
-                      Text(subtitle, style: TextStyle(fontSize: 11.sp, color: Colors.grey)),
+                      Text(subtitle, style: TextStyle(fontSize: 11.sp, color: AppColors.of(context).textLight)),
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right, color: Colors.grey),
+                Icon(Icons.chevron_right, color: AppColors.of(context).textLight),
               ],
             ),
           ),
@@ -958,9 +958,9 @@ class _QuickActionCard extends StatelessWidget {
       child: Container(
         height: 85.h,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(15.r),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: InkWell(
           onTap: onTap,

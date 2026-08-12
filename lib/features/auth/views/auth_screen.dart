@@ -163,7 +163,7 @@ class _AuthScreenState extends State<AuthScreen> {
               const Expanded(child: Divider()),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w),
-                child: Text('or'.tr(), style: TextStyle(color: Colors.grey, fontSize: 12.sp)),
+                child: Text('or'.tr(), style: TextStyle(color: AppColors.of(context).textLight, fontSize: 12.sp)),
               ),
               const Expanded(child: Divider()),
             ],
@@ -176,7 +176,7 @@ class _AuthScreenState extends State<AuthScreen> {
             style: OutlinedButton.styleFrom(
               padding: EdgeInsets.symmetric(vertical: 12.h),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
-              side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+              side: BorderSide(color: AppColors.of(context).border.withValues(alpha: 0.3)),
             ),
           ),
           SizedBox(height: 30.h),
@@ -212,7 +212,7 @@ class _AuthScreenState extends State<AuthScreen> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+          borderSide: BorderSide(color: AppColors.of(context).border.withValues(alpha: 0.3)),
         ),
       ),
       validator: (val) {

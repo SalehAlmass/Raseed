@@ -686,14 +686,14 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         prefixIcon: Icon(icon, size: 20, color: AppColors.primary),
         isDense: true,
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: AppColors.of(context).surfaceContainer,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
-          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+          borderSide: BorderSide(color: AppColors.of(context).border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
-          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+          borderSide: BorderSide(color: AppColors.of(context).border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -917,11 +917,11 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               labelText: 'category'.tr(),
               prefixIcon: const Icon(Icons.category_outlined),
               filled: true,
-              fillColor: Colors.grey[50],
+              fillColor: AppColors.of(context).surfaceContainer,
               isDense: true,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+                borderSide: BorderSide(color: AppColors.of(context).border),
               ),
             ),
             items: _categories
@@ -971,11 +971,11 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               labelText: 'suppliers'.tr(),
               prefixIcon: const Icon(Icons.business_rounded),
               filled: true,
-              fillColor: Colors.grey[50],
+              fillColor: AppColors.of(context).surfaceContainer,
               isDense: true,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+                borderSide: BorderSide(color: AppColors.of(context).border),
               ),
             ),
             items: _suppliers
@@ -1042,11 +1042,11 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       decoration: InputDecoration(
         labelText: label,
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: AppColors.of(context).surfaceContainer,
         isDense: true,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
-          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+          borderSide: BorderSide(color: AppColors.of(context).border),
         ),
       ),
       items: units
@@ -1112,7 +1112,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         Container(
           padding: const EdgeInsets.all(AppSpace.sm),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: AppColors.of(context).surfaceContainer,
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
           child: Row(
@@ -1127,7 +1127,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpace.xs),
-                child: Icon(Icons.add, color: Colors.grey[400], size: 16),
+                child: Icon(Icons.add, color: AppColors.of(context).textLight, size: 16),
               ),
               Expanded(
                 child: _buildDesktopField(
@@ -1191,19 +1191,19 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       child: Container(
         padding: const EdgeInsets.all(AppSpace.sm),
         decoration: BoxDecoration(
-          color: Colors.grey[50],
+          color: AppColors.of(context).surfaceContainer,
           borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_month_outlined, color: Colors.grey),
+            Icon(Icons.calendar_month_outlined, color: AppColors.of(context).textLight),
             const SizedBox(width: AppSpace.sm),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'expiry_date'.tr(),
-                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  style: TextStyle(fontSize: 11, color: AppColors.of(context).textSecondary),
                 ),
                 Text(
                   _expiryDate == null
@@ -1218,7 +1218,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             Icon(
               Icons.arrow_forward_ios,
               size: 14,
-              color: Colors.grey,
+              color: AppColors.of(context).textLight,
               textDirection: direction,
             ),
           ],
@@ -1311,7 +1311,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                         '${'last_purchase'.tr()}: ${CurrencyHelper.getFormatter('YER').format(_lastPurchasePrice!)}  '
                         '(${hasPriceDiff ? '${priceDiff > 0 ? "+" : ""}${CurrencyHelper.getFormatter('YER').format(priceDiff)}' : "0"} '
                         '| ${diffPercent.toStringAsFixed(1)}%)',
-                        style: TextStyle(fontSize: 10, color: Colors.grey[700]),
+                        style: TextStyle(fontSize: 10, color: AppColors.of(context).textSecondary),
                       ),
                     ),
                   ],
@@ -1320,7 +1320,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             const SizedBox(height: AppSpace.sm),
             Text(
               'record_as_purchase_desc'.tr(),
-              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 11, color: AppColors.of(context).textSecondary),
             ),
             const SizedBox(height: AppSpace.sm),
             _buildDesktopField(
@@ -1446,7 +1446,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                     isArabic ? 'القيمة المعادلة باليمني:' : 'Equivalent in YER:',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[700],
+                      color: AppColors.of(context).textSecondary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -1676,7 +1676,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               labelText: 'suppliers'.tr(),
               prefixIcon: const Icon(Icons.business_rounded),
               filled: true,
-              fillColor: Colors.grey[50],
+              fillColor: AppColors.of(context).surfaceContainer,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.r),
                 borderSide: BorderSide.none,
@@ -1729,13 +1729,13 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   Widget _buildSectionTitle(String title, IconData icon) {
     return Row(
       children: [
-        Icon(icon, size: 18.sp, color: Colors.grey[700]),
+        Icon(icon, size: 18.sp, color: AppColors.of(context).textSecondary),
         SizedBox(width: 8.w),
         Text(
           title,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Colors.grey[700],
+            color: AppColors.of(context).textSecondary,
             fontSize: 13.sp,
           ),
         ),
@@ -1796,7 +1796,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                 style: TextStyle(
                   fontSize: 13.sp,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
+                  color: AppColors.of(context).textSecondary,
                 ),
               ),
               if (required)
@@ -1820,15 +1820,15 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             hintText: hint,
             prefixIcon: icon != null ? Icon(icon, size: 20.sp, color: AppColors.primary) : null,
             filled: true,
-            fillColor: Colors.grey[50],
+            fillColor: AppColors.of(context).surfaceContainer,
             contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 16.h),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+              borderSide: BorderSide(color: AppColors.of(context).border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+              borderSide: BorderSide(color: AppColors.of(context).border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
@@ -1882,7 +1882,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               labelText: 'category'.tr(),
               prefixIcon: const Icon(Icons.category_outlined),
               filled: true,
-              fillColor: Colors.grey[50],
+              fillColor: AppColors.of(context).surfaceContainer,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.r),
                 borderSide: BorderSide.none,
@@ -1981,7 +1981,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       decoration: InputDecoration(
         labelText: label,
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: AppColors.of(context).surfaceContainer,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
           borderSide: BorderSide.none,
@@ -2004,14 +2004,14 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 13.sp,
-            color: Colors.grey[700],
+            color: AppColors.of(context).textSecondary,
           ),
         ),
         SizedBox(height: 8.h),
         Container(
           padding: EdgeInsets.all(12.w),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: AppColors.of(context).surfaceContainer,
             borderRadius: BorderRadius.circular(12.r),
           ),
           child: Row(
@@ -2026,7 +2026,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8.w),
-                child: Icon(Icons.add, color: Colors.grey[400], size: 16),
+                child: Icon(Icons.add, color: AppColors.of(context).textLight, size: 16),
               ),
               Expanded(
                 child: _buildModernField(
@@ -2059,19 +2059,19 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       child: Container(
         padding: EdgeInsets.all(12.w),
         decoration: BoxDecoration(
-          color: Colors.grey[50],
+          color: AppColors.of(context).surfaceContainer,
           borderRadius: BorderRadius.circular(12.r),
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_month_outlined, color: Colors.grey),
+            Icon(Icons.calendar_month_outlined, color: AppColors.of(context).textLight),
             SizedBox(width: 12.w),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'expiry_date'.tr(),
-                  style: TextStyle(fontSize: 11.sp, color: Colors.grey[600]),
+                  style: TextStyle(fontSize: 11.sp, color: AppColors.of(context).textSecondary),
                 ),
                 Text(
                   _expiryDate == null
@@ -2087,7 +2087,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             Icon(
               Icons.arrow_forward_ios,
               size: 14,
-              color: Colors.grey,
+              color: AppColors.of(context).textLight,
               textDirection: direction,
             ),
           ],
@@ -2159,7 +2159,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                         '${'last_purchase'.tr()}: ${CurrencyHelper.getFormatter('YER').format(_lastPurchasePrice!)}  '
                         '(${hasPriceDiff ? '${priceDiff > 0 ? "+" : ""}${CurrencyHelper.getFormatter('YER').format(priceDiff)}' : "0"} '
                         '| ${diffPercent.toStringAsFixed(1)}%)',
-                        style: TextStyle(fontSize: 10.sp, color: Colors.grey[700]),
+                        style: TextStyle(fontSize: 10.sp, color: AppColors.of(context).textSecondary),
                       ),
                     ),
                   ],
@@ -2168,7 +2168,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             SizedBox(height: 10.h),
             Text(
               'record_as_purchase_desc'.tr(),
-              style: TextStyle(fontSize: 11.sp, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 11.sp, color: AppColors.of(context).textSecondary),
             ),
             SizedBox(height: 12.h),
             _buildModernField(
@@ -2286,7 +2286,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                     isArabic ? 'القيمة المعادلة باليمني:' : 'Equivalent in YER:',
                     style: TextStyle(
                       fontSize: 12.sp,
-                      color: Colors.grey[700],
+                      color: AppColors.of(context).textSecondary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

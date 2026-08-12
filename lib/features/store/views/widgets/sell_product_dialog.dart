@@ -182,8 +182,8 @@ class _SellProductDialogState extends State<SellProductDialog> {
       children: [
         Icon(Icons.receipt_long_outlined, size: 40.sp, color: AppColors.primary),
         SizedBox(height: 8.h),
-        Text('sale'.tr(), style: TextStyle(fontSize: 14.sp, color: Colors.grey, fontWeight: FontWeight.bold)),
-        Text(widget.product.name, style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w900, color: AppColors.textPrimary)),
+        Text('sale'.tr(), style: TextStyle(fontSize: 14.sp, color: AppColors.of(context).textLight, fontWeight: FontWeight.bold)),
+        Text(widget.product.name, style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w900, color: AppColors.of(context).textPrimary)),
       ],
     );
   }
@@ -202,7 +202,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
   Widget _buildCustomUnitToggle() {
     if (widget.product.conversionFactor <= 1) return const SizedBox.shrink();
     return Container(
-      decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(15.r)),
+      decoration: BoxDecoration(color: AppColors.of(context).surfaceContainer, borderRadius: BorderRadius.circular(15.r)),
       child: Row(
         children: [
           _buildToggleButton(label: _subUnit?.name ?? 'Sub', isSelected: !_sellByMainUnit, onTap: () => setState(() => _sellByMainUnit = false)),
@@ -220,14 +220,14 @@ class _SellProductDialogState extends State<SellProductDialog> {
           padding: EdgeInsets.symmetric(vertical: 10.h),
           margin: EdgeInsets.all(4.w),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
+            color: isSelected ? AppColors.of(context).surface : Colors.transparent,
             borderRadius: BorderRadius.circular(11.r),
             boxShadow: isSelected ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))] : null,
           ),
           child: Center(
             child: Text(
               label,
-              style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? AppColors.primary : Colors.grey[600]),
+              style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? AppColors.primary : AppColors.of(context).textSecondary),
             ),
           ),
         ),
@@ -246,7 +246,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
         floatingLabelBehavior: FloatingLabelBehavior.always,
         suffixText: _sellByMainUnit ? (_mainUnit?.name ?? 'Main') : (_subUnit?.name ?? 'Sub'),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: AppColors.of(context).surfaceContainer,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.r), borderSide: BorderSide.none),
       ),
       onChanged: (val) => setState(() {}),
@@ -256,7 +256,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
   Widget _buildTypeSelector() {
     return Container(
       padding: EdgeInsets.all(4.w),
-      decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(15.r)),
+      decoration: BoxDecoration(color: AppColors.of(context).surfaceContainer, borderRadius: BorderRadius.circular(15.r)),
       child: Row(
         children: [
           _buildTypeButton(TransactionType.sale, 'cash'.tr(), Icons.payments_outlined),
@@ -280,9 +280,9 @@ class _SellProductDialogState extends State<SellProductDialog> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 16.sp, color: isSelected ? Colors.white : Colors.grey),
+              Icon(icon, size: 16.sp, color: isSelected ? Colors.white : AppColors.of(context).textLight),
               SizedBox(width: 8.w),
-              Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.grey, fontWeight: FontWeight.bold)),
+              Text(label, style: TextStyle(color: isSelected ? Colors.white : AppColors.of(context).textLight, fontWeight: FontWeight.bold)),
             ],
           ),
         ),
@@ -297,7 +297,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
       decoration: InputDecoration(
         labelText: 'select_customer'.tr(),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: AppColors.of(context).surfaceContainer,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.r), borderSide: BorderSide.none),
         isDense: true,
       ),
@@ -319,7 +319,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('unit_price'.tr(), style: TextStyle(color: Colors.grey[600], fontSize: 12.sp)),
+              Text('unit_price'.tr(), style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12.sp)),
               Text(CurrencyHelper.getFormatter(widget.product.currency).format(unitPrice), style: const TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
@@ -327,7 +327,7 @@ class _SellProductDialogState extends State<SellProductDialog> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('total'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+              Text('total'.tr(), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: AppColors.of(context).textPrimary)),
               Text(
                 '${CurrencyHelper.getFormatter(widget.product.currency).format(totalPrice)} ${widget.product.currency}',
                 style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w900, color: AppColors.primary),

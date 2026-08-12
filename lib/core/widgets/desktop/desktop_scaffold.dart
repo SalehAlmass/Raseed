@@ -1,4 +1,7 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import '../../di/injection_container.dart';
+import '../../services/theme_service.dart';
 import '../../theme/colors.dart';
 import '../../theme/desktop_tokens.dart';
 import '../app_bottom_navigation_bar.dart';
@@ -72,7 +75,10 @@ class _DesktopScaffoldState extends State<DesktopScaffold> {
               elevation: 0,
               foregroundColor: colors.textPrimary,
               leading: widget.mobileLeading,
-              actions: widget.actions,
+              actions: [
+                if (widget.actions != null) ...widget.actions!,
+                _buildMobileThemeToggle(context),
+              ],
             ),
             body: widget.body,
              floatingActionButton: widget.floatingActionButton,
@@ -116,6 +122,28 @@ class _DesktopScaffoldState extends State<DesktopScaffold> {
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMobileThemeToggle(BuildContext context) {
+    final themeService = sl<ThemeService>();
+    return ListenableBuilder(
+      listenable: themeService,
+      builder: (context, child) {
+        final icon = switch (themeService.themeModeIndex) {
+          0 => Icons.light_mode_rounded,
+          1 => Icons.dark_mode_rounded,
+          _ => Icons.brightness_auto_rounded,
+        };
+        return IconButton(
+          tooltip: 'theme'.tr(),
+          icon: Icon(icon),
+          onPressed: () {
+            final next = (themeService.themeModeIndex + 1) % 3;
+            themeService.setThemeModeByIndex(next);
+          },
         );
       },
     );

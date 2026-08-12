@@ -148,7 +148,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
                           ),
                           child: TabBar(
                             labelColor: AppColors.primary,
-                            unselectedLabelColor: Colors.grey,
+                            unselectedLabelColor: AppColors.of(context).textLight,
                             indicatorColor: AppColors.primary,
                             indicatorSize: TabBarIndicatorSize.label,
                             tabs: [
@@ -492,14 +492,14 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+          colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -513,7 +513,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
               if (_supplier.rating > 0)
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10.r)),
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(10.r)),
                   child: Row(
                     children: [
                       const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
@@ -538,7 +538,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
                 children: [
                   Text(
                     'total_paid'.tr(),
-                    style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13.sp),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13.sp),
                   ),
                   SizedBox(height: 5.h),
                   Text(
@@ -556,7 +556,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
                 children: [
                   Text(
                     'remaining'.tr(),
-                    style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13.sp),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13.sp),
                   ),
                   SizedBox(height: 5.h),
                   Text(
@@ -575,7 +575,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
             SizedBox(height: 15.h),
             Text(
               _supplier.company!,
-              style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13.sp, fontWeight: FontWeight.w500),
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13.sp, fontWeight: FontWeight.w500),
             ),
           ],
           SizedBox(height: 12.h),
@@ -584,7 +584,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
             children: [
               Text(
                 '${_transactions.where((t) => t.type == SupplierTransactionType.purchase).length} ${'purchases'.tr()}',
-                style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 11.sp),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 11.sp),
               ),
               if (_supplier.phone.isNotEmpty)
                 GestureDetector(
@@ -595,7 +595,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
+                      color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10.r),
                     ),
                     child: Row(
@@ -604,7 +604,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
                         SizedBox(width: 4.w),
                         Text(
                           'whatsapp'.tr(),
-                          style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 10.sp),
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 10.sp),
                         ),
                       ],
                     ),
@@ -634,9 +634,9 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
         SizedBox(height: 10.h),
         Container(
           decoration: BoxDecoration(
-            color: Colors.orange.withOpacity(0.05),
+            color: Colors.orange.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(15.r),
-            border: Border.all(color: Colors.orange.withOpacity(0.2)),
+            border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
           ),
           child: Column(
             children: _lowStockItems.map((item) {
@@ -792,9 +792,9 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
                   Container(
                     padding: EdgeInsets.all(10.w),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
+                      color: Colors.orange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8.r),
-                      border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                      border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [
@@ -876,7 +876,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
       return Center(
         child: Padding(
           padding: EdgeInsets.only(top: 40.h),
-          child: Text('no_transactions'.tr(), style: TextStyle(color: Colors.grey)),
+          child: Text('no_transactions'.tr(), style: TextStyle(color: AppColors.of(context).textLight)),
         ),
       );
     }
@@ -893,7 +893,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
         return ListTile(
           contentPadding: EdgeInsets.zero,
           leading: CircleAvatar(
-            backgroundColor: (isPurchase ? AppColors.error : AppColors.success).withOpacity(0.1),
+            backgroundColor: (isPurchase ? AppColors.error : AppColors.success).withValues(alpha: 0.1),
             child: Icon(
               isPurchase ? Icons.arrow_upward : Icons.arrow_downward,
               color: isPurchase ? AppColors.error : AppColors.success,
@@ -906,7 +906,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
           ),
           subtitle: Text(
             DateFormat('MMM dd, yyyy').format(tx.date),
-            style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+            style: TextStyle(fontSize: 12.sp, color: AppColors.of(context).textLight),
           ),
           trailing: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -957,7 +957,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
             children: [
               Text(
                 '${'date'.tr()}: ${DateFormat('yyyy/MM/dd HH:mm').format(tx.date)}',
-                style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+                style: TextStyle(fontSize: 12.sp, color: AppColors.of(context).textLight),
               ),
               const Divider(),
               Flexible(
@@ -1076,7 +1076,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
   Widget _buildProductList() {
     if (_products.isEmpty) {
       return Center(
-        child: Text('no_products'.tr(), style: TextStyle(color: Colors.grey)),
+        child: Text('no_products'.tr(), style: TextStyle(color: AppColors.of(context).textLight)),
       );
     }
 
@@ -1094,7 +1094,7 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
           leading: Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10.r),
             ),
             child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary),
@@ -1112,12 +1112,12 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
                   children: [
                     Text(
                       '${'last_purchase'.tr()}: ${CurrencyHelper.getFormatter('YER').format(lastPrice)}',
-                      style: TextStyle(fontSize: 10.sp, color: Colors.grey[600]),
+                      style: TextStyle(fontSize: 10.sp, color: AppColors.of(context).textSecondary),
                     ),
                     SizedBox(width: 4.w),
                     Text(
                       DateFormat('yyyy/MM/dd').format(DateTime.parse(lastPurchase!['date'])),
-                      style: TextStyle(fontSize: 9.sp, color: Colors.grey[400]),
+                      style: TextStyle(fontSize: 9.sp, color: AppColors.of(context).textLight),
                     ),
                   ],
                 ),
@@ -1157,9 +1157,9 @@ class _ActionButton extends StatelessWidget {
         width: isFullWidth ? double.infinity : null,
         padding: EdgeInsets.all(15.w),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(15.r),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Column(
           children: [

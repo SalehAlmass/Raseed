@@ -44,7 +44,7 @@ class _DateSelectorState extends State<DateSelector> {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 15.h),
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: AppColors.of(context).border),
           borderRadius: BorderRadius.circular(12.r),
         ),
         child: Row(
@@ -56,7 +56,7 @@ class _DateSelectorState extends State<DateSelector> {
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14.sp),
             ),
             const Spacer(),
-            Icon(Icons.edit, color: Colors.grey.withOpacity(0.5), size: 16),
+            Icon(Icons.edit, color: AppColors.of(context).textLight, size: 16),
           ],
         ),
       ),

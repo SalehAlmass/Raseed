@@ -23,11 +23,11 @@ class SubscriptionDialog extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.all(24.w),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.of(context).surface,
           borderRadius: BorderRadius.circular(24.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -39,7 +39,7 @@ class SubscriptionDialog extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -54,7 +54,7 @@ class SubscriptionDialog extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20.sp,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: AppColors.of(context).textPrimary,
               ),
             ),
             SizedBox(height: 16.h),
@@ -63,7 +63,7 @@ class SubscriptionDialog extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14.sp,
-                color: AppColors.textSecondary,
+                color: AppColors.of(context).textSecondary,
                 height: 1.5,
               ),
             ),
@@ -92,7 +92,7 @@ class SubscriptionDialog extends StatelessWidget {
               onPressed: () => Navigator.pop(context),
               child: Text(
                 'later'.tr(),
-                style: TextStyle(color: Colors.grey, fontWeight: FontWeight.normal),
+                style: TextStyle(color: AppColors.of(context).textLight, fontWeight: FontWeight.normal),
               ),
             ),
           ],

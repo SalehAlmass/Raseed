@@ -275,7 +275,7 @@ class _ReceivablesDashboardScreenState extends State<ReceivablesDashboardScreen>
       child: Container(
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12.r),
         ),
         child: Column(
@@ -300,11 +300,13 @@ class _ReceivablesDashboardScreenState extends State<ReceivablesDashboardScreen>
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.surface,
+          color: isSelected
+              ? AppColors.primary
+              : AppColors.of(context).surface,
           borderRadius: BorderRadius.circular(20.r),
-          border: Border.all(color: isSelected ? AppColors.primary : Colors.grey.withOpacity(0.3)),
+          border: Border.all(color: isSelected ? AppColors.primary : Colors.grey.withValues(alpha: 0.3)),
         ),
-        child: Text(label, style: TextStyle(fontSize: 12.sp, color: isSelected ? Colors.white : Colors.grey[700])),
+        child: Text(label, style: TextStyle(fontSize: 12.sp, color: isSelected ? Colors.white : AppColors.of(context).textSecondary)),
       ),
     );
   }
@@ -327,7 +329,7 @@ class _ReceivablesDashboardScreenState extends State<ReceivablesDashboardScreen>
                 children: [
                   Container(
                     padding: EdgeInsets.all(8.w),
-                    decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8.r)),
+                    decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8.r)),
                     child: Icon(plan.status == 'completed' ? Icons.check_circle : Icons.schedule, color: statusColor, size: 20),
                   ),
                   SizedBox(width: 12.w),
@@ -336,14 +338,14 @@ class _ReceivablesDashboardScreenState extends State<ReceivablesDashboardScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('${'installment_plan'.tr()} #${plan.id}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp)),
-                        Text('${plan.paidCount}/${plan.installmentCount} ${'installments'.tr()}', style: TextStyle(fontSize: 12.sp, color: Colors.grey[600])),
+                        Text('${plan.paidCount}/${plan.installmentCount} ${'installments'.tr()}', style: TextStyle(fontSize: 12.sp, color: AppColors.of(context).textSecondary)),
                       ],
                     ),
                   ),
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                     decoration: BoxDecoration(
-                      color: plan.status == 'active' ? Colors.blue.withOpacity(0.1) : statusColor.withOpacity(0.1),
+                      color: plan.status == 'active' ? Colors.blue.withValues(alpha: 0.1) : statusColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6.r),
                     ),
                     child: Text(
@@ -358,7 +360,7 @@ class _ReceivablesDashboardScreenState extends State<ReceivablesDashboardScreen>
                 borderRadius: BorderRadius.circular(6.r),
                 child: LinearProgressIndicator(
                   value: progress.clamp(0.0, 1.0),
-                  backgroundColor: Colors.grey[200],
+                  backgroundColor: AppColors.of(context).surfaceContainer,
                   color: statusColor,
                   minHeight: 6.h,
                 ),
@@ -368,7 +370,7 @@ class _ReceivablesDashboardScreenState extends State<ReceivablesDashboardScreen>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('${'remaining'.tr()}: ${CurrencyHelper.getFormatter('YER').format(plan.remaining)}', style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold)),
-                  Text('${'total'.tr()}: ${CurrencyHelper.getFormatter('YER').format(plan.totalAmount)}', style: TextStyle(fontSize: 12.sp, color: Colors.grey[600])),
+                  Text('${'total'.tr()}: ${CurrencyHelper.getFormatter('YER').format(plan.totalAmount)}', style: TextStyle(fontSize: 12.sp, color: AppColors.of(context).textSecondary)),
                 ],
               ),
             ],
@@ -400,7 +402,7 @@ class _ReceivablesDashboardScreenState extends State<ReceivablesDashboardScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(child: Container(width: 40.w, height: 4.h, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2.r)))),
+                Center(child: Container(width: 40.w, height: 4.h, decoration: BoxDecoration(color: AppColors.of(ctx).border, borderRadius: BorderRadius.circular(2.r)))),
                 SizedBox(height: 16.h),
                 Text('${'installment_plan'.tr()} #${refreshed.id}', style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold)),
                 SizedBox(height: 8.h),

@@ -60,7 +60,7 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('unit_type'.tr(), style: TextStyle(fontSize: 12.sp, color: Colors.grey[600], fontWeight: FontWeight.bold)),
+              Text('unit_type'.tr(), style: TextStyle(fontSize: 12.sp, color: AppColors.of(context).textSecondary, fontWeight: FontWeight.bold)),
               SizedBox(height: 8.h),
               SegmentedButton<bool>(
                 segments: [
@@ -94,7 +94,7 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
                 decoration: InputDecoration(
                   labelText: 'unit_name'.tr(),
                   filled: true,
-                  fillColor: Colors.grey[100],
+                  fillColor: AppColors.of(context).surfaceContainer,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15.r),
                     borderSide: BorderSide.none,
@@ -110,7 +110,7 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
                   decoration: InputDecoration(
                     labelText: 'main_unit'.tr(),
                     filled: true,
-                    fillColor: Colors.grey[100],
+                    fillColor: AppColors.of(context).surfaceContainer,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(15.r),
                       borderSide: BorderSide.none,
@@ -320,7 +320,7 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
@@ -364,7 +364,7 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
                         style: TextStyle(
                           fontSize: 18.sp,
                           fontWeight: FontWeight.w900,
-                          color: AppColors.textPrimary,
+                          color: AppColors.of(context).textPrimary,
                           letterSpacing: -0.5,
                         ),
                         maxLines: 1,
@@ -428,20 +428,20 @@ class _UnitManagementScreenState extends State<UnitManagementScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.straighten_outlined, size: 80.sp, color: Colors.grey[300]),
+          Icon(Icons.straighten_outlined, size: 80.sp, color: AppColors.of(context).textLight),
           SizedBox(height: 16.h),
           Text(
             'no_units_yet'.tr(),
             style: TextStyle(
               fontSize: 18.sp,
-              color: Colors.grey[600],
+              color: AppColors.of(context).textSecondary,
               fontWeight: FontWeight.bold,
             ),
           ),
           SizedBox(height: 8.h),
           Text(
             'add_units_to_manage_inventory'.tr(),
-            style: TextStyle(fontSize: 14.sp, color: Colors.grey[400]),
+            style: TextStyle(fontSize: 14.sp, color: AppColors.of(context).textLight),
           ),
         ],
       ),

@@ -428,7 +428,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
                         label: RichText(
                           text: TextSpan(
                             text: 'supplier_name'.tr(),
-                            style: TextStyle(color: Colors.grey[700], fontSize: 14.sp),
+                            style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 14.sp),
                             children: [
                               TextSpan(
                                 text: ' *',
@@ -477,7 +477,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
                       },
                     ),
                     const SizedBox(height: 15),
-                    Text('rating'.tr(), style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+                    Text('rating'.tr(), style: TextStyle(fontSize: 12.sp, color: AppColors.of(context).textLight)),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(5, (index) {
@@ -559,14 +559,14 @@ class _SupplierTile extends StatelessWidget {
         color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 5)),
         ],
       ),
       child: ListTile(
         contentPadding: EdgeInsets.all(15.w),
         onTap: onTap,
         leading: CircleAvatar(
-          backgroundColor: AppColors.primary.withOpacity(0.1),
+          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
           child: const Icon(Icons.business_rounded, color: AppColors.primary),
         ),
         title: Row(
@@ -582,12 +582,12 @@ class _SupplierTile extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(supplier.company ?? supplier.phone, style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+            Text(supplier.company ?? supplier.phone, style: TextStyle(fontSize: 12.sp, color: AppColors.of(context).textLight)),
             if (category.name.isNotEmpty)
               Container(
                 margin: EdgeInsets.only(top: 4.h),
                 padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(5.r)),
+                decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(5.r)),
                 child: Text(category.name, style: TextStyle(fontSize: 9.sp, color: AppColors.primary, fontWeight: FontWeight.bold)),
               ),
           ],
@@ -610,7 +610,7 @@ class _SupplierTile extends StatelessWidget {
                         fontSize: 12.sp,
                       ),
                     ),
-                    Text('total_paid'.tr(), style: TextStyle(fontSize: 9.sp, color: Colors.grey)),
+                    Text('total_paid'.tr(), style: TextStyle(fontSize: 9.sp, color: AppColors.of(context).textLight)),
                   ],
                 ),
                 SizedBox(width: 12.w),
@@ -625,7 +625,7 @@ class _SupplierTile extends StatelessWidget {
                         fontSize: 12.sp,
                       ),
                     ),
-                    Text('remaining'.tr(), style: TextStyle(fontSize: 9.sp, color: Colors.grey)),
+                    Text('remaining'.tr(), style: TextStyle(fontSize: 9.sp, color: AppColors.of(context).textLight)),
                   ],
                 ),
               ],

@@ -209,11 +209,11 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.receipt_long_outlined, size: 80, color: Colors.grey.withValues(alpha: 0.5)),
+          Icon(Icons.receipt_long_outlined, size: 80, color: AppColors.of(context).textLight),
           const SizedBox(height: 16),
           Text(
             'no_expenses_yet'.tr(),
-            style: const TextStyle(fontSize: 18, color: Colors.grey),
+            style: TextStyle(fontSize: 18, color: AppColors.of(context).textLight),
           ),
         ],
       ),
@@ -287,7 +287,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+        side: BorderSide(color: AppColors.of(context).border),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -305,7 +305,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
         ),
         subtitle: Text(
           DateFormat('yyyy/MM/dd HH:mm').format(expense.date),
-          style: TextStyle(color: Colors.grey[600], fontSize: 12),
+          style: TextStyle(color: AppColors.of(context).textSecondary, fontSize: 12),
         ),
         trailing: Text(
           '-${NumberFormat.currency(symbol: '', decimalDigits: 0).format(expense.amount)}',

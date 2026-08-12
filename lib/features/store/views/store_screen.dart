@@ -135,7 +135,7 @@ class _StoreScreenState extends State<StoreScreen> {
           border: Border.all(
             color: _selectedCategory != null 
                 ? AppColors.primary 
-                : Colors.grey.withOpacity(0.2),
+                : AppColors.of(context).border,
           ),
         ),
         child: Row(
@@ -180,10 +180,10 @@ class _StoreScreenState extends State<StoreScreen> {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.surface,
+          color: isSelected ? AppColors.primary : AppColors.of(context).surface,
           borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.grey.withOpacity(0.2),
+            color: isSelected ? AppColors.primary : AppColors.of(context).border,
           ),
         ),
         child: Text(
@@ -191,7 +191,7 @@ class _StoreScreenState extends State<StoreScreen> {
           style: TextStyle(
             fontSize: 12.sp,
             fontWeight: FontWeight.bold,
-            color: isSelected ? Colors.white : AppColors.textSecondary,
+            color: isSelected ? Colors.white : AppColors.of(context).textSecondary,
           ),
         ),
       ),
@@ -840,7 +840,7 @@ class _ProductTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(15.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -854,7 +854,7 @@ class _ProductTile extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
+                color: statusColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12.r),
               ),
               child: Icon(Icons.inventory_2_outlined, color: statusColor),
@@ -1002,7 +1002,7 @@ class _ProductTile extends StatelessWidget {
                         Icon(
                           Icons.event_note,
                           size: 10.sp,
-                          color: Colors.grey[600],
+                          color: AppColors.of(context).textSecondary,
                         ),
                         SizedBox(width: 4.w),
                         Text(
@@ -1014,7 +1014,7 @@ class _ProductTile extends StatelessWidget {
                           ),
                           style: TextStyle(
                             fontSize: 10.sp,
-                            color: Colors.grey[600],
+                            color: AppColors.of(context).textSecondary,
                           ),
                         ),
                       ],

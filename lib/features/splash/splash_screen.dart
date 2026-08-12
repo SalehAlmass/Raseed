@@ -100,7 +100,7 @@ class _SplashScreenState extends State<SplashScreen>
                       borderRadius: BorderRadius.circular(28),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.18),
+                          color: Colors.black.withValues(alpha: 0.18),
                           blurRadius: 30,
                           offset: const Offset(0, 18),
                         ),
@@ -136,7 +136,7 @@ class _SplashScreenState extends State<SplashScreen>
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.white.withOpacity(0.82),
+                        color: Colors.white.withValues(alpha: 0.82),
                         height: 1.5,
                       ),
                     ),
@@ -152,7 +152,7 @@ class _SplashScreenState extends State<SplashScreen>
                       'crafted_by'.tr(),
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -174,7 +174,7 @@ class _SplashScreenState extends State<SplashScreen>
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.16),
+                            color: Colors.white.withValues(alpha: 0.16),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -192,7 +192,7 @@ class _SplashScreenState extends State<SplashScreen>
                       'v${AppConfig.appVersion}',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                       ),
                     ),
                     const SizedBox(height: 18),

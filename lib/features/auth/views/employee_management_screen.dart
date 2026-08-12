@@ -152,7 +152,7 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
         ],
       ),
       user.id == 1
-          ? const Icon(Icons.admin_panel_settings, size: 18, color: Colors.grey)
+          ? Icon(Icons.admin_panel_settings, size: 18, color: colors.textLight)
           : Row(
               mainAxisAlignment: MainAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
@@ -177,7 +177,7 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
       margin: EdgeInsets.only(bottom: 12.h),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16.r),
-        side: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+        side: BorderSide(color: AppColors.of(context).border.withValues(alpha: 0.2)),
       ),
       child: ListTile(
         contentPadding: EdgeInsets.all(16.w),
@@ -189,7 +189,7 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('@${user.username}', style: TextStyle(color: Colors.grey, fontSize: 12.sp)),
+            Text('@${user.username}', style: TextStyle(color: AppColors.of(context).textLight, fontSize: 12.sp)),
             SizedBox(height: 4.h),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),

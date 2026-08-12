@@ -151,7 +151,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       SizedBox(height: 16.h),
                       Text(
                         context.locale.languageCode == 'ar' ? 'إجراء تجاوز حد الدين' : 'Action on Exceeding Debt Limit',
-                        style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+                        style: TextStyle(color: AppColors.of(context).textLight, fontSize: 12.sp),
                       ),
                       SizedBox(height: 6.h),
                       _buildDebtModeDropdown(),
@@ -206,11 +206,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: context.locale.languageCode == 'ar' ? 'إعدادات الطباعة والـ PDF' : 'Print & PDF Settings',
                     icon: Icons.print_rounded,
                     children: [
-                      Text('pdf_page_format'.tr(), style: TextStyle(color: Colors.grey, fontSize: 12.sp)),
+                      Text('pdf_page_format'.tr(), style: TextStyle(color: AppColors.of(context).textLight, fontSize: 12.sp)),
                       SizedBox(height: 6.h),
                       _buildPdfPageFormatDropdown(context),
                       SizedBox(height: 16.h),
-                      Text('receipt_width'.tr(), style: TextStyle(color: Colors.grey, fontSize: 12.sp)),
+                      Text('receipt_width'.tr(), style: TextStyle(color: AppColors.of(context).textLight, fontSize: 12.sp)),
                       SizedBox(height: 6.h),
                       _buildReceiptWidthDropdown(context),
                       SizedBox(height: 12.h),
@@ -269,7 +269,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: context.locale.languageCode == 'ar' ? 'الإعدادات العامة والحساب' : 'General & Account Settings',
                     icon: Icons.settings_rounded,
                     children: [
-                      Text('language'.tr(), style: TextStyle(color: Colors.grey, fontSize: 12.sp)),
+                      Text('language'.tr(), style: TextStyle(color: AppColors.of(context).textLight, fontSize: 12.sp)),
                       SizedBox(height: 6.h),
                       _buildLanguageDropdown(context),
                       SizedBox(height: 16.h),
@@ -316,7 +316,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       decoration: BoxDecoration(
         color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+        border: Border.all(color: AppColors.of(context).border.withValues(alpha: 0.15)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<DebtMode>(
@@ -691,12 +691,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: AppColors.of(context).border.withValues(alpha: 0.1)),
       ),
       child: Theme(
         data: Theme.of(context).copyWith(
@@ -706,7 +706,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           leading: Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.08),
+              color: AppColors.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10.r),
             ),
             child: Icon(icon, color: AppColors.primary, size: 20.sp),
@@ -741,7 +741,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 decoration: BoxDecoration(
                   color: AppColors.of(context).surface,
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primary.withOpacity(0.2), width: 2),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 2),
                   image: _settings.storeProfile.logoPath != null
                       ? DecorationImage(
                           image: FileImage(File(_settings.storeProfile.logoPath!)),
@@ -750,7 +750,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       : null,
                 ),
                 child: _settings.storeProfile.logoPath == null
-                    ? Icon(Icons.store_rounded, size: 40.sp, color: Colors.grey)
+                    ? Icon(Icons.store_rounded, size: 40.sp, color: AppColors.of(context).textLight)
                     : null,
               ),
               Positioned(
@@ -976,7 +976,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: TextStyle(color: Colors.grey, fontSize: 12.sp)),
+                Text(label, style: TextStyle(color: AppColors.of(context).textLight, fontSize: 12.sp)),
                 TextField(
                   controller: controller,
                   decoration: const InputDecoration(
@@ -1001,9 +1001,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Container(
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.05),
+          color: AppColors.primary.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(15.r),
-          border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
         ),
         child: Row(
           children: [
@@ -1029,9 +1029,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Container(
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.05),
+          color: AppColors.primary.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(15.r),
-          border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
         ),
         child: Row(
           children: [
@@ -1073,7 +1073,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('select_template'.tr(), style: TextStyle(fontSize: 12.sp, color: Colors.grey, fontWeight: FontWeight.bold)),
+                    Text('select_template'.tr(), style: TextStyle(fontSize: 12.sp, color: AppColors.of(context).textLight, fontWeight: FontWeight.bold)),
                     SizedBox(height: 10.h),
                     Wrap(
                       spacing: 8.w,
@@ -1147,7 +1147,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text('cancel'.tr(), style: const TextStyle(color: Colors.grey)),
+                  child: Text('cancel'.tr(), style: TextStyle(color: AppColors.of(context).textLight)),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -1180,7 +1180,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ActionChip(
       label: Text(label.tr(), style: TextStyle(fontSize: 11.sp)),
       onPressed: onSelected,
-      backgroundColor: AppColors.primary.withOpacity(0.1),
+      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
       labelStyle: const TextStyle(color: AppColors.primary),
       padding: EdgeInsets.zero,
     );
@@ -1302,7 +1302,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text('cancel'.tr(), style: const TextStyle(color: Colors.grey)),
+                  child: Text('cancel'.tr(), style: TextStyle(color: AppColors.of(context).textLight)),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -1563,7 +1563,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           isPremium 
             ? 'full_version'.tr() 
             : 'trial_remaining'.tr(namedArgs: {'days': remaining.toString()}),
-          style: TextStyle(fontSize: 12.sp, color: isPremium ? Colors.amber : Colors.grey),
+          style: TextStyle(fontSize: 12.sp, color: isPremium ? Colors.amber : AppColors.of(context).textLight),
         ),
         trailing: Icon(Icons.arrow_forward_ios, color: AppColors.of(context).textSecondary, size: 16.sp),
         onTap: () {
@@ -1615,7 +1615,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: ListTile(
         leading: const Icon(Icons.logout, color: AppColors.error),
         title: Text('logout'.tr(), style:  TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: AppColors.error)),
-        subtitle: Text(user.username, style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+        subtitle: Text(user.username, style: TextStyle(fontSize: 12.sp, color: AppColors.of(context).textLight)),
         onTap: () async {
           await _authService.logout();
           setState(() {});

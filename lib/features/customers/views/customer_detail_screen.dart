@@ -227,17 +227,17 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
         padding: EdgeInsets.all(12.w),
         decoration: BoxDecoration(
           border: Border.all(
-            color: isDark ? Colors.white.withOpacity(0.08) : Colors.grey.withOpacity(0.15),
+            color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.15),
           ),
           borderRadius: BorderRadius.circular(15.r),
-          color: isDark ? theme.colorScheme.background : Colors.grey[50],
+          color: AppColors.of(context).surfaceContainer,
         ),
         child: Row(
           children: [
             Container(
               padding: EdgeInsets.all(8.w),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 24.sp),
@@ -260,7 +260,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                     subtitle,
                     style: TextStyle(
                       fontSize: 10.sp,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -481,7 +481,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
             fontSize: 13,
             fontWeight: FontWeight.bold,
             color: isVoid
-                ? Colors.grey
+                ? colors.textLight
                 : (isRefund ? AppColors.error : AppColors.success),
             decoration: isVoid ? TextDecoration.lineThrough : null,
           ),
@@ -523,7 +523,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
         borderRadius: BorderRadius.circular(24.r),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -534,7 +534,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
           Text(
             'current_balance'.tr(),
             style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
               fontSize: 13.sp,
               fontWeight: FontWeight.w500,
               letterSpacing: 1,
@@ -562,7 +562,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                 Text(
                   'YER',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w600,
                   ),
@@ -655,7 +655,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                   padding: EdgeInsets.all(10.w),
                   decoration: BoxDecoration(
                     color: (isRefund ? AppColors.error : AppColors.success)
-                        .withOpacity(0.1),
+                        .withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -686,7 +686,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                             Container(
                               padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                               decoration: BoxDecoration(
-                                color: AppColors.error.withOpacity(0.1),
+                                color: AppColors.error.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(4.r),
                               ),
                               child: Text(
@@ -703,7 +703,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                       ),
                       Text(
                         DateFormat('MMM dd, yyyy').format(tx.date),
-                        style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+                        style: TextStyle(
+                          color: AppColors.of(context).textLight,
+                          fontSize: 12.sp,
+                        ),
                       ),
                     ],
                   ),
@@ -713,7 +716,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16.sp,
-                    color: tx.isVoid ? Colors.grey : (isRefund ? AppColors.error : AppColors.success),
+                    color: tx.isVoid
+                        ? AppColors.of(context).textLight
+                        : (isRefund ? AppColors.error : AppColors.success),
                     decoration: tx.isVoid ? TextDecoration.lineThrough : null,
                   ),
                 ),
@@ -751,7 +756,7 @@ class _ActionButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(15.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),

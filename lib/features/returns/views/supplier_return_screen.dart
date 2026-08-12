@@ -231,7 +231,7 @@ class _SupplierReturnScreenState extends State<SupplierReturnScreen> {
           margin: EdgeInsets.only(bottom: 8.h),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: AppColors.primary.withOpacity(0.1),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               child: Icon(Icons.business, color: AppColors.primary),
             ),
             title: Text(supplier.name),
@@ -272,7 +272,8 @@ class _SupplierReturnScreenState extends State<SupplierReturnScreen> {
                         ),
                         trailing: Text(
                           '${purchase.items.length} ${'items'.tr()}',
-                          style: TextStyle(color: AppColors.textSecondary),
+                          style: TextStyle(
+                              color: AppColors.of(context).textSecondary),
                         ),
                         onTap: () => _selectPurchase(purchase),
                       ),
@@ -289,7 +290,7 @@ class _SupplierReturnScreenState extends State<SupplierReturnScreen> {
       children: [
         Container(
           padding: EdgeInsets.all(16.w),
-          color: AppColors.primary.withOpacity(0.05),
+          color: AppColors.primary.withValues(alpha: 0.05),
           child: Row(
             children: [
               Expanded(
@@ -303,7 +304,9 @@ class _SupplierReturnScreenState extends State<SupplierReturnScreen> {
                     SizedBox(height: 4.h),
                     Text(
                       '${'purchase'.tr()} - ${DateFormat('yyyy-MM-dd').format(_selectedPurchase!.date)}',
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12.sp),
+                      style: TextStyle(
+                          color: AppColors.of(context).textSecondary,
+                          fontSize: 12.sp),
                     ),
                   ],
                 ),
@@ -372,7 +375,9 @@ class _SupplierReturnScreenState extends State<SupplierReturnScreen> {
                 padding: EdgeInsets.only(left: 40.w),
                 child: Row(
                   children: [
-                    Text('${'quantity'.tr()}: ', style: TextStyle(color: AppColors.textSecondary)),
+                    Text('${'quantity'.tr()}: ',
+                        style:
+                            TextStyle(color: AppColors.of(context).textSecondary)),
                     IconButton(
                       icon: const Icon(Icons.remove_circle_outline, size: 20),
                       onPressed: returnQty > 1
@@ -414,7 +419,7 @@ class _SupplierReturnScreenState extends State<SupplierReturnScreen> {
           decoration: InputDecoration(
             hintText: 'return_reason_hint'.tr(),
             filled: true,
-            fillColor: AppColors.surface,
+            fillColor: AppColors.of(context).surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
               borderSide: BorderSide.none,
@@ -430,9 +435,9 @@ class _SupplierReturnScreenState extends State<SupplierReturnScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5)),
         ],
       ),
       child: SafeArea(

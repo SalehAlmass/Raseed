@@ -20,7 +20,7 @@ class SalesTrendChart extends StatelessWidget {
         lineTouchData: LineTouchData(
           enabled: true,
           touchTooltipData: LineTouchTooltipData(
-            getTooltipColor: (_) => AppColors.surface,
+            getTooltipColor: (_) => AppColors.of(context).surface,
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((spot) {
                 final isSales = spot.barIndex == 0;
@@ -46,7 +46,10 @@ class SalesTrendChart extends StatelessWidget {
                   padding: EdgeInsets.only(top: 8.h),
                   child: Text(
                     trend[value.toInt()].label.split('-').last,
-                    style: TextStyle(fontSize: 10.sp, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      color: AppColors.of(context).textLight,
+                    ),
                   ),
                 );
               },
@@ -66,7 +69,10 @@ class SalesTrendChart extends StatelessWidget {
             belowBarData: BarAreaData(
               show: true,
               gradient: LinearGradient(
-                colors: [AppColors.primary.withOpacity(0.1), AppColors.secondary.withOpacity(0.0)],
+                colors: [
+                  AppColors.primary.withValues(alpha: 0.1),
+                  AppColors.secondary.withValues(alpha: 0.0),
+                ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),

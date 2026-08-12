@@ -47,7 +47,7 @@ class _AccountingHubScreenState extends State<AccountingHubScreen> {
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: AppColors.of(context).textPrimary,
             ),
           ),
           SizedBox(height: 15.h),
@@ -187,14 +187,14 @@ class _AccountingHubScreenState extends State<AccountingHubScreen> {
       padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+          colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24.r),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -225,7 +225,7 @@ class _AccountingHubScreenState extends State<AccountingHubScreen> {
           SizedBox(height: 8.h),
           Text(
             'hub_description'.tr(),
-            style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12.sp),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12.sp),
           ),
         ],
       ),
@@ -369,12 +369,12 @@ class _HubCard extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.of(context).surface,
           borderRadius: BorderRadius.circular(20.r),
-          border: Border.all(color: color.withOpacity(0.1)),
+          border: Border.all(color: color.withValues(alpha: 0.1)),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.05),
+              color: color.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -386,7 +386,7 @@ class _HubCard extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(8.w),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 24.sp),
@@ -397,7 +397,7 @@ class _HubCard extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 14.sp,
-                color: AppColors.textPrimary,
+                color: AppColors.of(context).textPrimary,
               ),
             ),
             SizedBox(height: 4.h),
@@ -405,7 +405,7 @@ class _HubCard extends StatelessWidget {
               desc,
               style: TextStyle(
                 fontSize: 10.sp,
-                color: AppColors.textSecondary,
+                color: AppColors.of(context).textSecondary,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,

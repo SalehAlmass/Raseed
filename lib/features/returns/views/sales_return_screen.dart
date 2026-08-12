@@ -233,7 +233,7 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> {
               hintText: 'search_customer'.tr(),
               prefixIcon: const Icon(Icons.search),
               filled: true,
-              fillColor: AppColors.surface,
+              fillColor: AppColors.of(context).surface,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.r),
                 borderSide: BorderSide.none,
@@ -256,7 +256,7 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> {
                       margin: EdgeInsets.only(bottom: 8.h),
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: AppColors.primary.withOpacity(0.1),
+                          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                           child: Icon(Icons.person, color: AppColors.primary),
                         ),
                         title: Text(customer.name),
@@ -300,7 +300,8 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> {
                         ),
                         trailing: Text(
                           '${sale.items.length} ${'items'.tr()}',
-                          style: TextStyle(color: AppColors.textSecondary),
+                          style: TextStyle(
+                              color: AppColors.of(context).textSecondary),
                         ),
                         onTap: () => _selectSale(sale),
                       ),
@@ -317,7 +318,7 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> {
       children: [
         Container(
           padding: EdgeInsets.all(16.w),
-          color: AppColors.primary.withOpacity(0.05),
+          color: AppColors.primary.withValues(alpha: 0.05),
           child: Row(
             children: [
               Expanded(
@@ -331,7 +332,9 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> {
                     SizedBox(height: 4.h),
                     Text(
                       '${'invoice'.tr()} #${_selectedSale!.id} - ${DateFormat('yyyy-MM-dd').format(_selectedSale!.date)}',
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12.sp),
+                      style: TextStyle(
+                          color: AppColors.of(context).textSecondary,
+                          fontSize: 12.sp),
                     ),
                   ],
                 ),
@@ -400,7 +403,9 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> {
                 padding: EdgeInsets.only(left: 40.w),
                 child: Row(
                   children: [
-                    Text('${'quantity'.tr()}: ', style: TextStyle(color: AppColors.textSecondary)),
+                    Text('${'quantity'.tr()}: ',
+                        style:
+                            TextStyle(color: AppColors.of(context).textSecondary)),
                     IconButton(
                       icon: const Icon(Icons.remove_circle_outline, size: 20),
                       onPressed: returnQty > 1
@@ -442,7 +447,7 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> {
           decoration: InputDecoration(
             hintText: 'return_reason_hint'.tr(),
             filled: true,
-            fillColor: AppColors.surface,
+            fillColor: AppColors.of(context).surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
               borderSide: BorderSide.none,
@@ -472,21 +477,25 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : AppColors.surface,
+          color: isSelected
+              ? color.withValues(alpha: 0.1)
+              : AppColors.of(context).surface,
           borderRadius: BorderRadius.circular(20.r),
-          border: Border.all(color: isSelected ? color : Colors.grey.withOpacity(0.3)),
+          border: Border.all(
+            color: isSelected ? color : AppColors.of(context).border,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: isSelected ? color : Colors.grey),
+            Icon(icon, size: 16, color: isSelected ? color : AppColors.of(context).textLight),
             SizedBox(width: 4.w),
             Text(
               value == 'good' ? (context.locale.languageCode == 'ar' ? 'سليم' : 'Good') :
               value == 'fair' ? (context.locale.languageCode == 'ar' ? 'مقبول' : 'Fair') :
               (context.locale.languageCode == 'ar' ? 'تالف' : 'Damaged'),
               style: TextStyle(
-                color: isSelected ? color : Colors.grey,
+                color: isSelected ? color : AppColors.of(context).textLight,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -501,9 +510,9 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5)),
         ],
       ),
       child: SafeArea(
@@ -952,18 +961,18 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> {
         decoration: BoxDecoration(
           color: isSelected
               ? color.withValues(alpha: 0.1)
-              : AppColors.surface,
+              : AppColors.of(context).surface,
           borderRadius: BorderRadius.circular(AppRadius.pill),
           border: Border.all(
             color: isSelected
                 ? color
-                : Colors.grey.withValues(alpha: 0.3),
+                : AppColors.of(context).border,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: isSelected ? color : Colors.grey),
+            Icon(icon, size: 16, color: isSelected ? color : AppColors.of(context).textLight),
             const SizedBox(width: 4),
             Text(
               value == 'good'
@@ -972,7 +981,7 @@ class _SalesReturnScreenState extends State<SalesReturnScreen> {
                       ? (context.locale.languageCode == 'ar' ? 'مقبول' : 'Fair')
                       : (context.locale.languageCode == 'ar' ? 'تالف' : 'Damaged'),
               style: TextStyle(
-                color: isSelected ? color : Colors.grey,
+                color: isSelected ? color : AppColors.of(context).textLight,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),

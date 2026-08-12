@@ -92,7 +92,7 @@ class AboutScreen extends StatelessWidget {
                   child: _buildContactSection(context),
                 ),
                 SizedBox(height: 40.h),
-                _buildCopyright(),
+                _buildCopyright(context),
                 SizedBox(height: 20.h),
               ],
             ),
@@ -123,7 +123,7 @@ class AboutScreen extends StatelessWidget {
               const SizedBox(height: AppSpace.xl),
               _buildDesktopContactSection(context),
               const SizedBox(height: AppSpace.xxl),
-              _buildDesktopCopyright(),
+              _buildDesktopCopyright(context),
             ],
           ),
         ),
@@ -155,7 +155,7 @@ class AboutScreen extends StatelessWidget {
         Container(
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20.r),
           ),
           child: Text(
@@ -200,7 +200,7 @@ class AboutScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(24.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -269,7 +269,7 @@ class AboutScreen extends StatelessWidget {
         Container(
           padding: EdgeInsets.all(8.w),
           decoration: BoxDecoration(
-            color: AppColors.success.withOpacity(0.1),
+            color: AppColors.success.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: AppColors.success, size: 20.sp),
@@ -322,7 +322,7 @@ class AboutScreen extends StatelessWidget {
           'crafted_by'.tr(),
           style: TextStyle(
             fontSize: 14.sp,
-            color: Colors.grey,
+            color: AppColors.of(context).textLight,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -372,7 +372,7 @@ class AboutScreen extends StatelessWidget {
           'crafted_by'.tr(),
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey,
+            color: AppColors.of(context).textLight,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -427,7 +427,7 @@ class AboutScreen extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -457,14 +457,14 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCopyright() {
+  Widget _buildCopyright(BuildContext context) {
     return Column(
       children: [
         Text(
           '© ${DateTime.now().year} تاجر ماس',
           style: TextStyle(
             fontSize: 12.sp,
-            color: Colors.grey,
+            color: AppColors.of(context).textLight,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -473,21 +473,21 @@ class AboutScreen extends StatelessWidget {
           'All rights reserved',
           style: TextStyle(
             fontSize: 10.sp,
-            color: Colors.grey.withOpacity(0.7),
+            color: AppColors.of(context).textLight.withValues(alpha: 0.7),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildDesktopCopyright() {
+  Widget _buildDesktopCopyright(BuildContext context) {
     return Column(
       children: [
         Text(
           '© ${DateTime.now().year} تاجر ماس',
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey,
+            color: AppColors.of(context).textLight,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -496,7 +496,7 @@ class AboutScreen extends StatelessWidget {
           'All rights reserved',
           style: TextStyle(
             fontSize: 10,
-            color: Colors.grey.withValues(alpha: 0.7),
+            color: AppColors.of(context).textLight.withValues(alpha: 0.7),
           ),
         ),
       ],

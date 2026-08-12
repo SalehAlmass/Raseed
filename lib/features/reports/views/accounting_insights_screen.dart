@@ -252,9 +252,15 @@ class _AccountingInsightsScreenState extends State<AccountingInsightsScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: isPositive ? Colors.green.shade50 : Colors.red.shade50,
+        color: isPositive
+            ? AppColors.of(context).success.withValues(alpha: 0.15)
+            : AppColors.of(context).error.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: isPositive ? Colors.green.shade200 : Colors.red.shade200),
+        border: Border.all(
+          color: isPositive
+              ? AppColors.of(context).success.withValues(alpha: 0.5)
+              : AppColors.of(context).error.withValues(alpha: 0.5),
+        ),
       ),
       child: Column(
         children: [
@@ -269,7 +275,7 @@ class _AccountingInsightsScreenState extends State<AccountingInsightsScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          Text('current_month'.tr(), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          Text('current_month'.tr(), style: TextStyle(fontSize: 12, color: AppColors.of(context).textLight)),
         ],
       ),
     );

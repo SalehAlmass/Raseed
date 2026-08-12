@@ -36,11 +36,11 @@ class AppBottomNavigationBar extends StatelessWidget {
       child: Container(
         height: 75.h,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.of(context).surface,
           borderRadius: BorderRadius.circular(40.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.12),
+              color: Colors.black.withValues(alpha: 0.12),
               blurRadius: 25,
               offset: const Offset(0, 10),
             ),
@@ -57,6 +57,7 @@ class AppBottomNavigationBar extends StatelessWidget {
             }
 
             return _buildTabItem(
+              context: context,
               icon: item.icon,
               label: item.label,
               isActive: isActive,
@@ -83,12 +84,13 @@ class AppBottomNavigationBar extends StatelessWidget {
   }
 
   Widget _buildTabItem({
+    required BuildContext context,
     required IconData icon,
     required String label,
     required bool isActive,
     required VoidCallback onTap,
   }) {
-    final color = isActive ? AppColors.primary : Colors.grey.withOpacity(0.6);
+    final color = isActive ? AppColors.primary : AppColors.of(context).textLight;
 
     return Expanded(
       child: GestureDetector(
@@ -141,7 +143,7 @@ class AppBottomNavigationBar extends StatelessWidget {
             gradient: LinearGradient(
               colors: [
                 AppColors.primary,
-                AppColors.primary.withOpacity(0.85),
+                AppColors.primary.withValues(alpha: 0.85),
                 const Color(0xFF6200EA), // Adding a deep purple hint for premium feel
               ],
               begin: Alignment.topLeft,
@@ -150,20 +152,20 @@ class AppBottomNavigationBar extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.4),
+                color: AppColors.primary.withValues(alpha: 0.4),
                 blurRadius: 25,
                 spreadRadius: 2,
                 offset: const Offset(0, 12),
               ),
               // Inner glow
               BoxShadow(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(-2, -2),
               ),
             ],
             border: Border.all(
-              color: Colors.white.withOpacity(0.35),
+              color: Colors.white.withValues(alpha: 0.35),
               width: 2.5,
             ),
           ),
@@ -172,7 +174,7 @@ class AppBottomNavigationBar extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha: 0.15),
                 width: 1,
               ),
             ),

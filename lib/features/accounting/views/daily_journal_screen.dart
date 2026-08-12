@@ -215,7 +215,7 @@ class _JournalEntryCard extends StatelessWidget {
       margin: EdgeInsets.only(bottom: 20.h),
       padding: EdgeInsets.all(15.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
         boxShadow: [
           BoxShadow(
@@ -233,7 +233,7 @@ class _JournalEntryCard extends StatelessWidget {
             children: [
               Text(
                 DateFormat('yyyy-MM-dd HH:mm').format(entry.date),
-                style: TextStyle(fontSize: 12.sp, color: Colors.grey, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 12.sp, color: AppColors.of(context).textLight, fontWeight: FontWeight.bold),
               ),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
@@ -258,9 +258,9 @@ class _JournalEntryCard extends StatelessWidget {
             padding: EdgeInsets.only(bottom: 8.h),
             child: Row(
               children: [
-                Expanded(flex: 2, child: Text('description'.tr(), style: TextStyle(fontSize: 11.sp, color: Colors.grey, fontWeight: FontWeight.bold))),
-                Expanded(child: Text('debit'.tr(), textAlign: TextAlign.center, style: TextStyle(fontSize: 11.sp, color: Colors.grey, fontWeight: FontWeight.bold))),
-                Expanded(child: Text('credit'.tr(), textAlign: TextAlign.center, style: TextStyle(fontSize: 11.sp, color: Colors.grey, fontWeight: FontWeight.bold))),
+                Expanded(flex: 2, child: Text('description'.tr(), style: TextStyle(fontSize: 11.sp, color: AppColors.of(context).textLight, fontWeight: FontWeight.bold))),
+                Expanded(child: Text('debit'.tr(), textAlign: TextAlign.center, style: TextStyle(fontSize: 11.sp, color: AppColors.of(context).textLight, fontWeight: FontWeight.bold))),
+                Expanded(child: Text('credit'.tr(), textAlign: TextAlign.center, style: TextStyle(fontSize: 11.sp, color: AppColors.of(context).textLight, fontWeight: FontWeight.bold))),
               ],
             ),
           ),
@@ -282,7 +282,7 @@ class _JournalEntryCard extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 12.sp,
-                          color: line.debit > 0 ? AppColors.success : Colors.grey[400],
+                          color: line.debit > 0 ? AppColors.success : AppColors.of(context).textLight,
                           fontWeight: line.debit > 0 ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
@@ -293,7 +293,7 @@ class _JournalEntryCard extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 12.sp,
-                          color: line.credit > 0 ? AppColors.error : Colors.grey[400],
+                          color: line.credit > 0 ? AppColors.error : AppColors.of(context).textLight,
                           fontWeight: line.credit > 0 ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),

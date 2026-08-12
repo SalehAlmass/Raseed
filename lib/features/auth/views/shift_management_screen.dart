@@ -156,7 +156,7 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
           title: isOpen ? 'shift_is_open'.tr() : 'no_active_shift'.tr(),
           value: isOpen ? '${current.openingBalance} YER' : '--',
           icon: isOpen ? Icons.lock_open_rounded : Icons.lock_outline_rounded,
-          color: isOpen ? AppColors.success : Colors.grey,
+          color: isOpen ? AppColors.success : AppColors.of(context).textLight,
           subtitle: isOpen
               ? '${'started_at'.tr()}: ${DateFormat('HH:mm').format(current.startTime)}'
               : 'open_new_shift'.tr(),
@@ -268,16 +268,16 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
       width: double.infinity,
       padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
-        color: isOpen ? Colors.green.shade50 : AppColors.surface,
+        color: isOpen ? AppColors.of(context).success.withValues(alpha: 0.15) : AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(color: isOpen ? Colors.green.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.2)),
+        border: Border.all(color: isOpen ? Colors.green.withValues(alpha: 0.3) : AppColors.of(context).border.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
           Icon(
             isOpen ? Icons.lock_open_rounded : Icons.lock_outline_rounded,
             size: 50.sp,
-            color: isOpen ? Colors.green : Colors.grey,
+            color: isOpen ? Colors.green : AppColors.of(context).textLight,
           ),
           SizedBox(height: 16.h),
           Text(
@@ -288,7 +288,7 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
             SizedBox(height: 8.h),
             Text(
               '${'started_at'.tr()}: ${DateFormat('HH:mm').format(current.startTime)}',
-              style: TextStyle(color: Colors.grey, fontSize: 14.sp),
+              style: TextStyle(color: AppColors.of(context).textLight, fontSize: 14.sp),
             ),
             SizedBox(height: 4.h),
             Text(
@@ -317,7 +317,7 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
 
   Widget _buildHistoryList() {
     if (_history.isEmpty) {
-      return Center(child: Text('no_history'.tr(), style: const TextStyle(color: Colors.grey)));
+      return Center(child: Text('no_history'.tr(), style: TextStyle(color: AppColors.of(context).textLight)));
     }
 
     return ListView.builder(

@@ -24,20 +24,32 @@ class ThemeService extends ChangeNotifier {
     }
   }
 
+  ThemeMode _themeModeFromIndex(int index) {
+    switch (index % 3) {
+      case 0:
+        return ThemeMode.light;
+      case 1:
+        return ThemeMode.dark;
+      case 2:
+      default:
+        return ThemeMode.system;
+    }
+  }
+
   Future<void> _loadTheme() async {
     final index = _prefs.getInt(_themeKey) ?? 2;
-    _themeMode = ThemeMode.values[index % 3];
+    _themeMode = _themeModeFromIndex(index);
     notifyListeners();
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
-    await _prefs.setInt(_themeKey, mode.index);
+    await _prefs.setInt(_themeKey, themeModeIndex);
     notifyListeners();
   }
 
   Future<void> setThemeModeByIndex(int index) async {
-    final mode = ThemeMode.values[index % 3];
+    final mode = _themeModeFromIndex(index);
     await setThemeMode(mode);
   }
 

@@ -117,23 +117,10 @@ class AppRouter {
     }
   }
 
-  static PageRouteBuilder _buildRoute(Widget page, RouteSettings settings) {
-    return PageRouteBuilder(
+  static Route<dynamic> _buildRoute(Widget page, RouteSettings settings) {
+    return MaterialPageRoute(
+      builder: (_) => page,
       settings: settings,
-      pageBuilder: (context, animation, secondaryAnimation) => page,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(1.0, 0.0);
-        const end = Offset.zero;
-        const curve = Curves.easeInOutCubic;
-
-        var tween = Tween(
-          begin: begin,
-          end: end,
-        ).chain(CurveTween(curve: curve));
-
-        return SlideTransition(position: animation.drive(tween), child: child);
-      },
-      transitionDuration: const Duration(milliseconds: 300),
     );
   }
 

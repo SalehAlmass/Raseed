@@ -177,11 +177,11 @@ class _DiscountCodesScreenState extends State<DiscountCodesScreen> {
                   final expired = !code.isValid;
                   return Card(
                     margin: EdgeInsets.only(bottom: 8.h),
-                    color: expired ? Colors.grey[100] : null,
+                    color: expired ? AppColors.of(context).surfaceContainer : null,
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: (expired ? Colors.grey : Colors.blue).withValues(alpha: 0.1),
-                        child: Icon(Icons.redeem, color: expired ? Colors.grey : Colors.blue),
+                        backgroundColor: (expired ? AppColors.of(context).textLight : Colors.blue).withValues(alpha: 0.1),
+                        child: Icon(Icons.redeem, color: expired ? AppColors.of(context).textLight : Colors.blue),
                       ),
                       title: Row(
                         children: [
@@ -209,7 +209,7 @@ class _DiscountCodesScreenState extends State<DiscountCodesScreen> {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('${code.currentUses}/${code.maxUses > 0 ? code.maxUses : '∞'}', style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+                          Text('${code.currentUses}/${code.maxUses > 0 ? code.maxUses : '∞'}', style: TextStyle(fontSize: 12.sp, color: AppColors.of(context).textLight)),
                           SizedBox(width: 8.w),
                           PopupMenuButton<String>(
                             itemBuilder: (_) => [

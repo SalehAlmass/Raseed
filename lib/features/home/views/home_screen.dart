@@ -791,9 +791,9 @@ class _HomeScreenState extends State<HomeScreen> {
       margin: EdgeInsets.only(bottom: 12.h),
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: color.withOpacity(0.1)),
+        border: Border.all(color: color.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
@@ -814,7 +814,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   desc,
                   style: TextStyle(
-                    color: color.withOpacity(0.8),
+                    color: color.withValues(alpha: 0.8),
                     fontSize: 12.sp,
                   ),
                 ),
@@ -892,7 +892,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.green.withOpacity(0.3),
+            color: Colors.green.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -903,7 +903,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             padding: EdgeInsets.all(10.w),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.rocket_launch, color: Colors.white, size: 28.sp),
@@ -924,7 +924,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   'marketing_desc'.tr(),
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 11.sp,
                   ),
                 ),
@@ -993,7 +993,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? Center(
                       child: Text(
                         'no_products'.tr(),
-                        style: const TextStyle(color: Colors.grey),
+                        style: TextStyle(color: AppColors.of(context).textLight),
                       ),
                     )
                   : ListView.separated(
@@ -1140,14 +1140,14 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+          colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -1164,7 +1164,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     'daily_sales'.tr(),
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 14.sp,
                     ),
                   ),
@@ -1227,7 +1227,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12.r),
           ),
           child: Row(
@@ -1321,7 +1321,7 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.circular(20.r),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.blue.withOpacity(0.3),
+                  color: Colors.blue.withValues(alpha: 0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),
@@ -1332,7 +1332,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   padding: EdgeInsets.all(12.w),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -1357,7 +1357,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(
                         'manage_business_finances'.tr(),
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 12.sp,
                         ),
                       ),
@@ -1366,7 +1366,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 Icon(
                   Icons.arrow_forward_ios_rounded,
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                   size: 18.sp,
                 ),
               ],
@@ -1519,7 +1519,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? Center(
                       child: Text(
                         'no_transactions'.tr(),
-                        style: const TextStyle(color: Colors.grey),
+                        style: TextStyle(color: AppColors.of(context).textLight),
                       ),
                     )
                   : ListView.separated(
@@ -1568,7 +1568,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(15.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -1580,7 +1580,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ? Center(
               child: Text(
                 'no_transactions'.tr(),
-                style: const TextStyle(color: Colors.grey),
+                style: TextStyle(color: AppColors.of(context).textLight),
               ),
             )
           : ListView.separated(
@@ -1979,7 +1979,7 @@ class _CustomerDropdownState extends State<_CustomerDropdown> {
         SizedBox(width: 10.w),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12.r),
           ),
           child: IconButton(
@@ -2109,6 +2109,7 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16.r),
@@ -2116,12 +2117,12 @@ class _SummaryCard extends StatelessWidget {
         width: double.infinity,
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: AppColors.of(context).surface,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: Colors.grey.withOpacity(0.1), width: 1),
+          border: Border.all(color: colors.border, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -2135,7 +2136,7 @@ class _SummaryCard extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.all(8.w),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10.r),
                   ),
                   child: Icon(icon, color: color, size: 20.sp),
@@ -2203,9 +2204,9 @@ class _ActionCard extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 12.w),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: color.withOpacity(0.2), width: 1),
+          border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -2282,7 +2283,7 @@ class _TransactionTile extends StatelessWidget {
       child: ListTile(
         contentPadding: EdgeInsets.zero,
         leading: CircleAvatar(
-          backgroundColor: iconColor.withOpacity(0.1),
+          backgroundColor: iconColor.withValues(alpha: 0.1),
           child: Icon(iconData, color: iconColor, size: 20),
         ),
         title: Text(
@@ -2294,7 +2295,7 @@ class _TransactionTile extends StatelessWidget {
           children: [
             Text(
               DateFormat('MMM dd, hh:mm a').format(tx.date),
-              style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+              style: TextStyle(fontSize: 12.sp, color: AppColors.of(context).textLight),
             ),
           ],
         ),
@@ -2351,7 +2352,7 @@ class _QuickActionCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(15.r),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -2362,7 +2363,7 @@ class _QuickActionCard extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(10.w),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 24.sp),

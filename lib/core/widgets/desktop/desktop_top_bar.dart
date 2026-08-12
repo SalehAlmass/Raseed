@@ -130,21 +130,23 @@ class DesktopTopBar extends StatelessWidget {
 
   Widget _buildThemeToggle(BuildContext context) {
     final themeService = sl<ThemeService>();
-    final icon = switch (themeService.themeModeIndex) {
-      0 => Icons.light_mode_rounded,
-      1 => Icons.dark_mode_rounded,
-      _ => Icons.brightness_auto_rounded,
-    };
     return ListenableBuilder(
       listenable: themeService,
-      builder: (context, child) => _GlobalAction(
-        tooltip: 'theme'.tr(),
-        icon: icon,
-        onPressed: () {
-          final next = (themeService.themeModeIndex + 1) % 3;
-          themeService.setThemeModeByIndex(next);
-        },
-      ),
+      builder: (context, child) {
+        final icon = switch (themeService.themeModeIndex) {
+          0 => Icons.light_mode_rounded,
+          1 => Icons.dark_mode_rounded,
+          _ => Icons.brightness_auto_rounded,
+        };
+        return _GlobalAction(
+          tooltip: 'theme'.tr(),
+          icon: icon,
+          onPressed: () {
+            final next = (themeService.themeModeIndex + 1) % 3;
+            themeService.setThemeModeByIndex(next);
+          },
+        );
+      },
     );
   }
 }

@@ -120,7 +120,7 @@ class _SupplierPurchaseHistoryScreenState extends State<SupplierPurchaseHistoryS
                 hintText: 'search_product'.tr(),
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
-                fillColor: AppColors.surface,
+                fillColor: AppColors.of(context).surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15.r),
                   borderSide: BorderSide.none,
@@ -147,10 +147,10 @@ class _SupplierPurchaseHistoryScreenState extends State<SupplierPurchaseHistoryS
                         return Container(
                           margin: EdgeInsets.only(bottom: 10.h),
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: AppColors.of(context).surface,
                             borderRadius: BorderRadius.circular(12.r),
                             boxShadow: [
-                              BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 3)),
+                              BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 3)),
                             ],
                           ),
                           child: ListTile(
@@ -158,7 +158,7 @@ class _SupplierPurchaseHistoryScreenState extends State<SupplierPurchaseHistoryS
                             leading: Container(
                               padding: EdgeInsets.all(8.w),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.1),
+                                color: AppColors.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10.r),
                               ),
                               child: const Icon(Icons.shopping_cart_outlined, color: AppColors.primary),
@@ -168,12 +168,12 @@ class _SupplierPurchaseHistoryScreenState extends State<SupplierPurchaseHistoryS
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 if (widget.initialSupplier == null)
-                                  Text(supplierName, style: TextStyle(fontSize: 11.sp, color: Colors.grey[600])),
+                                  Text(supplierName, style: TextStyle(fontSize: 11.sp, color: AppColors.of(context).textSecondary)),
                                 Row(
                                   children: [
-                                    Text('${qty} ${'units'.tr()}', style: TextStyle(fontSize: 11.sp, color: Colors.grey[500])),
+                                    Text('${qty} ${'units'.tr()}', style: TextStyle(fontSize: 11.sp, color: AppColors.of(context).textLight)),
                                     SizedBox(width: 8.w),
-                                    Text('× ${CurrencyHelper.getFormatter('YER').format(price)}', style: TextStyle(fontSize: 11.sp, color: Colors.grey[500])),
+                                    Text('× ${CurrencyHelper.getFormatter('YER').format(price)}', style: TextStyle(fontSize: 11.sp, color: AppColors.of(context).textLight)),
                                   ],
                                 ),
                               ],
@@ -188,7 +188,7 @@ class _SupplierPurchaseHistoryScreenState extends State<SupplierPurchaseHistoryS
                                 ),
                                 Text(
                                   DateFormat('yyyy/MM/dd').format(date),
-                                  style: TextStyle(fontSize: 10.sp, color: Colors.grey[400]),
+                                  style: TextStyle(fontSize: 10.sp, color: AppColors.of(context).textLight),
                                 ),
                               ],
                             ),

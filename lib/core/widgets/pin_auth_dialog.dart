@@ -65,7 +65,7 @@ class _PinAuthDialogState extends State<PinAuthDialog> {
           Text(
             'access_restricted'.tr(),
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+            style: TextStyle(fontSize: 12.sp, color: AppColors.of(context).textLight),
           ),
         ],
       ),

@@ -143,11 +143,11 @@ class _PurchaseOrderListScreenState extends State<PurchaseOrderListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.shopping_bag_outlined, size: 80, color: Colors.grey.withOpacity(0.5)),
+          Icon(Icons.shopping_bag_outlined, size: 80, color: AppColors.of(context).textLight),
           const SizedBox(height: 16),
           Text(
             'no_purchase_orders'.tr(),
-            style: const TextStyle(fontSize: 18, color: Colors.grey),
+            style: TextStyle(fontSize: 18, color: AppColors.of(context).textLight),
           ),
         ],
       ),
@@ -199,7 +199,7 @@ class _PurchaseOrderListScreenState extends State<PurchaseOrderListScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
+                color: statusColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(

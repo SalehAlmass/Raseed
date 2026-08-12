@@ -536,14 +536,14 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       padding: EdgeInsets.all(15.w),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+          colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -585,7 +585,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
             fontSize: 12.sp,
           ),
         ),
@@ -597,7 +597,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
     return Container(
       height: 30.h,
       width: 1,
-      color: Colors.white.withOpacity(0.3),
+      color: Colors.white.withValues(alpha: 0.3),
     );
   }
 
@@ -681,7 +681,7 @@ class _CustomerTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(15.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -693,7 +693,7 @@ class _CustomerTile extends StatelessWidget {
         leading: Stack(
           children: [
             CircleAvatar(
-              backgroundColor: AppColors.primary.withOpacity(0.1),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               child: Text(
                 customer.name.substring(0, 1).toUpperCase(),
                 style: const TextStyle(
@@ -748,14 +748,17 @@ class _CustomerTile extends StatelessWidget {
           children: [
             Text(
               customer.phone,
-              style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: AppColors.of(context).textLight,
+              ),
             ),
             if (customer.lastTransactionDate != null)
               Text(
                 '${'last_deal'.tr()}: ${timeago.format(customer.lastTransactionDate!, locale: context.locale.languageCode)}',
                 style: TextStyle(
                   fontSize: 10.sp,
-                  color: AppColors.primary.withOpacity(0.7),
+                  color: AppColors.primary.withValues(alpha: 0.7),
                 ),
               ),
           ],
@@ -774,7 +777,10 @@ class _CustomerTile extends StatelessWidget {
             ),
             Text(
               '${'spent'.tr()}: ${CurrencyHelper.getFormatter('YER').format(customer.totalSpent)}',
-              style: TextStyle(fontSize: 10.sp, color: Colors.grey[400]),
+              style: TextStyle(
+                fontSize: 10.sp,
+                color: AppColors.of(context).textLight,
+              ),
             ),
           ],
         ),

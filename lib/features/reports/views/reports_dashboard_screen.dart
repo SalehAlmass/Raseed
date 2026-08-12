@@ -140,7 +140,7 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
           return WillPopScope(
             onWillPop: () async => false, // Prevent dismissing by back button
             child: Dialog(
-              backgroundColor: AppColors.surface,
+              backgroundColor: AppColors.of(context).surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15.r),
               ),
@@ -158,7 +158,7 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: AppColors.of(context).textPrimary,
                       ),
                     ),
                   ],
@@ -566,9 +566,9 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
     if (report.insights.isEmpty) return const SizedBox.shrink();
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.05),
+        color: AppColors.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(15.r),
-        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
       ),
       child: Column(
         children: report.insights
@@ -608,7 +608,7 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: Row(
@@ -652,9 +652,11 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
           context.read<ReportsBloc>().add(LoadReportsEvent(_filter));
         }
       },
-      selectedColor: AppColors.primary.withOpacity(0.2),
+      selectedColor: AppColors.primary.withValues(alpha: 0.2),
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.primary : AppColors.textSecondary,
+        color: isSelected
+            ? AppColors.primary
+            : AppColors.of(context).textSecondary,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
     );
@@ -746,7 +748,7 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
                       child: Text(
                         title,
                         style: TextStyle(
-                          color: AppColors.textSecondary,
+                          color: AppColors.of(context).textSecondary,
                           fontSize: 13.sp,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -795,7 +797,7 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
       style: TextStyle(
         fontSize: 18.sp,
         fontWeight: FontWeight.bold,
-        color: AppColors.textPrimary,
+        color: AppColors.of(context).textPrimary,
       ),
     );
   }
@@ -861,7 +863,10 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
                 ),
                 Text(
                   'profit'.tr(),
-                  style: TextStyle(fontSize: 10.sp, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    color: AppColors.of(context).textLight,
+                  ),
                 ),
               ],
             ),
@@ -900,11 +905,11 @@ class _ReportsDashboardScreenState extends State<ReportsDashboardScreen> {
 
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
-      color: AppColors.surface,
+      color: AppColors.of(context).surface,
       borderRadius: BorderRadius.circular(15.r),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.05),
+          color: Colors.black.withValues(alpha: 0.05),
           blurRadius: 10,
           offset: const Offset(0, 5),
         ),

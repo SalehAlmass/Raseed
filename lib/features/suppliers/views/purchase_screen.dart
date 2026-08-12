@@ -333,7 +333,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   Widget _buildHeader() {
     return Container(
       padding: EdgeInsets.all(15.w),
-      color: AppColors.surface,
+      color: AppColors.of(context).surface,
       child: Row(
         children: [
           const Icon(Icons.business_rounded, color: AppColors.primary),
@@ -375,9 +375,9 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5))],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
